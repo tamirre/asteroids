@@ -2,4 +2,4 @@
 build/
 src/build/
 src/Debug/
-src/msvc
+src/msvc/
