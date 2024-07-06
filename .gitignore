@@ -1,5 +1,9 @@
 .vs/
+bin/
 build/
 src/build/
 src/Debug/
 src/msvc/
+src/backup/
+old/
+*~

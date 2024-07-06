@@ -1,2 +1,3 @@
-@echo off
-w:\build\win32_test.exe
+rem @echo off
+call %~dp0\bin\game.exe
+
