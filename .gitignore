@@ -6,4 +6,5 @@ src/Debug/
 src/msvc/
 src/backup/
 old/
+resources/*
 *~
