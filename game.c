@@ -27,23 +27,28 @@ typedef struct Enemy {
 typedef struct Bullet {
     Vector2 position;
     float velocity;
+    float damage;
 } Bullet;
 
 typedef struct GameState {
-    Vector2 playerPosition;
-    int playerHealth;
+    // General
     int score;
     State state;
     float gameTime;
-    float shootDelay;
-    float shootTime;
+    // Player
     float playerVelocity;
+    Vector2 playerPosition;
+    int playerHealth;
+    // Projectiles
     Bullet bullets[MAX_BULLETS];
     int bulletCount;
-    int enemyCount;
-    float enemySpawnRate;
-    float spawnTime;
+    float shootDelay;
+    float shootTime;
+    // Enemies
     Enemy enemies[MAX_ENEMIES];
+    int enemyCount;
+    float spawnTime;
+    float enemySpawnRate;
 } GameState;
 
 static const GameState defaultGameState = {
@@ -56,7 +61,7 @@ static const GameState defaultGameState = {
     .playerVelocity = 200,
     .shootTime = 0.0f,
     .enemyCount = 0,
-    .enemySpawnRate = 1.0f,
+    .enemySpawnRate = 0.5f,
     .spawnTime = 0.0,
     .score = 0,
 };
@@ -67,15 +72,6 @@ void draw_text_centered(const char* text, Vector2 pos, float fontSize, Color col
     pos.x -= textSize.x / 2.0f;
     pos.y -= textSize.y / 2.0f;
 	DrawText(text, pos.x, pos.y, fontSize, color);
-}
-
-Bullet shootBullet(Vector2 playerPosition, float deltaT)
-{
-    Bullet bullet = 
-    {
-        .position = playerPosition
-    };
-    return bullet;
 }
 
 int main() {
@@ -156,6 +152,7 @@ int main() {
                     {
                         .position = gameState.playerPosition,
                         .velocity = 100.0f,
+                        .damage = 1.0,
                     };
                     gameState.bullets[gameState.bulletCount++] = bullet;
                     gameState.shootTime -= gameState.shootDelay;
@@ -178,7 +175,7 @@ int main() {
                         bullet->position.y -= bullet->velocity * GetFrameTime();
                         Texture2D texture = LoadTexture("assets/bullet.png");
                         const int texture_x = bullet->position.x - texture.width / 2;
-                        const int texture_y = bullet->position.y - texture.height * 2 - 2;
+                        const int texture_y = bullet->position.y - texture.height / 2;
                         DrawTexture(texture, texture_x, texture_y, WHITE);
                     }
                         
@@ -192,11 +189,11 @@ int main() {
                         {
                             break;
                         }
-                        float size = GetRandomValue(100.0, 200.0) / 100.0f;                       
+                        float size = GetRandomValue(100.0, 300.0) / 100.0f;   
                         float enemyXPosition = GetRandomValue(0, SCREEN_WIDTH); 
                         Enemy enemy = {
                             .position = (Vector2) {enemyXPosition, 0},
-                            .health = 3,
+                            .health = (int) size * 2,
                             .velocity = 50.0,
                             .size = size,
                         };
@@ -210,18 +207,44 @@ int main() {
                     {
                         Enemy* enemy = &gameState.enemies[enemyIndex];
                         enemy->position.y += enemy->velocity * GetFrameTime();
+                        Rectangle enemyRec = {
+                            .width = 31.0f * enemy->size,
+                            .height = 28.0f * enemy->size,
+                            .x = enemy->position.x - 31.0f/2.0f * enemy->size,
+                            .y = enemy->position.y - 28.0f/2.0f * enemy->size,
+                        };
                         for (int bulletIndex = 0; bulletIndex < gameState.bulletCount; bulletIndex++)
                         {
                             Bullet* bullet = &gameState.bullets[bulletIndex];
-                            if(CheckCollisionCircles(enemy->position, 32.0f, gameState.bullets[bulletIndex].position, 8.0f))
+
+                            Rectangle bulletRec = {
+                                .width = 2.0f,
+                                .height = 7.0f,
+                                .x = gameState.bullets[bulletIndex].position.x - 2.0f/2,
+                                .y = gameState.bullets[bulletIndex].position.y - 7.0f/2,
+                            };
+                            // DrawRectangleRec(bulletRec, GREEN);
+                            if(CheckCollisionRecs(enemyRec, bulletRec))
                             {
-                                gameState.score += (int)(enemy->size * 100);
-                                // Replace with last enemy and the same for bullets
-                                *enemy = gameState.enemies[--gameState.enemyCount];
+                                // Replace with bullet with last bullet
                                 *bullet = gameState.bullets[--gameState.bulletCount];
+                                if (--enemy->health < 1)
+                                {
+                                    gameState.score += (int)(enemy->size * 100);
+                                    *enemy = gameState.enemies[--gameState.enemyCount];
+                                }
                             }
                         }
-                        if(CheckCollisionCircles(enemy->position, 32.0f, gameState.playerPosition, 16.0f))
+                        Rectangle playerRec = {
+                                .width = 26,
+                                .height = 27,
+                                .x = gameState.playerPosition.x - 26/2,
+                                .y = gameState.playerPosition.y - 27/2,
+                        };
+
+                        // DrawRectangleRec(enemyRec, RED); 
+                        // DrawRectangleRec(playerRec, BLUE);
+                        if(CheckCollisionRecs(enemyRec, playerRec))
                         {
                             *enemy = gameState.enemies[--gameState.enemyCount];
                             if(--gameState.playerHealth < 1) 
@@ -230,8 +253,8 @@ int main() {
                             }
                         }
                         Texture2D texture = LoadTexture("assets/asteroid.png");
-                        const int texture_x = enemy->position.x - texture.width / 2;
-                        const int texture_y = enemy->position.y - texture.height / 2;
+                        const int texture_x = enemy->position.x - texture.width / 2 * enemy->size;
+                        const int texture_y = enemy->position.y - texture.height / 2 * enemy->size;
                         DrawTextureEx(texture, (Vector2) {texture_x, texture_y}, 0.0, enemy->size, WHITE);
                     }
                     for (int i = 1; i <= gameState.playerHealth; i++)
