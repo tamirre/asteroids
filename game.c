@@ -36,6 +36,8 @@ typedef struct Enemy {
     int health;
     float size;
     float velocity;
+    char textureFile[100];
+    int type;
 } Enemy;
 
 typedef struct Bullet {
@@ -232,7 +234,7 @@ int main() {
                         if(!CheckCollisionPointRec(star->position, screenRect))
 						{
 							// Replace with last star
-							 *star = gameState.starsLayer2[--gameState.starCountLayer2];
+							*star = gameState.starsLayer2[--gameState.starCountLayer2];
 						}
                         star->position.y += star->velocity * GetFrameTime();
                         char imgCharBuffer[100] = { 0 };
@@ -327,6 +329,7 @@ int main() {
                         // {
                         //     break;
                         // } 
+
                         float size = GetRandomValue(100.0, 300.0) / 100.0f;
                         float minSpawnDistance = 31.0f * size;  
                         float enemyXPosition = MAX(minSpawnDistance, GetRandomValue(0, SCREEN_WIDTH)); 
@@ -338,9 +341,19 @@ int main() {
                             .velocity = 35.0,
                             .size = size,
                         };
+                        int whichAsteroid = GetRandomValue(1,10);
+                        if (whichAsteroid < 4)
+                        {
+                            sprintf(enemy.textureFile, "%s", "assets/asteroid2.png");
+                            enemy.type = 2;
+                        } 
+                        else 
+                        {
+                            sprintf(enemy.textureFile, "%s", "assets/asteroid1.png");
+                            enemy.type = 1;
+                        }
                         gameState.spawnTime = 0;
                         gameState.enemies[gameState.enemyCount++] = enemy;
-
                     }
                 }
                 // Update Enemies
@@ -349,11 +362,12 @@ int main() {
                     {
                         Enemy* enemy = &gameState.enemies[enemyIndex];
                         enemy->position.y += enemy->velocity * GetFrameTime();
+                        Texture2D texture = LoadTexture(enemy->textureFile);
                         Rectangle enemyRec = {
-                            .width = 31.0f * enemy->size,
-                            .height = 28.0f * enemy->size,
-                            .x = enemy->position.x - 31.0f/2.0f * enemy->size,
-                            .y = enemy->position.y - 28.0f/2.0f * enemy->size,
+                            .width = texture.width * enemy->size,
+                            .height = texture.height * enemy->size,
+                            .x = enemy->position.x - texture.width/2.0f * enemy->size,
+                            .y = enemy->position.y - texture.height/2.0f * enemy->size,
                         };
                         for (int bulletIndex = 0; bulletIndex < gameState.bulletCount; bulletIndex++)
                         {
@@ -399,7 +413,7 @@ int main() {
                                 gameState.state = STATE_GAME_OVER;
                             }
                         }
-                        Texture2D texture = LoadTexture("assets/asteroid.png");
+                        
                         const int texture_x = enemy->position.x - texture.width / 2 * enemy->size;
                         const int texture_y = enemy->position.y - texture.height / 2 * enemy->size;
                         DrawTextureEx(texture, (Vector2) {texture_x, texture_y}, 0.0, enemy->size, WHITE);
