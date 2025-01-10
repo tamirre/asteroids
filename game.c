@@ -8,7 +8,7 @@
 #define WINDOW_TITLE ("Asteroids")
 #define MAX_BULLETS (50)
 #define MAX_ENEMIES (20)
-#define MAX_STARS (10)
+#define MAX_STARS (20)
 // #define PARALLAX_LAYERS (2)
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
@@ -23,12 +23,12 @@ typedef enum State
 } State;
 
 typedef struct Star {
-    // int arrayIndex;
     Vector2 position;
     float size;
     float velocity;
     int imgIndex;
     float alpha;
+    Texture2D texture;
 } Star;
 
 typedef struct Enemy {
@@ -67,11 +67,9 @@ typedef struct GameState {
     float spawnTime;
     float enemySpawnRate;
     float lastEnemyXPosition;
-    // Parallax background
-    Star starsLayer1[MAX_STARS];
-    Star starsLayer2[MAX_STARS];
-    int starCountLayer1;
-    int starCountLayer2;
+    // Parallax background stars
+    Star stars[MAX_STARS];
+    int starCount;
     float starTime;
     float starSpawnRate;
 } GameState;
@@ -79,8 +77,8 @@ typedef struct GameState {
 static const GameState defaultGameState = {
     .playerPosition = {SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f},
     .playerHealth = 3,
-    .state = STATE_MAIN_MENU,
     .shootDelay = 1.0f/4.0f,
+    .state = STATE_MAIN_MENU,
     .gameTime = 0.0f,
     .bulletCount = 0,
     .playerVelocity = 200,
@@ -89,8 +87,7 @@ static const GameState defaultGameState = {
     .enemySpawnRate = 1.0f,
     .spawnTime = 0.0,
     .score = 0,
-    .starCountLayer1 = 0,
-    .starCountLayer2 = 0,
+    .starCount = 0,
     .starTime = 0,
     .starSpawnRate = 0.25f,
     .lastEnemyXPosition = 0.0f,
@@ -135,36 +132,22 @@ int main() {
                     gameState.state = STATE_RUNNING;
                     // Spawn initial stars for parallax
                     {
-                        while(gameState.starCountLayer1 < MAX_STARS)
-                        {
-                            // float size = GetRandomValue(100.0, 300.0) / 100.0f;   
+                        while(gameState.starCount < MAX_STARS)
+                        {                            
                             int imgIndex = GetRandomValue(1, 2);   
+                            char imgCharBuffer[100] = { 0 };
                             float starXPosition = GetRandomValue(0, SCREEN_WIDTH); 
                             float starYPosition = GetRandomValue(0, SCREEN_HEIGHT); 
-                            Star star1 = {
-                                // .arrayIndex = gameState.starCount,
+                            sprintf(imgCharBuffer, "assets/star%d.png", imgIndex);
+                            Texture2D texture = LoadTexture(imgCharBuffer);
+                            Star star = {
                                 .position = (Vector2) {starXPosition, starYPosition},
-                                .velocity = 50.0,
+                                .velocity = 50.0 * imgIndex,
                                 .size = 1,
-                                .imgIndex = imgIndex,
-                                .alpha = 0.5,
+                                .texture = texture,
+                                .alpha = 0.5 * imgIndex,
                             };
-                            gameState.starsLayer1[gameState.starCountLayer1++] = star1;
-                        }
-                        while(gameState.starCountLayer2 < MAX_STARS)
-                        {
-                            int imgIndex = GetRandomValue(1, 2);   
-                            float starXPosition = GetRandomValue(0, SCREEN_WIDTH); 
-                            float starYPosition = GetRandomValue(0, SCREEN_HEIGHT); 
-                            Star star2 = {
-                                // .arrayIndex = gameState.starCount,
-                                .position = (Vector2) {starXPosition, starYPosition},
-                                .velocity = 100.0f,
-                                .size = 1,
-                                .imgIndex = imgIndex,
-                                .alpha = 1.0f,
-                            };
-                            gameState.starsLayer2[gameState.starCountLayer2++] = star2;
+                            gameState.stars[gameState.starCount++] = star;
                         }
                     }
                 }
@@ -180,75 +163,45 @@ int main() {
                     if (gameState.starTime > gameState.starSpawnRate) 
                     {
                         gameState.starTime = 0;
-                        if (gameState.starCountLayer1 < MAX_STARS)
+                        if (gameState.starCount < MAX_STARS)
                         {
-                            int imgIndex = GetRandomValue(1, 2);   
+                            int imgIndex = GetRandomValue(1, 2);  
+                            char imgCharBuffer[100] = { 0 }; 
                             float starXPosition = GetRandomValue(0, SCREEN_WIDTH); 
+                            sprintf(imgCharBuffer, "assets/star%d.png", imgIndex);
+                            Texture2D texture = LoadTexture(imgCharBuffer);
                             Star star1 = {
-                                // .arrayIndex = gameState.starCount,
                                 .position = (Vector2) {starXPosition, 0},
-                                .velocity = 50.0f,
+                                .velocity = 50.0f * imgIndex,
                                 .size = 1,
-                                .imgIndex = imgIndex,
-                                .alpha = 0.5f,
+                                .texture = texture,
+                                .alpha = 0.5f * imgIndex,
                             };
-                            gameState.starsLayer1[gameState.starCountLayer1++]= star1;
-                        }
-                        if (gameState.starCountLayer2 < MAX_STARS)
-                        {
-                            int imgIndex = GetRandomValue(1, 2);   
-                            float starXPosition = GetRandomValue(0, SCREEN_WIDTH); 
-                            Star star2 = {
-                                // .arrayIndex = gameState.starCount,
-                                .position = (Vector2) {starXPosition, 0},
-                                .velocity = 100.0f,
-                                .size = 1,
-                                .imgIndex = imgIndex,
-                                .alpha = 1.0f,
-                            };
-                            gameState.starsLayer2[gameState.starCountLayer2++]= star2;    
+                            gameState.stars[gameState.starCount++]= star1;
                         }
                     }
                 }
                 // Update Stars
                 {
-                    for (int starIndex = 0; starIndex < gameState.starCountLayer1; starIndex++)
+                    for (int starIndex = 0; starIndex < gameState.starCount; starIndex++)
                     {
-                        Star* star = &gameState.starsLayer1[starIndex];
+                        Star* star = &gameState.stars[starIndex];
                         if(!CheckCollisionPointRec(star->position, screenRect))
 						{
 							// Replace with last star
-							*star = gameState.starsLayer1[--gameState.starCountLayer1];
+							*star = gameState.stars[--gameState.starCount];
 						}
                         star->position.y += star->velocity * GetFrameTime();
                         char imgCharBuffer[100] = { 0 };
-                        sprintf(imgCharBuffer, "assets/star%d.png", star->imgIndex);
-                        Texture2D texture = LoadTexture(imgCharBuffer);
-                        const int texture_x = star->position.x - texture.width / 2 * star->size;
-                        const int texture_y = star->position.y - texture.height / 2 * star->size;\
+                        
+                        const int texture_x = star->position.x - star->texture.width / 2 * star->size;
+                        const int texture_y = star->position.y - star->texture.height / 2 * star->size;\
                         Color starColor = ColorAlpha(WHITE, star->alpha);
-                        DrawTextureEx(texture, (Vector2) {texture_x, texture_y}, 0.0, star->size, starColor);
-                    }
-                    for (int starIndex = 0; starIndex < gameState.starCountLayer2; starIndex++)
-                    {
-                        Star* star = &gameState.starsLayer2[starIndex];
-                        if(!CheckCollisionPointRec(star->position, screenRect))
-						{
-							// Replace with last star
-							*star = gameState.starsLayer2[--gameState.starCountLayer2];
-						}
-                        star->position.y += star->velocity * GetFrameTime();
-                        char imgCharBuffer[100] = { 0 };
-                        sprintf(imgCharBuffer, "assets/star%d.png", star->imgIndex);
-                        Texture2D texture = LoadTexture(imgCharBuffer);
-                        const int texture_x = star->position.x - texture.width / 2 * star->size;
-                        const int texture_y = star->position.y - texture.height / 2 * star->size;\
-                        Color starColor = ColorAlpha(WHITE, star->alpha);
-                        DrawTextureEx(texture, (Vector2) {texture_x, texture_y}, 0.0, star->size, starColor);
+                        DrawTextureEx(star->texture, (Vector2) {texture_x, texture_y}, 0.0, star->size, starColor);
                     }
                 }
                 
-                // gameState.gameTime += GetFrameTime(); 
+                gameState.gameTime += GetFrameTime(); 
                                
                 Texture2D texture = LoadTexture("assets/rocket.png");
                 const int texture_x = gameState.playerPosition.x - texture.width / 2;
@@ -326,16 +279,9 @@ int main() {
                     gameState.spawnTime += GetFrameTime();
                     if (gameState.spawnTime > gameState.enemySpawnRate && gameState.enemyCount < MAX_ENEMIES) 
                     {
-                        // if (gameState.enemyCount >= MAX_ENEMIES)
-                        // {
-                        //     break;
-                        // } 
-
                         float size = GetRandomValue(100.0, 300.0) / 100.0f;
                         float minSpawnDistance = 31.0f * size;  
                         float enemyXPosition = MAX(minSpawnDistance, GetRandomValue(0, SCREEN_WIDTH)); 
-                        // float enemyXPosition = MAX(gameState.lastEnemyXPosition + minSpawnDistance, GetRandomValue(0, SCREEN_WIDTH)); 
-                        // gameState.lastEnemyXPosition = enemyXPosition;
                         Enemy enemy = {
                             .position = (Vector2) {enemyXPosition, 0},
                             .health = (int) (size+1.0) * 2.0,
@@ -354,6 +300,7 @@ int main() {
                             enemy.type = 1;
                         }
                         enemy.texture = LoadTexture(enemy.textureFile);
+                        enemy.position.y -= enemy.texture.height; // to make them come into screen smoothly
                         gameState.spawnTime = 0;
                         gameState.enemies[gameState.enemyCount++] = enemy;
                     }
@@ -364,7 +311,6 @@ int main() {
                     {
                         Enemy* enemy = &gameState.enemies[enemyIndex];
                         enemy->position.y += enemy->velocity * GetFrameTime();
-                        // Texture2D texture = 
                         Rectangle enemyRec = {
                             .width = enemy->texture.width * enemy->size,
                             .height = enemy->texture.height * enemy->size,
@@ -401,8 +347,13 @@ int main() {
                         };
                         // DrawRectangleRec(enemyRec, RED); 
                         // DrawRectangleRec(playerRec, BLUE);
-                        // || enemy->position.y > SCREEN_HEIGHT
-                        if(!CheckCollisionPointRec(enemy->position, screenRect))
+                        Rectangle screenRectExtended = {
+                            .width = SCREEN_WIDTH + enemy->texture.width,
+                            .height = SCREEN_HEIGHT + enemy->texture.height,
+                            .x = 0.0,
+                            .y = enemy->position.y, // to make them scroll into screen smoothly
+                        };
+                        if(!CheckCollisionPointRec(enemy->position, screenRectExtended))
                         {
                             // Replace with last enemy
                             *enemy = gameState.enemies[--gameState.enemyCount];
@@ -468,7 +419,6 @@ int main() {
                 break;
             }
         }
-
         EndDrawing();
     }
 
