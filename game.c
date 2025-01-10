@@ -38,6 +38,7 @@ typedef struct Enemy {
     float velocity;
     char textureFile[100];
     int type;
+    Texture2D texture;
 } Enemy;
 
 typedef struct Bullet {
@@ -217,7 +218,7 @@ int main() {
                         if(!CheckCollisionPointRec(star->position, screenRect))
 						{
 							// Replace with last star
-							 *star = gameState.starsLayer1[--gameState.starCountLayer1];
+							*star = gameState.starsLayer1[--gameState.starCountLayer1];
 						}
                         star->position.y += star->velocity * GetFrameTime();
                         char imgCharBuffer[100] = { 0 };
@@ -352,6 +353,7 @@ int main() {
                             sprintf(enemy.textureFile, "%s", "assets/asteroid1.png");
                             enemy.type = 1;
                         }
+                        enemy.texture = LoadTexture(enemy.textureFile);
                         gameState.spawnTime = 0;
                         gameState.enemies[gameState.enemyCount++] = enemy;
                     }
@@ -362,12 +364,12 @@ int main() {
                     {
                         Enemy* enemy = &gameState.enemies[enemyIndex];
                         enemy->position.y += enemy->velocity * GetFrameTime();
-                        Texture2D texture = LoadTexture(enemy->textureFile);
+                        // Texture2D texture = 
                         Rectangle enemyRec = {
-                            .width = texture.width * enemy->size,
-                            .height = texture.height * enemy->size,
-                            .x = enemy->position.x - texture.width/2.0f * enemy->size,
-                            .y = enemy->position.y - texture.height/2.0f * enemy->size,
+                            .width = enemy->texture.width * enemy->size,
+                            .height = enemy->texture.height * enemy->size,
+                            .x = enemy->position.x - enemy->texture.width/2.0f * enemy->size,
+                            .y = enemy->position.y - enemy->texture.height/2.0f * enemy->size,
                         };
                         for (int bulletIndex = 0; bulletIndex < gameState.bulletCount; bulletIndex++)
                         {
@@ -414,10 +416,13 @@ int main() {
                             }
                         }
                         
-                        const int texture_x = enemy->position.x - texture.width / 2 * enemy->size;
-                        const int texture_y = enemy->position.y - texture.height / 2 * enemy->size;
-                        DrawTextureEx(texture, (Vector2) {texture_x, texture_y}, 0.0, enemy->size, WHITE);
+                        const int texture_x = enemy->position.x - enemy->texture.width / 2 * enemy->size;
+                        const int texture_y = enemy->position.y - enemy->texture.height / 2 * enemy->size;
+                        DrawTextureEx(enemy->texture, (Vector2) {texture_x, texture_y}, 0.0, enemy->size, WHITE);
                     }
+                }
+                // Update player health
+                {
                     for (int i = 1; i <= gameState.playerHealth; i++)
                     {
                         Texture2D texture = LoadTexture("assets/heart.png");
