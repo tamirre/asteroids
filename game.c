@@ -161,26 +161,11 @@ int main() {
     Texture2D playerTexture = LoadTexture("assets/rocketNew.png");
     gameState.playerTexture = playerTexture;
     gameState.playerAnimation = createSpriteAnimation(playerTexture, 10, (Rectangle[]) {
-        (Rectangle){0,0,32,62},
-        (Rectangle){32,0,32,62},
-        (Rectangle){64,0,32,62},
-        (Rectangle){96,0,32,62},
-        (Rectangle){128,0,32,62},
-        (Rectangle){160,0,32,62},
-        (Rectangle){192,0,32,62},
-        (Rectangle){224,0,32,62},
-        (Rectangle){256,0,32,62},
-        (Rectangle){288,0,32,62},
-        (Rectangle){320,0,32,62},
-        (Rectangle){352,0,32,62},
-        (Rectangle){384,0,32,62},
-        (Rectangle){416,0,32,62},
-        (Rectangle){448,0,32,62},
-        (Rectangle){480,0,32,62},
-        (Rectangle){512,0,32,62},
-        (Rectangle){544,0,32,62},
-        (Rectangle){576,0,32,62},
-        (Rectangle){608,0,32,62},        
+        (Rectangle){0,0,32,62},   (Rectangle){32,0,32,62},  (Rectangle){64,0,32,62},  (Rectangle){96,0,32,62},
+        (Rectangle){128,0,32,62}, (Rectangle){160,0,32,62}, (Rectangle){192,0,32,62}, (Rectangle){224,0,32,62},
+        (Rectangle){256,0,32,62}, (Rectangle){288,0,32,62}, (Rectangle){320,0,32,62}, (Rectangle){352,0,32,62},
+        (Rectangle){384,0,32,62}, (Rectangle){416,0,32,62}, (Rectangle){448,0,32,62}, (Rectangle){480,0,32,62},
+        (Rectangle){512,0,32,62}, (Rectangle){544,0,32,62}, (Rectangle){576,0,32,62}, (Rectangle){608,0,32,62},        
     }, 20);
 
     while (!WindowShouldClose())
@@ -206,26 +191,6 @@ int main() {
                 draw_text_centered("v0.1", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT - 15}, 15, WHITE);
                 if (IsKeyPressed(KEY_ENTER)) {                    
                     gameState.state = STATE_RUNNING;
-                    // Spawn initial stars for parallax
-                    {
-                        while(gameState.starCount < MAX_STARS)
-                        {                            
-                            int imgIndex = GetRandomValue(1, 2);   
-                            char imgCharBuffer[100] = { 0 };
-                            float starXPosition = GetRandomValue(0, SCREEN_WIDTH); 
-                            float starYPosition = GetRandomValue(0, SCREEN_HEIGHT); 
-                            sprintf(imgCharBuffer, "assets/star%d.png", imgIndex);
-                            Texture2D texture = LoadTexture(imgCharBuffer);
-                            Star star = {
-                                .position = (Vector2) {starXPosition, starYPosition},
-                                .velocity = 50.0 * imgIndex,
-                                .size = 1,
-                                .texture = texture,
-                                .alpha = 0.5 * imgIndex,
-                            };
-                            gameState.stars[gameState.starCount++] = star;
-                        }
-                    }
                 }
                 break;
             }
@@ -233,6 +198,26 @@ int main() {
             {
                 Color backgroundColor = ColorFromHSV(258, 1, 0.07);
                 ClearBackground(backgroundColor);
+                // Spawn initial stars for parallax
+                {
+                    while(gameState.starCount < MAX_STARS)
+                    {                            
+                        int imgIndex = GetRandomValue(1, 2);   
+                        char imgCharBuffer[100] = { 0 };
+                        float starXPosition = GetRandomValue(0, SCREEN_WIDTH); 
+                        float starYPosition = GetRandomValue(0, SCREEN_HEIGHT); 
+                        sprintf(imgCharBuffer, "assets/star%d.png", imgIndex);
+                        Texture2D texture = LoadTexture(imgCharBuffer);
+                        Star star = {
+                            .position = (Vector2) {starXPosition, starYPosition},
+                            .velocity = 50.0 * imgIndex,
+                            .size = 1,
+                            .texture = texture,
+                            .alpha = 0.5 * imgIndex,
+                        };
+                        gameState.stars[gameState.starCount++] = star;
+                    }
+                }
                 // Spawn new stars for parallax
                 {
                     gameState.starTime += GetFrameTime();
@@ -485,7 +470,17 @@ int main() {
                 draw_text_centered("<Press enter to try again>", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 60}, 20, WHITE);
                 if (IsKeyPressed(KEY_ENTER)) {
                     gameState = defaultGameState;
+                    Texture2D playerTexture = LoadTexture("assets/rocketNew.png");
+                    gameState.playerTexture = playerTexture;
+                    gameState.playerAnimation = createSpriteAnimation(playerTexture, 10, (Rectangle[]) {
+                        (Rectangle){0,0,32,62},   (Rectangle){32,0,32,62},  (Rectangle){64,0,32,62},  (Rectangle){96,0,32,62},
+                        (Rectangle){128,0,32,62}, (Rectangle){160,0,32,62}, (Rectangle){192,0,32,62}, (Rectangle){224,0,32,62},
+                        (Rectangle){256,0,32,62}, (Rectangle){288,0,32,62}, (Rectangle){320,0,32,62}, (Rectangle){352,0,32,62},
+                        (Rectangle){384,0,32,62}, (Rectangle){416,0,32,62}, (Rectangle){448,0,32,62}, (Rectangle){480,0,32,62},
+                        (Rectangle){512,0,32,62}, (Rectangle){544,0,32,62}, (Rectangle){576,0,32,62}, (Rectangle){608,0,32,62},        
+                    }, 20);
                     gameState.state = STATE_RUNNING;
+
                 }
                 break;
             }
