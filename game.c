@@ -1,7 +1,7 @@
 #define RAYMATH_IMPLEMENTATION
 #include "raylib.h"
 #include "raymath.h"
-
+#include <stdlib.h>
 #include <stdio.h>
 #define SCREEN_WIDTH (700.0f)
 #define SCREEN_HEIGHT (400.0f)
@@ -13,6 +13,15 @@
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
+
+typedef struct SpriteAnimation
+{
+    Texture2D atlas;
+    int framesPerSecond;
+    float timeStarted;
+    Rectangle* rectangles;
+    int rectanglesLentgh;
+} SpriteAnimation;
 
 typedef enum State
 {
@@ -45,6 +54,7 @@ typedef struct Bullet {
     Vector2 position;
     float velocity;
     float damage;
+    Texture2D texture;
 } Bullet;
 
 typedef struct GameState {
@@ -56,6 +66,8 @@ typedef struct GameState {
     float playerVelocity;
     Vector2 playerPosition;
     int playerHealth;
+    Texture2D playerTexture;
+    SpriteAnimation playerAnimation;
     // Projectiles
     Bullet bullets[MAX_BULLETS];
     int bulletCount;
@@ -93,6 +105,46 @@ static const GameState defaultGameState = {
     .lastEnemyXPosition = 0.0f,
 };
 
+SpriteAnimation createSpriteAnimation(Texture2D atlas, int framesPerSecond, Rectangle rectangles[], int length)
+{
+    SpriteAnimation spriteAnimation = 
+    {
+        .atlas = atlas,
+        .framesPerSecond = framesPerSecond,
+        .rectanglesLentgh = length,
+        .rectangles = NULL,
+        .timeStarted = GetTime(),
+    };
+
+    Rectangle* mem = (Rectangle*)malloc(sizeof(Rectangle) * length);
+    if (mem == NULL)
+    {
+        TraceLog(LOG_FATAL, "No memory for CreateSpriteAnimation");
+        spriteAnimation.rectanglesLentgh = 0;
+        return spriteAnimation;
+    }
+    spriteAnimation.rectangles = mem;
+
+    for(int i = 0; i < length; i++)
+    {
+        spriteAnimation.rectangles[i] = rectangles[i];
+    }
+
+    return spriteAnimation;
+}
+
+void DrawSpriteAnimationPro(SpriteAnimation animation, Rectangle destination, Vector2 origin, float rotation, Color tint)
+{
+    int index = (int)(GetTime() * animation.framesPerSecond) % animation.rectanglesLentgh;
+    Rectangle source = animation.rectangles[index];
+    DrawTexturePro(animation.atlas, source, destination, origin, rotation, tint);
+}
+
+void FreeSpriteAnimation(SpriteAnimation animation)
+{
+    free(animation.rectangles);
+}
+
 void draw_text_centered(const char* text, Vector2 pos, float fontSize, Color color)
 {
 	const Vector2 textSize = MeasureTextEx(GetFontDefault(), text, fontSize, 1);
@@ -106,7 +158,31 @@ int main() {
     SetTargetFPS(60);
     
     GameState gameState = defaultGameState;
-    
+    Texture2D playerTexture = LoadTexture("assets/rocketNew.png");
+    gameState.playerTexture = playerTexture;
+    gameState.playerAnimation = createSpriteAnimation(playerTexture, 10, (Rectangle[]) {
+        (Rectangle){0,0,32,62},
+        (Rectangle){32,0,32,62},
+        (Rectangle){64,0,32,62},
+        (Rectangle){96,0,32,62},
+        (Rectangle){128,0,32,62},
+        (Rectangle){160,0,32,62},
+        (Rectangle){192,0,32,62},
+        (Rectangle){224,0,32,62},
+        (Rectangle){256,0,32,62},
+        (Rectangle){288,0,32,62},
+        (Rectangle){320,0,32,62},
+        (Rectangle){352,0,32,62},
+        (Rectangle){384,0,32,62},
+        (Rectangle){416,0,32,62},
+        (Rectangle){448,0,32,62},
+        (Rectangle){480,0,32,62},
+        (Rectangle){512,0,32,62},
+        (Rectangle){544,0,32,62},
+        (Rectangle){576,0,32,62},
+        (Rectangle){608,0,32,62},        
+    }, 20);
+
     while (!WindowShouldClose())
     {
         BeginDrawing();
@@ -202,30 +278,30 @@ int main() {
                 }
                 
                 gameState.gameTime += GetFrameTime(); 
-                               
-                Texture2D texture = LoadTexture("assets/rocket.png");
-                const int texture_x = gameState.playerPosition.x - texture.width / 2;
-                const int texture_y = gameState.playerPosition.y - texture.height / 2;
+                
+                const int texture_x = gameState.playerPosition.x - 32.0f / 2;
+                const int texture_y = gameState.playerPosition.y - 62.0f / 2;
+
                 if (IsKeyDown(KEY_W)) {
-                    if(!CheckCollisionPointLine(gameState.playerPosition, (Vector2) {0, 0}, (Vector2) {SCREEN_WIDTH, 0}, texture.height / 2))
+                    if(!CheckCollisionPointLine(gameState.playerPosition, (Vector2) {0, 0}, (Vector2) {SCREEN_WIDTH, 0}, 62.0f / 2))
                     {
                         gameState.playerPosition.y -= gameState.playerVelocity * GetFrameTime();
                     }   
                 }
                 if (IsKeyDown(KEY_S)) {
-                    if(!CheckCollisionPointLine(gameState.playerPosition, (Vector2) {0, SCREEN_HEIGHT}, (Vector2) {SCREEN_WIDTH, SCREEN_HEIGHT}, texture.height / 2))
+                    if(!CheckCollisionPointLine(gameState.playerPosition, (Vector2) {0, SCREEN_HEIGHT}, (Vector2) {SCREEN_WIDTH, SCREEN_HEIGHT}, 62.0f / 2))
                     {
                         gameState.playerPosition.y += gameState.playerVelocity * GetFrameTime();
                     }
                 }
                 if (IsKeyDown(KEY_A)) {
-                    if(!CheckCollisionPointLine(gameState.playerPosition, (Vector2) {0, 0}, (Vector2) {0, SCREEN_HEIGHT}, texture.width / 2))
+                    if(!CheckCollisionPointLine(gameState.playerPosition, (Vector2) {0, 0}, (Vector2) {0, SCREEN_HEIGHT}, 32.0f / 2))
                     {
                         gameState.playerPosition.x -= gameState.playerVelocity * GetFrameTime();
                     }
                 }
                 if (IsKeyDown(KEY_D)) {
-                    if(!CheckCollisionPointLine(gameState.playerPosition, (Vector2) {SCREEN_WIDTH, 0}, (Vector2) {SCREEN_WIDTH, SCREEN_HEIGHT}, texture.width / 2))
+                    if(!CheckCollisionPointLine(gameState.playerPosition, (Vector2) {SCREEN_WIDTH, 0}, (Vector2) {SCREEN_WIDTH, SCREEN_HEIGHT}, 32.0f / 2))
                     {
                         gameState.playerPosition.x += gameState.playerVelocity * GetFrameTime();
                     }
@@ -234,6 +310,7 @@ int main() {
                 {
                     gameState.shootTime += GetFrameTime();
                 } 
+                // Shoot bullets
                 while (IsKeyDown(KEY_SPACE) && gameState.shootTime >= gameState.shootDelay) 
                 {
                     if (gameState.bulletCount >= MAX_BULLETS)
@@ -246,13 +323,13 @@ int main() {
                         .position = gameState.playerPosition,
                         .velocity = 100.0f,
                         .damage = 1.0,
+                        .texture = LoadTexture("assets/bullet.png"),
                     };
                     gameState.bullets[gameState.bulletCount++] = bullet;
                     gameState.shootTime -= gameState.shootDelay;
-                    Texture2D texture = LoadTexture("assets/bullet.png");
-                    const int texture_x = gameState.playerPosition.x - texture.width / 2;
-                    const int texture_y = gameState.playerPosition.y - texture.height * 2 - 2;
-                    DrawTexture(texture, texture_x, texture_y, WHITE);
+                    const int texture_x = gameState.playerPosition.x - bullet.texture.width / 2;
+                    const int texture_y = gameState.playerPosition.y - gameState.playerTexture.height/2 - bullet.texture.height / 2;
+                    DrawTexture(bullet.texture, texture_x, texture_y, WHITE);
                 }
                 // Update Bullets
                 {
@@ -265,15 +342,17 @@ int main() {
 							*bullet = gameState.bullets[--gameState.bulletCount];
 						}
                         bullet->position.y -= bullet->velocity * GetFrameTime();
-                        Texture2D texture = LoadTexture("assets/bullet.png");
-                        const int texture_x = bullet->position.x - texture.width / 2;
-                        const int texture_y = bullet->position.y - texture.height / 2;
-                        DrawTexture(texture, texture_x, texture_y, WHITE);
+                        const int texture_x = bullet->position.x - bullet->texture.width / 2;
+                        const int texture_y = bullet->position.y - gameState.playerTexture.height/2 - bullet->texture.height / 2;
+                        DrawTexture(bullet->texture, texture_x, texture_y, WHITE);
                     }
                         
                 }
                 // Update Player
-                DrawTextureEx(texture, (Vector2) {texture_x, texture_y}, 0.0, 1.0, WHITE);
+                Rectangle destination = {texture_x, texture_y, 32, 62}; // origin in coordinates and scale
+                Vector2 origin = { 0 }; // so it draws from top left of image
+                DrawSpriteAnimationPro(gameState.playerAnimation, destination, origin, 0, WHITE);
+
                 // Spawn Enemies
                 {
                     gameState.spawnTime += GetFrameTime();
@@ -340,10 +419,10 @@ int main() {
                             }
                         }
                         Rectangle playerRec = {
-                            .width = 26,
-                            .height = 27,
-                            .x = gameState.playerPosition.x - 26/2,
-                            .y = gameState.playerPosition.y - 27/2,
+                            .width = 32,
+                            .height = 62,
+                            .x = gameState.playerPosition.x - 32/2,
+                            .y = gameState.playerPosition.y - 62/2,
                         };
                         // DrawRectangleRec(enemyRec, RED); 
                         // DrawRectangleRec(playerRec, BLUE);
@@ -422,7 +501,7 @@ int main() {
         EndDrawing();
     }
 
+    FreeSpriteAnimation(gameState.playerAnimation);
     CloseWindow();
-    printf("%f", gameState.playerPosition.x);
     return 0;
 }
