@@ -4,7 +4,7 @@ A simple Asteroid game written in C using the [raylib](https://www.raylib.com/) 
 
 ## Gameplay
 
-![](https://github.com/tamirre/asteroids/assets/asteroids.gif)
+![](assets/asteroids.gif)
 
 ## Getting Started
 
@@ -60,13 +60,13 @@ cd asteroids
 
 - `asteroids.c`: Main game logic, including initialization, game loop, and rendering.
 - `assets/`: Directory for optional assets like images or sounds.
+- `third_party/`: raylib include files and libs
 
 All assets are created using [Aseprite](https://www.aseprite.org/).
 
-
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details.
 
 ## Acknowledgements
 
