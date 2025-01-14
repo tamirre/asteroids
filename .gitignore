@@ -8,7 +8,7 @@ src/backup/
 old/
 resources/*
 *~
-game.exe
-game.ilk
-game.pdb
+*.exe
+*.ilk
+*.pdb
 misc/

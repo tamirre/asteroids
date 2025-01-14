@@ -8,7 +8,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "name": "Debug",
-            "program": "${workspaceFolder}/game.exe",
+            "program": "${workspaceFolder}/asteroids.exe",
             "args": [],
             "cwd": "${workspaceFolder}",
         }
