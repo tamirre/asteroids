@@ -23,7 +23,15 @@ Follow the [installation guide](https://github.com/raysan5/raylib#installation) 
 git clone https://github.com/tamirre/asteroids.git
 cd asteroids
 ```
-
+### Building the Game (Windows)
+You need to have the windows msvc compiler installed. Edit the path to your 'vcvarsall.bat' in the build.bat and run:
+```bash
+./build.bat
+```
+### Running the Game (Windows)
+```bash
+./run.bat
+```
 <!-- ## Building the Game -->
 
 <!-- ### On Linux/MacOS
