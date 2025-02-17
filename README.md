@@ -10,7 +10,7 @@ A simple Asteroid game written in C using the [raylib](https://www.raylib.com/) 
 
 ### Prerequisites
 
-- A C compiler (e.g., GCC or Clang)
+- A C compiler (e.g., msvc or gcc)
 - [raylib](https://www.raylib.com/) library installed
 
 ### Installing raylib
