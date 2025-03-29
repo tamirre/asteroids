@@ -29,6 +29,7 @@ typedef enum State
     STATE_RUNNING,
     STATE_GAME_OVER,
     STATE_PAUSED,
+    STATE_UPGRADE,
 } State;
 
 typedef struct Star {
@@ -59,7 +60,7 @@ typedef struct Bullet {
 
 typedef struct GameState {
     // General
-    int score;
+    int experience;
     State state;
     float gameTime;
     // Player
@@ -99,7 +100,7 @@ static const GameState defaultGameState = {
     .enemyCount = 0,
     .enemySpawnRate = 0.5f,
     .spawnTime = 0.0,
-    .score = 0,
+    .experience = 0,
     .starCount = 0,
     .starTime = 0,
     .starSpawnRate = 0.25f,
@@ -181,6 +182,11 @@ int main() {
             .x = 0,
             .y = 0
         };
+
+        // Font font = LoadFont("resources/fonts/alagard.png");
+        Font font = LoadFont("resources/fonts/jupiter_crash.png");
+        int fontSpacing = 2;
+        int fontSize = 15;
 
         switch (gameState.state) {
             case STATE_MAIN_MENU:
@@ -405,7 +411,7 @@ int main() {
                                 *bullet = gameState.bullets[--gameState.bulletCount];
                                 if (--enemy->health < 1)
                                 {
-                                    gameState.score += (int)(enemy->size * 100);
+                                    gameState.experience += (int)(enemy->size * 100);
                                     *enemy = gameState.enemies[--gameState.enemyCount];
                                 }
                             }
@@ -437,10 +443,10 @@ int main() {
                                 gameState.state = STATE_GAME_OVER;
                             }
                         }
-                        
+
                         const int texture_x = enemy->position.x - enemy->texture.width / 2 * enemy->size;
                         const int texture_y = enemy->position.y - enemy->texture.height / 2 * enemy->size;
-                        DrawTextureEx(enemy->texture, (Vector2) {texture_x, texture_y}, 0.0, enemy->size, WHITE);
+                        DrawTextureEx(enemy->texture, (Vector2){texture_x, texture_y}, 0.0, enemy->size, WHITE);
                     }
                 }
                 // Update player health
@@ -455,15 +461,31 @@ int main() {
                 }
                 // Update Score
                 {
-                    char scoreText[100] = { 0 };
-                    int fontSize = 15;
-				    sprintf(scoreText, "Score: %d", gameState.score);
-                    const Vector2 textSize = MeasureTextEx(GetFontDefault(), scoreText, fontSize, 1);
-                    DrawText(scoreText, SCREEN_WIDTH - textSize.x - 20.0, 20.0, fontSize, WHITE);
+                    if (gameState.experience > 1000.0 && gameState.state != STATE_UPGRADE)
+                    {
+                        gameState.state = STATE_UPGRADE;
+                        gameState.experience -= 1000.0;
+                    }
+                    DrawRectangle(SCREEN_WIDTH - 150.0, 20.0, gameState.experience / 10.0, 30.0, ColorAlpha(GREEN, 0.5));
+                    DrawRectangleLines(SCREEN_WIDTH - 150.0, 20.0, 100.0, 30.0, ColorAlpha(WHITE, 0.5));
+                    char experienceText[100] = "EXP";
+                    const Vector2 textSize = MeasureTextEx(font, experienceText, 15, fontSpacing);
+                    DrawTextEx(font, experienceText, (Vector2){SCREEN_WIDTH - 150.0 + 100.0 / 2.0 - textSize.x / 2.0, 20.0 + textSize.y / 2.0}, 15, fontSpacing, WHITE);
                 }
 
                 if (IsKeyPressed(KEY_P)) {
                     gameState.state = STATE_PAUSED;
+                }
+                
+                break;
+            }
+            case STATE_UPGRADE:
+            {
+                ClearBackground(BLACK);
+                draw_text_centered("UPGRADE", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f}, 40, WHITE);
+                draw_text_centered("<Press enter to play>", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 30}, 20, WHITE);
+                if (IsKeyPressed(KEY_ENTER)) {                    
+                    gameState.state = STATE_RUNNING;
                 }
                 break;
             }
@@ -472,7 +494,7 @@ int main() {
                 ClearBackground(BLACK);
                 draw_text_centered("GAME OVER", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f}, 40, WHITE);
                 char scoreText[100] = {0};
-                sprintf(scoreText, "Final score: %d", gameState.score);
+                sprintf(scoreText, "Final score: %d", gameState.experience);
                 draw_text_centered(scoreText, (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 30}, 20, WHITE);
                 draw_text_centered("<Press enter to try again>", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 60}, 20, WHITE);
                 if (IsKeyPressed(KEY_ENTER)) {
