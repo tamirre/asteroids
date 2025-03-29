@@ -13,3 +13,5 @@ resources/*
 *.pdb
 misc/
 #*.*#
+*.obj
+.vscode/*
