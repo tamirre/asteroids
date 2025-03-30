@@ -67,6 +67,7 @@ typedef struct GameState {
     float playerVelocity;
     Vector2 playerPosition;
     int playerHealth;
+    bool playerMultishot;
     Texture2D playerTexture;
     SpriteAnimation playerAnimation;
     // Projectiles
@@ -96,11 +97,12 @@ static const GameState defaultGameState = {
     .gameTime = 0.0f,
     .bulletCount = 0,
     .playerVelocity = 200,
+    .playerMultishot = false,
     .shootTime = 0.0f,
     .enemyCount = 0,
     .enemySpawnRate = 0.5f,
     .spawnTime = 0.0,
-    .experience = 0,
+    .experience = 999,
     .starCount = 0,
     .starTime = 0,
     .starSpawnRate = 0.25f,
@@ -269,7 +271,7 @@ int main() {
                         char imgCharBuffer[100] = { 0 };
                         
                         const int texture_x = star->position.x - star->texture.width / 2 * star->size;
-                        const int texture_y = star->position.y - star->texture.height / 2 * star->size;\
+                        const int texture_y = star->position.y - star->texture.height / 2 * star->size;
                         Color starColor = ColorAlpha(WHITE, star->alpha);
                         DrawTextureEx(star->texture, (Vector2) {texture_x, texture_y}, 0.0, star->size, starColor);
                     }
@@ -314,20 +316,60 @@ int main() {
                     if (gameState.bulletCount >= MAX_BULLETS)
                     {
                         break;
-                    }  
+                    }
 
-                    Bullet bullet = 
+                    if (gameState.playerMultishot == true)
                     {
-                        .position = gameState.playerPosition,
-                        .velocity = 100.0f,
-                        .damage = 1.0,
-                        .texture = LoadTexture("assets/bullet.png"),
-                    };
-                    gameState.bullets[gameState.bulletCount++] = bullet;
-                    gameState.shootTime -= gameState.shootDelay;
-                    const int texture_x = gameState.playerPosition.x - bullet.texture.width / 2;
-                    const int texture_y = gameState.playerPosition.y - gameState.playerTexture.height/2 - bullet.texture.height / 2;
-                    DrawTexture(bullet.texture, texture_x, texture_y, WHITE);
+                        Bullet bullet1 = 
+                        {
+                            .position = gameState.playerPosition,
+                            .velocity = 100.0f,
+                            .damage = 1.0,
+                            .texture = LoadTexture("assets/bullet.png"),
+                        };
+                        gameState.bullets[gameState.bulletCount++] = bullet1;
+                        float texture_x = gameState.playerPosition.x - bullet1.texture.width / 2;
+                        float texture_y = gameState.playerPosition.y - gameState.playerTexture.height / 2 - bullet1.texture.height / 2;
+                        DrawTexture(bullet1.texture, texture_x, texture_y, WHITE);
+                        Bullet bullet2 = 
+                        {
+                            .position = (Vector2){gameState.playerPosition.x - 40.0f, 0.0f},
+                            .velocity = 100.0f,
+                            .damage = 1.0,
+                            .texture = LoadTexture("assets/bullet.png"),
+                        };
+                        gameState.bullets[gameState.bulletCount++] = bullet2;
+                        texture_x = gameState.playerPosition.x - bullet2.texture.width / 2;
+                        texture_y = gameState.playerPosition.y - gameState.playerTexture.height / 2 - bullet2.texture.height / 2;
+                        DrawTexture(bullet2.texture, texture_x, texture_y, WHITE);
+                        Bullet bullet3 = 
+                        {
+                            .position = (Vector2){gameState.playerPosition.x + 40.0f, 0.0f},
+                            .velocity = 100.0f,
+                            .damage = 1.0,
+                            .texture = LoadTexture("assets/bullet.png"),
+                        };
+                        gameState.bullets[gameState.bulletCount++] = bullet3;
+                        texture_x = gameState.playerPosition.x - bullet3.texture.width / 2;
+                        texture_y = gameState.playerPosition.y - gameState.playerTexture.height / 2 - bullet3.texture.height / 2;
+                        DrawTexture(bullet3.texture, texture_x, texture_y, WHITE);
+                        gameState.shootTime -= gameState.shootDelay;
+                    }
+                    else
+                    {
+                        Bullet bullet =
+                            {
+                                .position = gameState.playerPosition,
+                                .velocity = 100.0f,
+                                .damage = 1.0,
+                                .texture = LoadTexture("assets/bullet.png"),
+                            };
+                        gameState.bullets[gameState.bulletCount++] = bullet;
+                        gameState.shootTime -= gameState.shootDelay;
+                        const int texture_x = gameState.playerPosition.x - bullet.texture.width / 2;
+                        const int texture_y = gameState.playerPosition.y - gameState.playerTexture.height / 2 - bullet.texture.height / 2;
+                        DrawTexture(bullet.texture, texture_x, texture_y, WHITE);
+                    }
                 }
                 // Update Bullets
                 {
@@ -404,7 +446,7 @@ int main() {
                                 .x = gameState.bullets[bulletIndex].position.x - 2.0f/2,
                                 .y = gameState.bullets[bulletIndex].position.y - 7.0f/2,
                             };
-                            // DrawRectangleRec(bulletRec, GREEN);
+                            DrawRectangleRec(bulletRec, GREEN);
                             if(CheckCollisionRecs(enemyRec, bulletRec))
                             {
                                 // Replace with bullet with last bullet
@@ -468,9 +510,9 @@ int main() {
                     }
                     DrawRectangle(SCREEN_WIDTH - 150.0, 20.0, gameState.experience / 10.0, 30.0, ColorAlpha(GREEN, 0.5));
                     DrawRectangleLines(SCREEN_WIDTH - 150.0, 20.0, 100.0, 30.0, ColorAlpha(WHITE, 0.5));
-                    char experienceText[100] = "EXP";
+                    char experienceText[100] = "XP";
                     const Vector2 textSize = MeasureTextEx(font, experienceText, 15, fontSpacing);
-                    DrawTextEx(font, experienceText, (Vector2){SCREEN_WIDTH - 150.0 + 100.0 / 2.0 - textSize.x / 2.0, 20.0 + textSize.y / 2.0}, 15, fontSpacing, WHITE);
+                    DrawTextEx(font, experienceText, (Vector2){SCREEN_WIDTH - 150.0 + 100.0 / 2.0 - textSize.x / 2.0, 20.0 + textSize.y / 2.0}, 20.0, fontSpacing, WHITE);
                 }
 
                 if (IsKeyPressed(KEY_P)) {
@@ -482,9 +524,14 @@ int main() {
             case STATE_UPGRADE:
             {
                 ClearBackground(BLACK);
-                draw_text_centered("UPGRADE", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f}, 40, WHITE);
-                draw_text_centered("<Press enter to play>", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 30}, 20, WHITE);
+                draw_text_centered("CHOOSE UPGRADE", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f - 80.0}, 40, WHITE);
+                Texture2D upgradeMultishotTexture = LoadTexture("assets/upgradeMultiShot.png");
+                const int texture_x = upgradeMultishotTexture.width;
+                const int texture_y = upgradeMultishotTexture.height;
+                DrawTexture(upgradeMultishotTexture, SCREEN_WIDTH/2.0f - texture_x/2.0f, SCREEN_HEIGHT/2.0f - texture_y/2.0f, WHITE);
+                // draw_text_centered("<Press enter to play>", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 30}, 20, WHITE);
                 if (IsKeyPressed(KEY_ENTER)) {                    
+                    gameState.playerMultishot = true;
                     gameState.state = STATE_RUNNING;
                 }
                 break;
