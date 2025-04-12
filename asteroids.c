@@ -186,7 +186,8 @@ int main() {
         };
 
         // Font font = LoadFont("resources/fonts/alagard.png");
-        Font font = LoadFont("resources/fonts/jupiter_crash.png");
+        // Font font = LoadFont("resources/fonts/jupiter_crash.png");
+        Font font = GetFontDefault(); 
         int fontSpacing = 2;
         int fontSize = 15;
 
@@ -270,17 +271,17 @@ int main() {
                         star->position.y += star->velocity * GetFrameTime();
                         char imgCharBuffer[100] = { 0 };
                         
-                        const int texture_x = star->position.x - star->texture.width / 2 * star->size;
-                        const int texture_y = star->position.y - star->texture.height / 2 * star->size;
+                        const int texture_x = star->position.x - star->texture.width / 2.0 * star->size;
+                        const int texture_y = star->position.y - star->texture.height / 2.0 * star->size;
                         Color starColor = ColorAlpha(WHITE, star->alpha);
                         DrawTextureEx(star->texture, (Vector2) {texture_x, texture_y}, 0.0, star->size, starColor);
                     }
                 }
-                
+                // Update game time
                 gameState.gameTime += GetFrameTime(); 
                 
-                const int texture_x = gameState.playerPosition.x - 32.0f / 2;
-                const int texture_y = gameState.playerPosition.y - 62.0f / 2;
+                const int texture_x = gameState.playerPosition.x - 32.0f / 2.0;
+                const int texture_y = gameState.playerPosition.y - 62.0f / 2.0;
 
                 if (IsKeyDown(KEY_W)) {
                     if(!CheckCollisionPointLine(gameState.playerPosition, (Vector2) {0, 0}, (Vector2) {SCREEN_WIDTH, 0}, 62.0f / 2))
@@ -328,30 +329,30 @@ int main() {
                             .texture = LoadTexture("assets/bullet.png"),
                         };
                         gameState.bullets[gameState.bulletCount++] = bullet1;
-                        float texture_x = gameState.playerPosition.x - bullet1.texture.width / 2;
-                        float texture_y = gameState.playerPosition.y - gameState.playerTexture.height / 2 - bullet1.texture.height / 2;
+                        float texture_x = gameState.playerPosition.x - bullet1.texture.width / 2.0;
+                        float texture_y = gameState.playerPosition.y - gameState.playerTexture.height / 2.0 - bullet1.texture.height / 2.0;
                         DrawTexture(bullet1.texture, texture_x, texture_y, WHITE);
                         Bullet bullet2 = 
                         {
-                            .position = (Vector2){gameState.playerPosition.x - 40.0f, 0.0f},
+                            .position = (Vector2){gameState.playerPosition.x - 40.0f, gameState.playerPosition.y + 0.0f},
                             .velocity = 100.0f,
                             .damage = 1.0,
                             .texture = LoadTexture("assets/bullet.png"),
                         };
                         gameState.bullets[gameState.bulletCount++] = bullet2;
-                        texture_x = gameState.playerPosition.x - bullet2.texture.width / 2;
-                        texture_y = gameState.playerPosition.y - gameState.playerTexture.height / 2 - bullet2.texture.height / 2;
+                        texture_x = gameState.playerPosition.x - 40.0f - bullet2.texture.width / 2.0;
+                        texture_y = gameState.playerPosition.y - gameState.playerTexture.height / 2.0 - bullet2.texture.height / 2.0;
                         DrawTexture(bullet2.texture, texture_x, texture_y, WHITE);
                         Bullet bullet3 = 
                         {
-                            .position = (Vector2){gameState.playerPosition.x + 40.0f, 0.0f},
+                            .position = (Vector2){gameState.playerPosition.x + 40.0f, gameState.playerPosition.y + 0.0f},
                             .velocity = 100.0f,
                             .damage = 1.0,
                             .texture = LoadTexture("assets/bullet.png"),
                         };
                         gameState.bullets[gameState.bulletCount++] = bullet3;
-                        texture_x = gameState.playerPosition.x - bullet3.texture.width / 2;
-                        texture_y = gameState.playerPosition.y - gameState.playerTexture.height / 2 - bullet3.texture.height / 2;
+                        texture_x = gameState.playerPosition.x + 40.0f - bullet3.texture.width / 2.0;
+                        texture_y = gameState.playerPosition.y - gameState.playerTexture.height / 2.0 - bullet3.texture.height / 2.0;
                         DrawTexture(bullet3.texture, texture_x, texture_y, WHITE);
                         gameState.shootTime -= gameState.shootDelay;
                     }
@@ -366,8 +367,8 @@ int main() {
                             };
                         gameState.bullets[gameState.bulletCount++] = bullet;
                         gameState.shootTime -= gameState.shootDelay;
-                        const int texture_x = gameState.playerPosition.x - bullet.texture.width / 2;
-                        const int texture_y = gameState.playerPosition.y - gameState.playerTexture.height / 2 - bullet.texture.height / 2;
+                        const int texture_x = gameState.playerPosition.x - bullet.texture.width / 2.0;
+                        const int texture_y = gameState.playerPosition.y - gameState.playerTexture.height / 2.0 - bullet.texture.height / 2.0;
                         DrawTexture(bullet.texture, texture_x, texture_y, WHITE);
                     }
                 }
@@ -382,11 +383,10 @@ int main() {
 							*bullet = gameState.bullets[--gameState.bulletCount];
 						}
                         bullet->position.y -= bullet->velocity * GetFrameTime();
-                        const int texture_x = bullet->position.x - bullet->texture.width / 2;
-                        const int texture_y = bullet->position.y - gameState.playerTexture.height/2 - bullet->texture.height / 2;
+                        const int texture_x = bullet->position.x - bullet->texture.width / 2.0;
+                        const int texture_y = bullet->position.y - gameState.playerTexture.height / 2.0 - bullet->texture.height / 2.0;
                         DrawTexture(bullet->texture, texture_x, texture_y, WHITE);
                     }
-                        
                 }
                 // Update Player
                 Rectangle destination = {texture_x, texture_y, 32, 62}; // origin in coordinates and scale
@@ -443,10 +443,10 @@ int main() {
                             Rectangle bulletRec = {
                                 .width = 2.0f,
                                 .height = 7.0f,
-                                .x = gameState.bullets[bulletIndex].position.x - 2.0f/2,
-                                .y = gameState.bullets[bulletIndex].position.y - 7.0f/2,
+                                .x = gameState.bullets[bulletIndex].position.x - 2.0f/2.0,
+                                .y = gameState.bullets[bulletIndex].position.y - 7.0f/2.0,
                             };
-                            DrawRectangleRec(bulletRec, GREEN);
+                            // DrawRectangleRec(bulletRec, GREEN);
                             if(CheckCollisionRecs(enemyRec, bulletRec))
                             {
                                 // Replace with bullet with last bullet
@@ -461,8 +461,8 @@ int main() {
                         Rectangle playerRec = {
                             .width = 32,
                             .height = 62,
-                            .x = gameState.playerPosition.x - 32/2,
-                            .y = gameState.playerPosition.y - 62/2,
+                            .x = gameState.playerPosition.x - 32.0f/2.0,
+                            .y = gameState.playerPosition.y - 62.0f/2.0,
                         };
                         // DrawRectangleRec(enemyRec, RED); 
                         // DrawRectangleRec(playerRec, BLUE);
@@ -486,8 +486,8 @@ int main() {
                             }
                         }
 
-                        const int texture_x = enemy->position.x - enemy->texture.width / 2 * enemy->size;
-                        const int texture_y = enemy->position.y - enemy->texture.height / 2 * enemy->size;
+                        const int texture_x = enemy->position.x - enemy->texture.width / 2.0 * enemy->size;
+                        const int texture_y = enemy->position.y - enemy->texture.height / 2.0 * enemy->size;
                         DrawTextureEx(enemy->texture, (Vector2){texture_x, texture_y}, 0.0, enemy->size, WHITE);
                     }
                 }
@@ -508,11 +508,18 @@ int main() {
                         gameState.state = STATE_UPGRADE;
                         gameState.experience -= 1000.0;
                     }
-                    DrawRectangle(SCREEN_WIDTH - 150.0, 20.0, gameState.experience / 10.0, 30.0, ColorAlpha(GREEN, 0.5));
-                    DrawRectangleLines(SCREEN_WIDTH - 150.0, 20.0, 100.0, 30.0, ColorAlpha(WHITE, 0.5));
+                    float recPosX = SCREEN_WIDTH - 115.0;
+                    float recPosY = 20.0;
+                    float recHeight = 30.0;
+                    float recWidth = 100.0;
+                    DrawRectangle(recPosX, recPosY, gameState.experience / 10.0, recHeight, ColorAlpha(BLUE, 0.5));
+                    DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
                     char experienceText[100] = "XP";
-                    const Vector2 textSize = MeasureTextEx(font, experienceText, 15, fontSpacing);
-                    DrawTextEx(font, experienceText, (Vector2){SCREEN_WIDTH - 150.0 + 100.0 / 2.0 - textSize.x / 2.0, 20.0 + textSize.y / 2.0}, 20.0, fontSpacing, WHITE);
+                    Vector2 textSize = MeasureTextEx(font, experienceText, fontSize, fontSpacing);
+                    // Vector2 textSize = MeasureTextEx(font, experienceText, (float)font.baseSize, -3);
+                    printf("textsize: %f , %f \n", textSize.x, textSize.y);
+                    DrawTextEx(font, experienceText, (Vector2){recPosX + recWidth / 2.0 - textSize.x / 2.0, recPosY + recHeight / 2.0 - textSize.y / 2.0}, 20.0, fontSpacing, WHITE);
+                    // DrawTextEx(font, experienceText, (Vector2){recPosX + recWidth / 2.0 , recPosY + recHeight / 2.0 }, fontSize, fontSpacing, WHITE);
                 }
 
                 if (IsKeyPressed(KEY_P)) {
@@ -569,6 +576,7 @@ int main() {
                 break;
             }
         }
+        UnloadFont(font);
         EndDrawing();
     }
 
