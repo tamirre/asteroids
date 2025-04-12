@@ -102,7 +102,7 @@ static const GameState defaultGameState = {
     .enemyCount = 0,
     .enemySpawnRate = 0.5f,
     .spawnTime = 0.0,
-    .experience = 999,
+    .experience = 0,
     .starCount = 0,
     .starTime = 0,
     .starSpawnRate = 0.25f,
@@ -150,18 +150,22 @@ void FreeSpriteAnimation(SpriteAnimation animation)
     free(animation.rectangles);
 }
 
-void draw_text_centered(const char* text, Vector2 pos, float fontSize, Color color)
+void draw_text_centered(Font font, const char* text, Vector2 pos, float fontSize, float fontSpacing, Color color)
 {
-	const Vector2 textSize = MeasureTextEx(GetFontDefault(), text, fontSize, 1);
+	const Vector2 textSize = MeasureTextEx(font, text, fontSize, fontSpacing);
     pos.x -= textSize.x / 2.0f;
     pos.y -= textSize.y / 2.0f;
-	DrawText(text, pos.x, pos.y, fontSize, color);
+	DrawTextEx(font, text, (Vector2){pos.x, pos.y}, fontSize, fontSpacing, color);
 }
 
 int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_TITLE);
     SetTargetFPS(60);
     
+    Font font = LoadFont("fonts/setback.png");
+    int fontSpacing = 1;
+    int fontSize = 15;
+
     GameState gameState = defaultGameState;
     Texture2D playerTexture = LoadTexture("assets/rocketNew.png");
     gameState.playerTexture = playerTexture;
@@ -185,21 +189,19 @@ int main() {
             .y = 0
         };
 
-        // Font font = LoadFont("resources/fonts/alagard.png");
-        // Font font = LoadFont("resources/fonts/jupiter_crash.png");
-        Font font = GetFontDefault(); 
-        int fontSpacing = 2;
-        int fontSize = 15;
+        // Font font = LoadFont("fonts/alagard.png");
+        // Font font = GetFontDefault(); 
+        
 
         switch (gameState.state) {
             case STATE_MAIN_MENU:
             {
                 Color backgroundColor = ColorFromHSV(259, 1, 0.07);
                 ClearBackground(backgroundColor);
-                draw_text_centered("Asteroids", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f}, 40, WHITE);
-                draw_text_centered("<Press enter to play>", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 30}, 20, WHITE);
-                draw_text_centered("<WASD to move, space to shoot, p to pause>", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 50}, 20, WHITE);
-                draw_text_centered("v0.1", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT - 15}, 15, WHITE);
+                draw_text_centered(font, "Asteroids", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f}, 40, fontSpacing, WHITE);
+                draw_text_centered(font, "<Press enter to play>", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 30}, 20, fontSpacing, WHITE);
+                draw_text_centered(font, "<WASD to move, space to shoot, p to pause>", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 50}, 20,fontSpacing, WHITE);
+                draw_text_centered(font, "v0.1", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT - 15}, 15, fontSpacing, WHITE);
                 if (IsKeyPressed(KEY_ENTER)) {                    
                     gameState.state = STATE_RUNNING;
                 }
@@ -224,7 +226,7 @@ int main() {
                             Texture2D texture = LoadTexture(imgCharBuffer);
                             Star star = {
                                 .position = (Vector2) {starXPosition, starYPosition},
-                                .velocity = 50.0 * imgIndex,
+                                .velocity = 30.0f * GetRandomValue(1,2) * imgIndex,
                                 .size = 1,
                                 .texture = texture,
                                 .alpha = 0.5 * imgIndex,
@@ -249,7 +251,7 @@ int main() {
                             Texture2D texture = LoadTexture(imgCharBuffer);
                             Star star = {
                                 .position = (Vector2) {starXPosition, 0},
-                                .velocity = 50.0f * imgIndex,
+                                .velocity = 30.0f * GetRandomValue(1,2) * imgIndex,
                                 .size = 1,
                                 .texture = texture,
                                 .alpha = 0.5f * imgIndex,
@@ -517,7 +519,7 @@ int main() {
                     char experienceText[100] = "XP";
                     Vector2 textSize = MeasureTextEx(font, experienceText, fontSize, fontSpacing);
                     // Vector2 textSize = MeasureTextEx(font, experienceText, (float)font.baseSize, -3);
-                    printf("textsize: %f , %f \n", textSize.x, textSize.y);
+                    // printf("textsize: %f , %f \n", textSize.x, textSize.y);
                     DrawTextEx(font, experienceText, (Vector2){recPosX + recWidth / 2.0 - textSize.x / 2.0, recPosY + recHeight / 2.0 - textSize.y / 2.0}, 20.0, fontSpacing, WHITE);
                     // DrawTextEx(font, experienceText, (Vector2){recPosX + recWidth / 2.0 , recPosY + recHeight / 2.0 }, fontSize, fontSpacing, WHITE);
                 }
@@ -531,7 +533,7 @@ int main() {
             case STATE_UPGRADE:
             {
                 ClearBackground(BLACK);
-                draw_text_centered("CHOOSE UPGRADE", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f - 80.0}, 40, WHITE);
+                draw_text_centered(font, "CHOOSE UPGRADE", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f - 80.0}, 40, fontSpacing, WHITE);
                 Texture2D upgradeMultishotTexture = LoadTexture("assets/upgradeMultiShot.png");
                 const int texture_x = upgradeMultishotTexture.width;
                 const int texture_y = upgradeMultishotTexture.height;
@@ -546,11 +548,11 @@ int main() {
             case STATE_GAME_OVER:
             {
                 ClearBackground(BLACK);
-                draw_text_centered("GAME OVER", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f}, 40, WHITE);
+                draw_text_centered(font, "GAME OVER", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f}, 40, fontSpacing, WHITE);
                 char scoreText[100] = {0};
                 sprintf(scoreText, "Final score: %d", gameState.experience);
-                draw_text_centered(scoreText, (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 30}, 20, WHITE);
-                draw_text_centered("<Press enter to try again>", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 60}, 20, WHITE);
+                draw_text_centered(font, scoreText, (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 30}, 20, fontSpacing, WHITE);
+                draw_text_centered(font, "<Press enter to try again>", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 60}, 20, fontSpacing, WHITE);
                 if (IsKeyPressed(KEY_ENTER)) {
                     gameState = defaultGameState;
                     Texture2D playerTexture = LoadTexture("assets/rocketNew.png");
@@ -569,18 +571,18 @@ int main() {
             }
             case STATE_PAUSED:
             {
-                draw_text_centered("Game is paused...", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f}, 40, WHITE);
+                draw_text_centered(font, "Game is paused...", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f}, 40, fontSpacing, WHITE);
                 if (IsKeyPressed(KEY_P)) {
                     gameState.state = STATE_RUNNING;
                 }
                 break;
             }
         }
-        UnloadFont(font);
         EndDrawing();
     }
 
     FreeSpriteAnimation(gameState.playerAnimation);
+    UnloadFont(font);
     CloseWindow();
     return 0;
 }
