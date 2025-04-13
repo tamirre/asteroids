@@ -102,7 +102,7 @@ static const GameState defaultGameState = {
     .enemyCount = 0,
     .enemySpawnRate = 0.5f,
     .spawnTime = 0.0,
-    .experience = 0,
+    .experience = 999,
     .starCount = 0,
     .starTime = 0,
     .starSpawnRate = 0.25f,
@@ -518,10 +518,7 @@ int main() {
                     DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
                     char experienceText[100] = "XP";
                     Vector2 textSize = MeasureTextEx(font, experienceText, fontSize, fontSpacing);
-                    // Vector2 textSize = MeasureTextEx(font, experienceText, (float)font.baseSize, -3);
-                    // printf("textsize: %f , %f \n", textSize.x, textSize.y);
                     DrawTextEx(font, experienceText, (Vector2){recPosX + recWidth / 2.0 - textSize.x / 2.0, recPosY + recHeight / 2.0 - textSize.y / 2.0}, 20.0, fontSpacing, WHITE);
-                    // DrawTextEx(font, experienceText, (Vector2){recPosX + recWidth / 2.0 , recPosY + recHeight / 2.0 }, fontSize, fontSpacing, WHITE);
                 }
 
                 if (IsKeyPressed(KEY_P)) {
@@ -533,12 +530,17 @@ int main() {
             case STATE_UPGRADE:
             {
                 ClearBackground(BLACK);
+                draw_text_centered(font, "LEVEL UP!", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f - 35.0}, 40, fontSpacing, WHITE);
                 draw_text_centered(font, "CHOOSE UPGRADE", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f - 80.0}, 40, fontSpacing, WHITE);
                 Texture2D upgradeMultishotTexture = LoadTexture("assets/upgradeMultiShot.png");
+                Texture2D upgradeDamage = LoadTexture("assets/upgradeDamage.png");
+                Texture2D upgradeFireRate = LoadTexture("assets/upgradeFireRate.png");
                 const int texture_x = upgradeMultishotTexture.width;
                 const int texture_y = upgradeMultishotTexture.height;
-                DrawTexture(upgradeMultishotTexture, SCREEN_WIDTH/2.0f - texture_x/2.0f, SCREEN_HEIGHT/2.0f - texture_y/2.0f, WHITE);
-                // draw_text_centered("<Press enter to play>", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 30}, 20, WHITE);
+                const int spacing_x = 10;
+                DrawTexture(upgradeMultishotTexture, SCREEN_WIDTH/2.0f - texture_x/2.0f, SCREEN_HEIGHT/2.0f - texture_y/2.0f + 30.0, WHITE);
+                DrawTexture(upgradeDamage, SCREEN_WIDTH/2.0f - texture_x/2.0f - texture_x - spacing_x, SCREEN_HEIGHT/2.0f - texture_y/2.0f + 30.0, WHITE);
+                DrawTexture(upgradeFireRate,SCREEN_WIDTH/2.0f - texture_x/2.0f + texture_x + spacing_x, SCREEN_HEIGHT/2.0f - texture_y/2.0f + 30.0, WHITE);
                 if (IsKeyPressed(KEY_ENTER)) {                    
                     gameState.playerMultishot = true;
                     gameState.state = STATE_RUNNING;
