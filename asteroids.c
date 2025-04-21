@@ -65,7 +65,6 @@ typedef struct GameState {
     Vector2 playerPosition;
     int playerHealth;
     bool playerMultishot;
-    SpriteAnimation playerAnimation;
     // Projectiles
     Bullet bullets[MAX_BULLETS];
     int bulletCount;
@@ -83,7 +82,6 @@ typedef struct GameState {
     float starTime;
     float starSpawnRate;
     int initStars;
-    Texture2D playerTexture;
 } GameState;
 
 static const GameState defaultGameState = {
@@ -125,16 +123,6 @@ int main() {
 
     GameState gameState = defaultGameState;
     TextureAtlas atlas = initTextureAtlas();
-    Texture2D playerTexture = LoadTexture("assets/rocketNew.png");
-    gameState.playerTexture = playerTexture;
-    gameState.playerAnimation = createSpriteAnimation(playerTexture, 10, (Rectangle[]) {
-        (Rectangle){0,0,32,62},   (Rectangle){32,0,32,62},  (Rectangle){64,0,32,62},  (Rectangle){96,0,32,62},
-        (Rectangle){128,0,32,62}, (Rectangle){160,0,32,62}, (Rectangle){192,0,32,62}, (Rectangle){224,0,32,62},
-        (Rectangle){256,0,32,62}, (Rectangle){288,0,32,62}, (Rectangle){320,0,32,62}, (Rectangle){352,0,32,62},
-        (Rectangle){384,0,32,62}, (Rectangle){416,0,32,62}, (Rectangle){448,0,32,62}, (Rectangle){480,0,32,62},
-        (Rectangle){512,0,32,62}, (Rectangle){544,0,32,62}, (Rectangle){576,0,32,62}, (Rectangle){608,0,32,62},        
-    }, 20);
-    // initTextureAtlas(&atlas);
 
     while (!WindowShouldClose())
     {
@@ -147,10 +135,6 @@ int main() {
             .x = 0,
             .y = 0
         };
-
-        // Font font = LoadFont("fonts/alagard.png");
-        // Font font = GetFontDefault(); 
-        
 
         switch (gameState.state) {
             case STATE_MAIN_MENU:
@@ -178,10 +162,8 @@ int main() {
                         while(gameState.starCount < MAX_STARS)
                         {                            
                             int imgIndex = GetRandomValue(1, 2);   
-                            // char imgCharBuffer[100] = { 0 };
                             float starXPosition = GetRandomValue(0, SCREEN_WIDTH); 
                             float starYPosition = GetRandomValue(0, SCREEN_HEIGHT); 
-                            // sprintf(imgCharBuffer, "assets/star%d.png", imgIndex);
                             Sprite sprite;
                             if (imgIndex == 1)
                             {
@@ -213,7 +195,6 @@ int main() {
                         if (gameState.starCount < MAX_STARS)
                         {
                             int imgIndex = GetRandomValue(1, 2);  
-                            // char imgCharBuffer[100] = { 0 }; 
                             Sprite starSprite;
                             if (imgIndex == 1)
                             {
@@ -224,7 +205,6 @@ int main() {
                                 starSprite = getSprite(SPRITE_STAR2);
                             }
                             float starXPosition = GetRandomValue(0, SCREEN_WIDTH); 
-                            // sprintf(imgCharBuffer, "assets/star%d.png", imgIndex);
                             Star star = {
                                 .position = (Vector2) {starXPosition, 0},
                                 .velocity = 30.0f * GetRandomValue(1,2) * imgIndex,
@@ -247,12 +227,10 @@ int main() {
 							*star = gameState.stars[--gameState.starCount];
 						}
                         star->position.y += star->velocity * GetFrameTime();
-                        // char imgCharBuffer[100] = { 0 };
                         
                         const int texture_x = star->position.x - star->sprite.coords.width / 2.0 * star->size;
                         const int texture_y = star->position.y - star->sprite.coords.height / 2.0 * star->size;
                         Color starColor = ColorAlpha(WHITE, star->alpha);
-                        // DrawTextureEx(star->texture, (Vector2) {texture_x, texture_y}, 0.0, star->size, starColor);
                         DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_STAR1).coords, (Vector2) {texture_x, texture_y}, starColor);
                     }
                 }
@@ -307,11 +285,9 @@ int main() {
                             .damage = 1.0,
                             .sprite = getSprite(SPRITE_BULLET),
                         };
-                        // Sprite bulletSprite;
                         gameState.bullets[gameState.bulletCount++] = bullet1;
                         float texture_x = gameState.playerPosition.x - bullet1.sprite.coords.width / 2.0;
                         float texture_y = gameState.playerPosition.y - getSprite(SPRITE_PLAYER).coords.height / 2.0 - bullet1.sprite.coords.height / 2.0;
-                        // DrawTexture(bullet1.texture, texture_x, texture_y, WHITE);
                         DrawTextureRec(atlas.textureAtlas, bullet1.sprite.coords, (Vector2){texture_x, texture_y}, WHITE);
                         Bullet bullet2 = 
                         {
@@ -323,7 +299,6 @@ int main() {
                         gameState.bullets[gameState.bulletCount++] = bullet2;
                         texture_x = gameState.playerPosition.x - 40.0f - bullet2.sprite.coords.width / 2.0;
                         texture_y = gameState.playerPosition.y - getSprite(SPRITE_PLAYER).coords.height / 2.0 - bullet2.sprite.coords.height / 2.0;
-                        // DrawTexture(bullet2.texture, texture_x, texture_y, WHITE);
                         DrawTextureRec(atlas.textureAtlas, bullet2.sprite.coords, (Vector2){texture_x, texture_y}, WHITE);
                         Bullet bullet3 = 
                         {
@@ -335,7 +310,6 @@ int main() {
                         gameState.bullets[gameState.bulletCount++] = bullet3;
                         texture_x = gameState.playerPosition.x + 40.0f - bullet3.sprite.coords.width / 2.0;
                         texture_y = gameState.playerPosition.y - getSprite(SPRITE_PLAYER).coords.height / 2.0 - bullet3.sprite.coords.height / 2.0;
-                        // DrawTexture(bullet3.texture, texture_x, texture_y, WHITE);
                         DrawTextureRec(atlas.textureAtlas, bullet3.sprite.coords, (Vector2){texture_x, texture_y}, WHITE);
                         gameState.shootTime -= gameState.shootDelay;
                     }
@@ -352,7 +326,6 @@ int main() {
                         gameState.shootTime -= gameState.shootDelay;
                         const float texture_x = gameState.playerPosition.x - bullet.sprite.coords.width / 2.0;
                         const float texture_y = gameState.playerPosition.y - getSprite(SPRITE_PLAYER).coords.height / 2.0 - bullet.sprite.coords.height / 2.0;
-                        // DrawTexture(bullet.texture, texture_x, texture_y, WHITE);
                         DrawTextureRec(atlas.textureAtlas, bullet.sprite.coords, (Vector2){texture_x, texture_y}, WHITE);
                     }
                 }
@@ -374,8 +347,8 @@ int main() {
                 }
                 // Update Player
                 Rectangle destination = {texture_x, texture_y, 32, 62}; // origin in coordinates and scale
-                Vector2 origin = { 0 }; // so it draws from top left of image
-                DrawSpriteAnimationPro(gameState.playerAnimation, destination, origin, 0, WHITE);
+                Vector2 origin = {0, 0}; // so it draws from top left of image
+                DrawSpriteAnimationPro(atlas.playerAnimation, destination, origin, 0, WHITE);
 
                 // Spawn Enemies
                 {
@@ -397,8 +370,6 @@ int main() {
                         if (whichAsteroid < 4)
                         {
                             asteroidSprite = getSprite(SPRITE_ASTEROID1);
-                            // sprintf(enemy.textureFile, "%s", "assets/asteroid2.png");
-                            // enemy.type = 2;
                         } 
                         else 
                         {
@@ -425,7 +396,6 @@ int main() {
                             .y = enemy->position.y - height, 
                         };
 
-
                         for (int bulletIndex = 0; bulletIndex < gameState.bulletCount; bulletIndex++)
                         {
                             Bullet* bullet = &gameState.bullets[bulletIndex];
@@ -436,7 +406,7 @@ int main() {
                                 .x = gameState.bullets[bulletIndex].position.x - 2.0f/2.0,
                                 .y = gameState.bullets[bulletIndex].position.y - 7.0f/2.0,
                             };
-                            // DrawRectangleRec(bulletRec, GREEN);
+                            // DrawRectangleLines(bulletRec.x, bulletRec.y, bulletRec.width, bulletRec.height, GREEN);
                             if(CheckCollisionRecs(enemyRec, bulletRec))
                             {
                                 // Replace with bullet with last bullet
@@ -475,22 +445,14 @@ int main() {
                                 gameState.state = STATE_GAME_OVER;
                             }
                         }
+                        // Check if asteroid is off-screen
+                        if (enemy->position.y > SCREEN_HEIGHT + enemy->sprite.coords.height * enemy->size)
+                        {
+                            *enemy = gameState.enemies[--gameState.enemyCount];
+                        }
 
-                        const int texture_x = enemy->position.x - enemy->sprite.coords.width / 2.0 * enemy->size;
-                        const int texture_y = enemy->position.y - enemy->sprite.coords.height / 2.0 * enemy->size;
-
-                        Vector2 origin = {
-                            width / 2.0f,
-                            height / 2.0f,
-                        };
-                        Rectangle destination = {
-                            texture_x,
-                            texture_y,
-                            width,
-                            height,
-                        };
                         float rotation = 0.0f;
-                        DrawTexturePro(atlas.textureAtlas, enemy->sprite.coords, destination, origin, rotation, WHITE);
+                        DrawTexturePro(atlas.textureAtlas, enemy->sprite.coords, enemyRec, (Vector2){0, 0}, rotation, WHITE);
                     }
                 }
                 // Update player health
@@ -499,7 +461,6 @@ int main() {
                     {
                         const int texture_x = i * 16;
                         const int texture_y = getSprite(SPRITE_HEART).coords.height;
-                        // DrawTexture(atlas.healthTexture, texture_x, texture_y, WHITE);
                         DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_HEART).coords, (Vector2){texture_x, texture_y}, WHITE);
                     }
                 }
@@ -537,9 +498,6 @@ int main() {
                 const int pos_x = SCREEN_WIDTH/2.0f - width/2.0f;
                 const int pos_y = SCREEN_HEIGHT/2.0f - height/2.0f + 30.0;
                 const int spacing_x = 80;
-                // DrawTexture(atlas.upgradeMultishotTexture,   WHITE);
-                // DrawTexture(atlas.upgradeDamageTexture, SCREEN_WIDTH/2.0f - width/2.0f - width - spacing_x, SCREEN_HEIGHT/2.0f - height/2.0f + 30.0, WHITE);
-                // DrawTexture(atlas.upgradeFirerateTexture, SCREEN_WIDTH/2.0f - width/2.0f + width + spacing_x, SCREEN_HEIGHT/2.0f - height/2.0f + 30.0, WHITE);
                 DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_MULTISHOT_UPGRADE).coords, (Vector2){pos_x, pos_y}, WHITE);
                 DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_DAMAGE_UPGRADE).coords, (Vector2){pos_x - spacing_x, pos_y}, WHITE);
                 DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_FIRERATE_UPGRADE).coords, (Vector2){pos_x + spacing_x, pos_y}, WHITE);
@@ -559,16 +517,7 @@ int main() {
                 draw_text_centered(font, "<Press enter to try again>", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 60}, 20, fontSpacing, WHITE);
                 if (IsKeyPressed(KEY_ENTER)) {
                     gameState = defaultGameState;
-                    // initTextureAtlas(&atlas);
-                    Texture2D playerTexture = LoadTexture("assets/rocketNew.png");
-                    gameState.playerTexture = playerTexture;
-                    gameState.playerAnimation = createSpriteAnimation(playerTexture, 10, (Rectangle[]) {
-                        (Rectangle){0,0,32,62},   (Rectangle){32,0,32,62},  (Rectangle){64,0,32,62},  (Rectangle){96,0,32,62},
-                        (Rectangle){128,0,32,62}, (Rectangle){160,0,32,62}, (Rectangle){192,0,32,62}, (Rectangle){224,0,32,62},
-                        (Rectangle){256,0,32,62}, (Rectangle){288,0,32,62}, (Rectangle){320,0,32,62}, (Rectangle){352,0,32,62},
-                        (Rectangle){384,0,32,62}, (Rectangle){416,0,32,62}, (Rectangle){448,0,32,62}, (Rectangle){480,0,32,62},
-                        (Rectangle){512,0,32,62}, (Rectangle){544,0,32,62}, (Rectangle){576,0,32,62}, (Rectangle){608,0,32,62},        
-                    }, 20);
+                    
                     gameState.state = STATE_RUNNING;
 
                 }
@@ -587,7 +536,7 @@ int main() {
         EndDrawing();
     }
 
-    FreeSpriteAnimation(gameState.playerAnimation);
+    FreeSpriteAnimation(atlas.playerAnimation);
     UnloadFont(font);
     CloseWindow();
     return 0;
