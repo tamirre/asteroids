@@ -1,8 +1,7 @@
-#ifndef ASSETS_H
-#define ASSETS_H
-
+#pragma once
 #include <stdlib.h>
 #include "raylib.h"
+#define internal static
 
 typedef struct SpriteAnimation
 {
@@ -13,8 +12,23 @@ typedef struct SpriteAnimation
     int rectanglesLentgh;
 } SpriteAnimation;
 
-typedef struct TextureAtlas {
+typedef enum SpriteID {
+   SPRITE_PLAYER_ANIMATION,
+   SPRITE_PLAYER,
+   SPRITE_STAR1,
+   SPRITE_STAR2,
+   SPRITE_BULLET,
+   SPRITE_ASTEROID1,
+   SPRITE_ASTEROID2,
+   SPRITE_HEART,
+   SPRITE_MULTISHOT_UPGRADE,
+   SPRITE_DAMAGE_UPGRADE,
+   SPRITE_FIRERATE_UPGRADE,
 
+   SPRITE_COUNT,
+} SpriteID;
+
+typedef struct TextureAtlas {
     SpriteAnimation playerAnimation;
     Texture2D playerTexture;
     Texture2D starTexture1;
@@ -26,8 +40,34 @@ typedef struct TextureAtlas {
     Texture2D upgradeMultishotTexture;
     Texture2D upgradeFirerateTexture;
     Texture2D upgradeDamageTexture;
-
 } TextureAtlas;
+
+typedef struct Sprite {
+    Vector4 coords;
+} Sprite;
+
+internal Sprite getSprite(SpriteID spriteID)
+{
+    Sprite s = {};
+    switch(spriteID)
+    {
+        case SPRITE_PLAYER_ANIMATION: { s.coords = (Vector4){0,0,0,0}; break;}
+        case SPRITE_PLAYER:           { s.coords = (Vector4){0,0,0,0}; break;}
+        case SPRITE_STAR1:            { s.coords = (Vector4){0,0,0,0}; break;}
+        case SPRITE_STAR2:            { s.coords = (Vector4){0,0,0,0}; break;}
+        case SPRITE_BULLET:           { s.coords = (Vector4){0,0,0,0}; break;}
+        case SPRITE_ASTEROID1:        { s.coords = (Vector4){0,0,0,0}; break;}
+        case SPRITE_ASTEROID2:        { s.coords = (Vector4){0,0,0,0}; break;}
+        case SPRITE_HEART:            { s.coords = (Vector4){0,0,0,0}; break;}
+        case SPRITE_MULTISHOT_UPGRADE:{ s.coords = (Vector4){0,0,0,0}; break;}
+        case SPRITE_DAMAGE_UPGRADE:   { s.coords = (Vector4){0,0,0,0}; break;}
+        case SPRITE_FIRERATE_UPGRADE: { s.coords = (Vector4){0,0,0,0}; break;}
+        default: { } 
+    }
+    return s;
+}
+#define ASSETS_IMPLEMENTATION
+#ifdef ASSETS_IMPLEMENTATION
 
 SpriteAnimation createSpriteAnimation(Texture2D atlas, int framesPerSecond, Rectangle rectangles[], int length)
 {
@@ -47,8 +87,8 @@ SpriteAnimation createSpriteAnimation(Texture2D atlas, int framesPerSecond, Rect
         spriteAnimation.rectanglesLentgh = 0;
         return spriteAnimation;
     }
-    spriteAnimation.rectangles = mem;
 
+    spriteAnimation.rectangles = mem;
     for(int i = 0; i < length; i++)
     {
         spriteAnimation.rectangles[i] = rectangles[i];
@@ -69,9 +109,6 @@ void FreeSpriteAnimation(SpriteAnimation animation)
 {
     free(animation.rectangles);
 }
-
-#define ASSETS_IMPLEMENTATION
-#ifdef ASSETS_IMPLEMENTATION
 
 void initTextureAtlas(TextureAtlas* atlas)
 {
@@ -94,5 +131,4 @@ void initTextureAtlas(TextureAtlas* atlas)
     atlas->upgradeFirerateTexture = LoadTexture("assets/upgradeFireRate.png");
 }
 
-#endif // ASSETS_IMPLEMENTATION
-#endif // ASSETS_H
+#endif 
