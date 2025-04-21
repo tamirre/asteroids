@@ -416,12 +416,16 @@ int main() {
                     {
                         Enemy* enemy = &gameState.enemies[enemyIndex];
                         enemy->position.y += enemy->velocity * GetFrameTime();
+                        float width = enemy->sprite.coords.width * enemy->size;
+                        float height = enemy->sprite.coords.height * enemy->size;
                         Rectangle enemyRec = {
-                            .width = enemy->sprite.coords.width * enemy->size,
-                            .height = enemy->sprite.coords.height * enemy->size,
-                            .x = enemy->position.x - enemy->sprite.coords.width/2.0f * enemy->size,
-                            .y = enemy->position.y - enemy->sprite.coords.height/2.0f * enemy->size,
+                            .width = width,
+                            .height = height, 
+                            .x = enemy->position.x - width,
+                            .y = enemy->position.y - height, 
                         };
+
+
                         for (int bulletIndex = 0; bulletIndex < gameState.bulletCount; bulletIndex++)
                         {
                             Bullet* bullet = &gameState.bullets[bulletIndex];
@@ -450,7 +454,7 @@ int main() {
                             .x = gameState.playerPosition.x - 32.0f/2.0,
                             .y = gameState.playerPosition.y - 62.0f/2.0,
                         };
-                        // DrawRectangleRec(enemyRec, RED); 
+                        // DrawRectangleLines(enemyRec.x, enemyRec.y, enemyRec.width, enemyRec.height, RED);
                         // DrawRectangleRec(playerRec, BLUE);
                         Rectangle screenRectExtended = {
                             .width = SCREEN_WIDTH + enemy->sprite.coords.width,
@@ -474,8 +478,19 @@ int main() {
 
                         const int texture_x = enemy->position.x - enemy->sprite.coords.width / 2.0 * enemy->size;
                         const int texture_y = enemy->position.y - enemy->sprite.coords.height / 2.0 * enemy->size;
-                        // DrawTextureEx(enemy->texture, (Vector2){texture_x, texture_y}, 0.0, enemy->size, WHITE);
-                        DrawTextureRec(atlas.textureAtlas, enemy->sprite.coords, (Vector2){texture_x, texture_y}, WHITE);
+
+                        Vector2 origin = {
+                            width / 2.0f,
+                            height / 2.0f,
+                        };
+                        Rectangle destination = {
+                            texture_x,
+                            texture_y,
+                            width,
+                            height,
+                        };
+                        float rotation = 0.0f;
+                        DrawTexturePro(atlas.textureAtlas, enemy->sprite.coords, destination, origin, rotation, WHITE);
                     }
                 }
                 // Update player health
@@ -517,14 +532,14 @@ int main() {
                 ClearBackground(BLACK);
                 draw_text_centered(font, "LEVEL UP!", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f - 35.0}, 40, fontSpacing, WHITE);
                 draw_text_centered(font, "CHOOSE UPGRADE", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f - 80.0}, 40, fontSpacing, WHITE);
-                const int texture_x = getSprite(SPRITE_MULTISHOT_UPGRADE).coords.width;
-                const int texture_y = getSprite(SPRITE_MULTISHOT_UPGRADE).coords.height;                
-                const int pos_x = SCREEN_WIDTH/2.0f - texture_x/2.0f;
-                const int pos_y = SCREEN_HEIGHT/2.0f - texture_y/2.0f + 30.0;
-                const int spacing_x = 10;
+                const int width = getSprite(SPRITE_MULTISHOT_UPGRADE).coords.width;
+                const int height = getSprite(SPRITE_MULTISHOT_UPGRADE).coords.height;                
+                const int pos_x = SCREEN_WIDTH/2.0f - width/2.0f;
+                const int pos_y = SCREEN_HEIGHT/2.0f - height/2.0f + 30.0;
+                const int spacing_x = 80;
                 // DrawTexture(atlas.upgradeMultishotTexture,   WHITE);
-                // DrawTexture(atlas.upgradeDamageTexture, SCREEN_WIDTH/2.0f - texture_x/2.0f - texture_x - spacing_x, SCREEN_HEIGHT/2.0f - texture_y/2.0f + 30.0, WHITE);
-                // DrawTexture(atlas.upgradeFirerateTexture, SCREEN_WIDTH/2.0f - texture_x/2.0f + texture_x + spacing_x, SCREEN_HEIGHT/2.0f - texture_y/2.0f + 30.0, WHITE);
+                // DrawTexture(atlas.upgradeDamageTexture, SCREEN_WIDTH/2.0f - width/2.0f - width - spacing_x, SCREEN_HEIGHT/2.0f - height/2.0f + 30.0, WHITE);
+                // DrawTexture(atlas.upgradeFirerateTexture, SCREEN_WIDTH/2.0f - width/2.0f + width + spacing_x, SCREEN_HEIGHT/2.0f - height/2.0f + 30.0, WHITE);
                 DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_MULTISHOT_UPGRADE).coords, (Vector2){pos_x, pos_y}, WHITE);
                 DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_DAMAGE_UPGRADE).coords, (Vector2){pos_x - spacing_x, pos_y}, WHITE);
                 DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_FIRERATE_UPGRADE).coords, (Vector2){pos_x + spacing_x, pos_y}, WHITE);
