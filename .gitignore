@@ -15,5 +15,5 @@ misc/
 #*.*#
 *.obj
 .vscode/*
-raylib/*
+raylib/
 asteroids
