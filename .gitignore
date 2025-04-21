@@ -16,3 +16,4 @@ misc/
 *.obj
 .vscode/*
 raylib/*
+asteroids
