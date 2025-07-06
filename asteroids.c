@@ -18,7 +18,6 @@
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
-
 typedef enum State
 {
     STATE_MAIN_MENU,
@@ -259,7 +258,10 @@ int main() {
                     }
                 }
                 if (IsKeyDown(KEY_D)) {
-                    if(!CheckCollisionPointLine(gameState.playerPosition, (Vector2) {SCREEN_WIDTH, 0}, (Vector2) {SCREEN_WIDTH, SCREEN_HEIGHT}, 32.0f / 2))
+                    if(!CheckCollisionPointLine(gameState.playerPosition, 
+                                                (Vector2) {SCREEN_WIDTH, 0},
+                                                (Vector2) {SCREEN_WIDTH, SCREEN_HEIGHT}, 
+                                                32.0f / 2))
                     {
                         gameState.playerPosition.x += gameState.playerVelocity * GetFrameTime();
                     }
@@ -358,10 +360,11 @@ int main() {
                         float size = GetRandomValue(100.0, 300.0) / 100.0f;
                         float minSpawnDistance = 31.0f * size;  
                         float enemyXPosition = MAX(minSpawnDistance, GetRandomValue(0, SCREEN_WIDTH)); 
+                        float enemyVelocity = GetRandomValue(30.0f, 65.0f) * 2.0f / (size);
                         Enemy enemy = {
                             .position = (Vector2) {enemyXPosition, 0},
                             .health = (int) (size+1.0) * 2.0,
-                            .velocity = 35.0,
+                            .velocity = enemyVelocity,
                             .size = size,
                         };
                         int whichAsteroid = GetRandomValue(1,10);
