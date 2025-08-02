@@ -4,6 +4,7 @@
 #include "raylib.h"
 // #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 // #define ASSETS_IMPLEMENTATION
 #include "assets.h"
 
@@ -13,7 +14,6 @@
 #define MAX_BULLETS (50)
 #define MAX_ENEMIES (40)
 #define MAX_STARS (20)
-// #define PARALLAX_LAYERS (2)
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -48,7 +48,7 @@ typedef struct Enemy {
 
 typedef struct Bullet {
     Vector2 position;
-    float velocity;
+    Vector2 velocity;
     float damage;
     // Texture2D texture;
     Sprite sprite;
@@ -280,10 +280,11 @@ int main() {
 
                     if (gameState.playerMultishot == true)
                     {
+                        float bulletOffset = 30.0f;
                         Bullet bullet1 = 
                         {
                             .position = gameState.playerPosition,
-                            .velocity = 100.0f,
+                            .velocity = (Vector2){0.0f, 100.0f},
                             .damage = 1.0,
                             .sprite = getSprite(SPRITE_BULLET),
                         };
@@ -293,24 +294,24 @@ int main() {
                         DrawTextureRec(atlas.textureAtlas, bullet1.sprite.coords, (Vector2){texture_x, texture_y}, WHITE);
                         Bullet bullet2 = 
                         {
-                            .position = (Vector2){gameState.playerPosition.x - 40.0f, gameState.playerPosition.y + 0.0f},
-                            .velocity = 100.0f,
+                            .position = (Vector2){gameState.playerPosition.x - bulletOffset, gameState.playerPosition.y + 0.0f},
+                            .velocity = (Vector2){sqrt(pow(100.0f,2) - pow(95.0f,2)), 95.0f},
                             .damage = 1.0,
                             .sprite = getSprite(SPRITE_BULLET),
                         };
                         gameState.bullets[gameState.bulletCount++] = bullet2;
-                        texture_x = gameState.playerPosition.x - 40.0f - bullet2.sprite.coords.width / 2.0;
+                        texture_x = gameState.playerPosition.x - bulletOffset - bullet2.sprite.coords.width / 2.0;
                         texture_y = gameState.playerPosition.y - getSprite(SPRITE_PLAYER).coords.height / 2.0 - bullet2.sprite.coords.height / 2.0;
                         DrawTextureRec(atlas.textureAtlas, bullet2.sprite.coords, (Vector2){texture_x, texture_y}, WHITE);
                         Bullet bullet3 = 
                         {
-                            .position = (Vector2){gameState.playerPosition.x + 40.0f, gameState.playerPosition.y + 0.0f},
-                            .velocity = 100.0f,
+                            .position = (Vector2){gameState.playerPosition.x + bulletOffset, gameState.playerPosition.y + 0.0f},
+                            .velocity = (Vector2){-sqrt(pow(100.0f,2) - pow(95.0f,2)), 95.0f},
                             .damage = 1.0,
                             .sprite = getSprite(SPRITE_BULLET),
                         };
                         gameState.bullets[gameState.bulletCount++] = bullet3;
-                        texture_x = gameState.playerPosition.x + 40.0f - bullet3.sprite.coords.width / 2.0;
+                        texture_x = gameState.playerPosition.x + bulletOffset - bullet3.sprite.coords.width / 2.0;
                         texture_y = gameState.playerPosition.y - getSprite(SPRITE_PLAYER).coords.height / 2.0 - bullet3.sprite.coords.height / 2.0;
                         DrawTextureRec(atlas.textureAtlas, bullet3.sprite.coords, (Vector2){texture_x, texture_y}, WHITE);
                         gameState.shootTime -= gameState.shootDelay;
@@ -320,7 +321,7 @@ int main() {
                         Bullet bullet =
                         {
                             .position = gameState.playerPosition,
-                            .velocity = 100.0f,
+                            .velocity = (Vector2){0.0f, 100.0f},
                             .damage = 1.0,
                             .sprite = getSprite(SPRITE_BULLET),
                         };
@@ -341,7 +342,8 @@ int main() {
 							// Replace with last projectile
 							*bullet = gameState.bullets[--gameState.bulletCount];
 						}
-                        bullet->position.y -= bullet->velocity * GetFrameTime();
+                        bullet->position.x -= bullet->velocity.x * GetFrameTime();
+                        bullet->position.y -= bullet->velocity.y * GetFrameTime();
                         const int texture_x = bullet->position.x - bullet->sprite.coords.width / 2.0;
                         const int texture_y = bullet->position.y - getSprite(SPRITE_PLAYER).coords.height / 2.0 - bullet->sprite.coords.height / 2.0;
                         DrawTextureRec(atlas.textureAtlas, bullet->sprite.coords, (Vector2){texture_x, texture_y}, WHITE);
