@@ -27,6 +27,14 @@ typedef enum State
     STATE_UPGRADE,
 } State;
 
+typedef enum Upgrade
+{
+    UPGRADE_MULTISHOT,
+    UPGRADE_DAMAGE,
+    UPGRADE_FIRERATE,
+    UPGRADE_COUNT,
+} Upgrade;
+
 typedef struct Star {
     Vector2 position;
     float size;
@@ -81,6 +89,7 @@ typedef struct GameState {
     float starTime;
     float starSpawnRate;
     int initStars;
+    Upgrade pickedUpgrade;
 } GameState;
 
 static const GameState defaultGameState = {
@@ -102,6 +111,7 @@ static const GameState defaultGameState = {
     .starSpawnRate = 0.25f,
     .lastEnemyXPosition = 0.0f,
     .initStars = 0,
+    .pickedUpgrade = UPGRADE_MULTISHOT,
 };
 
 void draw_text_centered(Font font, const char* text, Vector2 pos, float fontSize, float fontSpacing, Color color)
@@ -495,6 +505,7 @@ int main() {
             }
             case STATE_UPGRADE:
             {
+                
                 ClearBackground(BLACK);
                 draw_text_centered(font, "LEVEL UP!", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f - 35.0}, 40, fontSpacing, WHITE);
                 draw_text_centered(font, "CHOOSE UPGRADE", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f - 80.0}, 40, fontSpacing, WHITE);
@@ -503,9 +514,36 @@ int main() {
                 const int pos_x = SCREEN_WIDTH/2.0f - width/2.0f;
                 const int pos_y = SCREEN_HEIGHT/2.0f - height/2.0f + 30.0;
                 const int spacing_x = 80;
+                switch (gameState.pickedUpgrade)
+                {
+                    case UPGRADE_MULTISHOT:
+                    {
+                        DrawRectangle(pos_x-5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
+                        break;
+                    }
+                    case UPGRADE_DAMAGE:
+                    {
+                        DrawRectangle(pos_x - spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
+                        break;
+                    }
+                    case UPGRADE_FIRERATE:
+                    {
+                        DrawRectangle(pos_x + spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
+                        break;
+                    }
+                    case UPGRADE_COUNT:
+                    {
+                        break;
+                    }
+                }
                 DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_MULTISHOT_UPGRADE).coords, (Vector2){pos_x, pos_y}, WHITE);
                 DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_DAMAGE_UPGRADE).coords, (Vector2){pos_x - spacing_x, pos_y}, WHITE);
                 DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_FIRERATE_UPGRADE).coords, (Vector2){pos_x + spacing_x, pos_y}, WHITE);
+                if (IsKeyPressed(KEY_LEFT)) {
+                    gameState.pickedUpgrade = (Upgrade)((gameState.pickedUpgrade + 1) % UPGRADE_COUNT);
+                } else if (IsKeyPressed(KEY_RIGHT)) {
+                    gameState.pickedUpgrade = (Upgrade)((gameState.pickedUpgrade - 1 + UPGRADE_COUNT) % UPGRADE_COUNT);
+                }
                 if (IsKeyPressed(KEY_ENTER)) {                    
                     gameState.playerMultishot = true;
                     gameState.state = STATE_RUNNING;
