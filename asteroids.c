@@ -49,6 +49,7 @@ typedef struct Enemy {
     int health;
     float size;
     float velocity;
+    float rotation;
     char textureFile[100];
     int type;
     Sprite sprite;
@@ -378,6 +379,7 @@ int main() {
                             .health = (int) (size+1.0) * 2.0,
                             .velocity = enemyVelocity,
                             .size = size,
+                            .rotation = 6.0f * (1 - GetRandomValue(1, 2)),
                         };
                         int whichAsteroid = GetRandomValue(1,10);
                         // Texture2D enemyTexture;
@@ -466,7 +468,9 @@ int main() {
                             *enemy = gameState.enemies[--gameState.enemyCount];
                         }
 
-                        float rotation = 0.0f;
+                        // float rotation = 0.0f;
+                        //
+                        float rotation = enemy->rotation * gameState.gameTime;
                         DrawTexturePro(atlas.textureAtlas, enemy->sprite.coords, enemyRec, (Vector2){0, 0}, rotation, WHITE);
                     }
                 }

@@ -46,8 +46,10 @@ internal Sprite getSprite(SpriteID spriteID)
         case SPRITE_STAR1:            {s.coords = (Rectangle){0,  69,   5,  5}; break;}
         case SPRITE_STAR2:            {s.coords = (Rectangle){5,  69,   3,  3}; break;}
         case SPRITE_BULLET:           {s.coords = (Rectangle){0,  52,   2,  7}; break;}
-        case SPRITE_ASTEROID1:        {s.coords = (Rectangle){0,   0,  31, 28}; break;}
-        case SPRITE_ASTEROID2:        {s.coords = (Rectangle){0,  28,  27, 23}; break;}
+        // case SPRITE_ASTEROID1:        {s.coords = (Rectangle){0,   0,  31, 28}; break;}
+        // case SPRITE_ASTEROID2:        {s.coords = (Rectangle){0,  28,  27, 23}; break;}
+        case SPRITE_ASTEROID1:        {s.coords = (Rectangle){192,   74,  50, 50}; break;}
+        case SPRITE_ASTEROID2:        {s.coords = (Rectangle){242,   74,  50, 50}; break;}
         case SPRITE_HEART:            {s.coords = (Rectangle){2,  52,  17, 17}; break;}
         case SPRITE_MULTISHOT_UPGRADE:{s.coords = (Rectangle){128,74,  64, 80}; break;}
         case SPRITE_DAMAGE_UPGRADE:   {s.coords = (Rectangle){0,  74,  64, 80}; break;}
