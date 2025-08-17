@@ -42,7 +42,7 @@ internal Sprite getSprite(SpriteID spriteID)
     Sprite s = {};
     switch(spriteID)
     {
-        case SPRITE_PLAYER:           {s.coords = (Rectangle){31,  0, 635, 62}; break;}
+        case SPRITE_PLAYER:           {s.coords = (Rectangle){292,  74, 190, 64}; break;}
         case SPRITE_STAR1:            {s.coords = (Rectangle){0,  69,   5,  5}; break;}
         case SPRITE_STAR2:            {s.coords = (Rectangle){5,  69,   3,  3}; break;}
         case SPRITE_BULLET:           {s.coords = (Rectangle){0,  52,   2,  7}; break;}
@@ -105,14 +105,23 @@ TextureAtlas initTextureAtlas()
 {
     TextureAtlas atlas;
     atlas.textureAtlas = LoadTexture("assets/textureAtlas.png");
-    Texture2D playerTexture = LoadTexture("assets/rocketNew.png");
-    atlas.playerAnimation = createSpriteAnimation(playerTexture, 10, (Rectangle[]) {
-            (Rectangle){0,0,32,62},   (Rectangle){32,0,32,62},  (Rectangle){64,0,32,62},  (Rectangle){96,0,32,62},
-            (Rectangle){128,0,32,62}, (Rectangle){160,0,32,62}, (Rectangle){192,0,32,62}, (Rectangle){224,0,32,62},
-            (Rectangle){256,0,32,62}, (Rectangle){288,0,32,62}, (Rectangle){320,0,32,62}, (Rectangle){352,0,32,62},
-            (Rectangle){384,0,32,62}, (Rectangle){416,0,32,62}, (Rectangle){448,0,32,62}, (Rectangle){480,0,32,62},
-            (Rectangle){512,0,32,62}, (Rectangle){544,0,32,62}, (Rectangle){576,0,32,62}, (Rectangle){608,0,32,62},        
-            }, 20);
+    // Texture2D playerTexture = LoadTexture("assets/rocketNew.png");
+    // atlas.playerAnimation = createSpriteAnimation(playerTexture, 10, (Rectangle[]) {
+    //         (Rectangle){0,0,32,62},   (Rectangle){32,0,32,62},  (Rectangle){64,0,32,62},  (Rectangle){96,0,32,62},
+    //         (Rectangle){128,0,32,62}, (Rectangle){160,0,32,62}, (Rectangle){192,0,32,62}, (Rectangle){224,0,32,62},
+    //         (Rectangle){256,0,32,62}, (Rectangle){288,0,32,62}, (Rectangle){320,0,32,62}, (Rectangle){352,0,32,62},
+    //         (Rectangle){384,0,32,62}, (Rectangle){416,0,32,62}, (Rectangle){448,0,32,62}, (Rectangle){480,0,32,62},
+    //         (Rectangle){512,0,32,62}, (Rectangle){544,0,32,62}, (Rectangle){576,0,32,62}, (Rectangle){608,0,32,62},        
+    //         }, 20);
+    float textureWidth = 38;
+    float textureHeight = 64;
+    atlas.playerAnimation = createSpriteAnimation(atlas.textureAtlas, 7, (Rectangle[]) {
+                        (Rectangle){292,74,textureWidth,textureHeight},   
+                        (Rectangle){292+1*textureWidth,74,textureWidth,textureHeight},  
+                        (Rectangle){292+2*textureWidth,74,textureWidth,textureHeight},  
+                        (Rectangle){292+3*textureWidth,74,textureWidth,textureHeight},
+                        (Rectangle){292+4*textureWidth,74,textureWidth,textureHeight},
+                        }, 5);
     return atlas;
 }
 
