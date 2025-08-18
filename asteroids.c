@@ -8,14 +8,15 @@
 // #define ASSETS_IMPLEMENTATION
 #include "assets.h"
 
-#define SCREEN_WIDTH (700.0f)
-#define SCREEN_HEIGHT (400.0f)
-// #define SCREEN_WIDTH (1400.0f)
-// #define SCREEN_HEIGHT (700.0f)
+// #define SCREEN_WIDTH (700.0f)
+// #define SCREEN_HEIGHT (400.0f)
+#define SCREEN_WIDTH (1400.0f)
+#define SCREEN_HEIGHT (700.0f)
 #define WINDOW_TITLE ("Asteroids")
-#define MAX_BULLETS (50)
+#define MAX_BULLETS (1000)
 #define MAX_ENEMIES (40)
-#define MAX_STARS (20)
+#define MAX_STARS (50)
+#define TARGET_FPS (240)
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -73,6 +74,8 @@ typedef struct Player {
     Sprite sprite;
     float size;
     int animationFrames;
+    float invulTime;
+    float maxInvulTime;
 } Player;
 
 typedef struct GameState {
@@ -134,7 +137,7 @@ void draw_text_centered(Font font, const char* text, Vector2 pos, float fontSize
 
 int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_TITLE);
-    SetTargetFPS(240);
+    SetTargetFPS(TARGET_FPS);
     
     // Font font = LoadFont("fonts/setback.png");
     Font font = LoadFont("fonts/jupiter_crash.png");
@@ -150,13 +153,9 @@ int main() {
     gameState.player.sprite = getSprite(SPRITE_PLAYER);
     gameState.player.size = 2;
     gameState.player.animationFrames = 5;
-    // init bullets
-    // for (int i = 0; i < MAX_BULLETS; i++) {
-    //     gameState.bullets[i].position = (Vector2){0, 0};
-    //     gameState.bullets[i].velocity = (Vector2){0, 0};
-    //     gameState.bullets[i].damage = 1.0f;
-    //     gameState.bullets[i].sprite = getSprite(SPRITE_BULLET);
-    // }
+    gameState.player.invulTime = 0.0f;
+    gameState.player.maxInvulTime = 3.0f;
+    gameState.bullets[0].position = (Vector2){0, 0};
     TextureAtlas atlas = initTextureAtlas();
 
     while (!WindowShouldClose())
@@ -271,7 +270,12 @@ int main() {
                 }
                 // Update game time
                 gameState.gameTime += GetFrameTime(); 
-                
+                if (gameState.player.invulTime < 0.0f)
+                {
+                    gameState.player.invulTime = 0.0f;
+                } else {
+                    gameState.player.invulTime -= GetFrameTime();
+                }
 
                 if (IsKeyDown(KEY_W)) {
                     if(!CheckCollisionPointLine(gameState.player.playerPosition, (Vector2) {0, 0}, (Vector2) {SCREEN_WIDTH, 0}, gameState.player.sprite.coords.width/gameState.player.animationFrames / 2))
@@ -307,15 +311,15 @@ int main() {
                 // Shoot bullets
                 while (IsKeyDown(KEY_SPACE) 
                     && gameState.shootTime >= gameState.shootDelay
-                    && gameState.bulletCount <= MAX_BULLETS) 
+                    && gameState.bulletCount <= MAX_BULLETS)
                 {
                     // if (gameState.bulletCount >= MAX_BULLETS)
                     // {
+                    //     printf("DEBUG: Max bullets reached\n");
                     //     break;
-                    //     // continue;
+                        // continue;
                     // } else {
-
-                        if (gameState.player.playerMultishot == true)
+                        if (gameState.player.playerMultishot == true && gameState.bulletCount < MAX_BULLETS-3)
                         {
                             float bulletOffset = 0.0f;
                             Bullet bullet1 = 
@@ -403,8 +407,13 @@ int main() {
                                          gameState.player.sprite.coords.width / gameState.player.animationFrames * gameState.player.size, 
                                          gameState.player.sprite.coords.height * gameState.player.size}; // origin in coordinates and scale
                 Vector2 origin = {0, 0}; // so it draws from top left of image
-                DrawSpriteAnimationPro(atlas.playerAnimation, destination, origin, 0, WHITE);
-
+                if (gameState.player.invulTime <= 0.0f) {
+                    DrawSpriteAnimationPro(atlas.playerAnimation, destination, origin, 0, WHITE);
+                } else {
+                    if (((int)(gameState.player.invulTime * 10)) % 2 == 0) {
+                        DrawSpriteAnimationPro(atlas.playerAnimation, destination, origin, 0, WHITE);
+                    }
+                }
                 // Spawn Enemies
                 {
                     gameState.spawnTime += GetFrameTime();
@@ -496,8 +505,9 @@ int main() {
                             // Replace with last enemy
                             *enemy = gameState.enemies[--gameState.enemyCount];
                         }
-                        if(CheckCollisionRecs(enemyRec, playerRec))
+                        if(CheckCollisionRecs(enemyRec, playerRec) && gameState.player.invulTime <= 0.0f)
                         {
+                            gameState.player.invulTime = gameState.player.maxInvulTime;
                             *enemy = gameState.enemies[--gameState.enemyCount];
                             if(--gameState.player.playerHealth < 1) 
                             {
