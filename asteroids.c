@@ -70,12 +70,14 @@ typedef struct Player {
     float playerVelocity;
     Vector2 playerPosition;
     int playerHealth;
-    bool playerMultishot;
     Sprite sprite;
     float size;
     int animationFrames;
     float invulTime;
-    float maxInvulTime;
+    float invulDuration;
+    bool playerMultishot;
+    float fireRate;
+    float damageMulti;
 } Player;
 
 typedef struct GameState {
@@ -92,7 +94,6 @@ typedef struct GameState {
     // Projectiles
     Bullet bullets[MAX_BULLETS];
     int bulletCount;
-    float shootDelay;
     float shootTime;
     // Enemies
     Enemy enemies[MAX_ENEMIES];
@@ -109,23 +110,38 @@ typedef struct GameState {
     Upgrade pickedUpgrade;
 } GameState;
 
-static const GameState defaultGameState = {
-    .shootDelay = 1.0f/4.0f,
-    .state = STATE_MAIN_MENU,
-    .gameTime = 0.0f,
-    .bulletCount = 0,
-    .shootTime = 0.0f,
-    .enemyCount = 0,
-    .enemySpawnRate = 0.5f,
-    .spawnTime = 0.0,
-    .experience = 999,
-    .starCount = 0,
-    .starTime = 0,
-    .starSpawnRate = 0.25f,
-    .lastEnemyXPosition = 0.0f,
-    .initStars = 0,
-    .pickedUpgrade = UPGRADE_MULTISHOT,
-};
+void initialize(GameState* gameState) {
+    *gameState = (GameState) {
+        .state = STATE_MAIN_MENU,
+        .gameTime = 0.0f,
+        .bulletCount = 0,
+        .shootTime = 0.0f,
+        .enemyCount = 0,
+        .enemySpawnRate = 0.5f,
+        .spawnTime = 0.0,
+        .experience = 999,
+        .starCount = 0,
+        .starTime = 0,
+        .starSpawnRate = 0.25f,
+        .lastEnemyXPosition = 0.0f,
+        .initStars = 0,
+        .pickedUpgrade = UPGRADE_MULTISHOT,
+    };
+
+    gameState->player = (Player) {
+        .playerVelocity = 200,
+        .playerPosition = (Vector2){SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f},
+        .playerHealth = 3,
+        .playerMultishot = false,
+        .sprite = getSprite(SPRITE_PLAYER),
+        .size = 2,
+        .animationFrames = 5,
+        .invulTime = 0.0f,
+        .invulDuration = 3.0f,
+        .fireRate = 1.0f,
+        .damageMulti = 1.0f,
+    };
+}
 
 void draw_text_centered(Font font, const char* text, Vector2 pos, float fontSize, float fontSpacing, Color color)
 {
@@ -145,17 +161,10 @@ int main() {
     int fontSpacing = 1;
     int fontSize = 15;
 
-    GameState gameState = defaultGameState;
-    gameState.player.playerPosition = (Vector2){SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f};
-    gameState.player.playerVelocity = 200;
-    gameState.player.playerHealth = 3;
-    gameState.player.playerMultishot = false;
-    gameState.player.sprite = getSprite(SPRITE_PLAYER);
-    gameState.player.size = 2;
-    gameState.player.animationFrames = 5;
-    gameState.player.invulTime = 0.0f;
-    gameState.player.maxInvulTime = 3.0f;
-    gameState.bullets[0].position = (Vector2){0, 0};
+    GameState gameState;
+    initialize(&gameState);
+
+    // gameState.bullets[0].position = (Vector2){0, 0};
     TextureAtlas atlas = initTextureAtlas();
 
     while (!WindowShouldClose())
@@ -304,13 +313,13 @@ int main() {
                         gameState.player.playerPosition.x += gameState.player.playerVelocity * GetFrameTime();
                     }
                 }
-                if (gameState.shootTime < gameState.shootDelay)
+                if (gameState.shootTime < 1.0f/gameState.player.fireRate)
                 {
                     gameState.shootTime += GetFrameTime();
                 } 
                 // Shoot bullets
                 while (IsKeyDown(KEY_SPACE) 
-                    && gameState.shootTime >= gameState.shootDelay
+                    && gameState.shootTime >= 1.0f/gameState.player.fireRate
                     && gameState.bulletCount <= MAX_BULLETS)
                 {
                     // if (gameState.bulletCount >= MAX_BULLETS)
@@ -326,7 +335,7 @@ int main() {
                             {
                                 .position = gameState.player.playerPosition,
                                 .velocity = (Vector2){0.0f, 100.0f},
-                                .damage = 1.0,
+                                .damage = 1.0*gameState.player.damageMulti,
                                 .sprite = getSprite(SPRITE_BULLET),
                             };
                             bullet1.position.x -= bullet1.sprite.coords.width / 2.0f;
@@ -339,7 +348,7 @@ int main() {
                             {
                                 .position = (Vector2){gameState.player.playerPosition.x - bulletOffset, gameState.player.playerPosition.y + 0.0f},
                                 .velocity = (Vector2){sqrt(pow(100.0f,2) - pow(95.0f,2)), 95.0f},
-                                .damage = 1.0,
+                                .damage = 1.0*gameState.player.damageMulti,
                                 .sprite = getSprite(SPRITE_BULLET),
                             };
                             bullet2.position.x -= bullet2.sprite.coords.width / 2.0f;
@@ -352,7 +361,7 @@ int main() {
                             {
                                 .position = (Vector2){gameState.player.playerPosition.x + bulletOffset, gameState.player.playerPosition.y + 0.0f},
                                 .velocity = (Vector2){-sqrt(pow(100.0f,2) - pow(95.0f,2)), 95.0f},
-                                .damage = 1.0,
+                                .damage = 1.0*gameState.player.damageMulti,
                                 .sprite = getSprite(SPRITE_BULLET),
                             };
                             bullet3.position.x -= bullet3.sprite.coords.width / 2.0f;
@@ -361,7 +370,7 @@ int main() {
                             texture_x = gameState.player.playerPosition.x + bulletOffset - bullet3.sprite.coords.width / 2.0;
                             texture_y = gameState.player.playerPosition.y - gameState.player.sprite.coords.height * gameState.player.size / 2.0 - bullet3.sprite.coords.height / 2.0;
                             DrawTextureRec(atlas.textureAtlas, bullet3.sprite.coords, (Vector2){texture_x, texture_y}, WHITE);
-                            gameState.shootTime -= gameState.shootDelay;
+                            gameState.shootTime -= 1.0f/gameState.player.fireRate;
                         }
                         else
                         {
@@ -369,13 +378,13 @@ int main() {
                             {
                                 .position = gameState.player.playerPosition,
                                 .velocity = (Vector2){0.0f, 100.0f},
-                                .damage = 1.0,
+                                .damage = 1.0*gameState.player.damageMulti,
                                 .sprite = getSprite(SPRITE_BULLET),
                             };
                             // bullet.position.x -= bullet.sprite.coords.width / 2.0;
                             bullet.position.y -= gameState.player.sprite.coords.height * gameState.player.size / 2.0 + bullet.sprite.coords.height;
                             gameState.bullets[gameState.bulletCount++] = bullet;
-                            gameState.shootTime -= gameState.shootDelay;
+                            gameState.shootTime -= 1.0f/gameState.player.fireRate;
                             // const float texture_x = gameState.player.playerPosition.x - bullet.sprite.coords.width / 2.0;
                             // const float texture_y = gameState.player.playerPosition.y - gameState.player.sprite.coords.height * gameState.player.size / 2.0 - bullet.sprite.coords.height / 2.0;
 
@@ -470,7 +479,7 @@ int main() {
                                 .x = gameState.bullets[bulletIndex].position.x,
                                 .y = gameState.bullets[bulletIndex].position.y,
                             };
-                            DrawRectangleLines(bulletRec.x, bulletRec.y, bulletRec.width, bulletRec.height, GREEN);
+                            // DrawRectangleLines(bulletRec.x, bulletRec.y, bulletRec.width, bulletRec.height, GREEN);
                             if(CheckCollisionRecs(enemyRec, bulletRec))
                             {
                                 // Replace with bullet with last bullet
@@ -492,8 +501,8 @@ int main() {
                             .x = gameState.player.playerPosition.x - playerWidth/2.0f,
                             .y = gameState.player.playerPosition.y - playerHeight/2.0f,
                         };
-                        DrawRectangleLines(enemyRec.x, enemyRec.y, enemyRec.width, enemyRec.height, RED);
-                        DrawRectangleLinesEx(playerRec, 1.0, BLUE);
+                        // DrawRectangleLines(enemyRec.x, enemyRec.y, enemyRec.width, enemyRec.height, RED);
+                        // DrawRectangleLinesEx(playerRec, 1.0, BLUE);
                         Rectangle screenRectExtended = {
                             .width = SCREEN_WIDTH + enemy->sprite.coords.width,
                             .height = SCREEN_HEIGHT + enemy->sprite.coords.height,
@@ -507,7 +516,7 @@ int main() {
                         }
                         if(CheckCollisionRecs(enemyRec, playerRec) && gameState.player.invulTime <= 0.0f)
                         {
-                            gameState.player.invulTime = gameState.player.maxInvulTime;
+                            gameState.player.invulTime = gameState.player.invulDuration;
                             *enemy = gameState.enemies[--gameState.enemyCount];
                             if(--gameState.player.playerHealth < 1) 
                             {
@@ -602,7 +611,13 @@ int main() {
                     gameState.pickedUpgrade = (Upgrade)((gameState.pickedUpgrade - 1 + UPGRADE_COUNT) % UPGRADE_COUNT);
                 }
                 if (IsKeyPressed(KEY_ENTER)) {                    
-                    gameState.player.playerMultishot = true;
+                    if (gameState.pickedUpgrade == UPGRADE_MULTISHOT) {
+                        gameState.player.playerMultishot = true;
+                    } else if (gameState.pickedUpgrade == UPGRADE_DAMAGE) {
+                        gameState.player.damageMulti += 0.2f;
+                    } else if (gameState.pickedUpgrade == UPGRADE_FIRERATE) {
+                        gameState.player.fireRate += 2.0f;
+                    }
                     gameState.state = STATE_RUNNING;
                 }
                 break;
@@ -616,14 +631,7 @@ int main() {
                 draw_text_centered(font, scoreText, (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 30}, 20, fontSpacing, WHITE);
                 draw_text_centered(font, "<Press enter to try again>", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 60}, 20, fontSpacing, WHITE);
                 if (IsKeyPressed(KEY_ENTER)) {
-                    gameState = defaultGameState;
-                    gameState.player.playerPosition = (Vector2){SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f};
-                    gameState.player.playerVelocity = 200;
-                    gameState.player.playerHealth = 3;
-                    gameState.player.playerMultishot = false;
-                    gameState.player.sprite = getSprite(SPRITE_PLAYER);
-                    gameState.player.size = 2;
-                    gameState.player.animationFrames = 5;
+                    initialize(&gameState);
                     gameState.state = STATE_RUNNING;
 
                 }
