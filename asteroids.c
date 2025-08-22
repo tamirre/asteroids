@@ -614,9 +614,9 @@ int main() {
                 DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_MULTISHOT_UPGRADE).coords, (Vector2){pos_x, pos_y}, WHITE);
                 DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_DAMAGE_UPGRADE).coords, (Vector2){pos_x - spacing_x, pos_y}, WHITE);
                 DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_FIRERATE_UPGRADE).coords, (Vector2){pos_x + spacing_x, pos_y}, WHITE);
-                if (IsKeyPressed(KEY_LEFT)) {
+                if (IsKeyPressed(KEY_A)) {
                     gameState.pickedUpgrade = (Upgrade)((gameState.pickedUpgrade + 1) % UPGRADE_COUNT);
-                } else if (IsKeyPressed(KEY_RIGHT)) {
+                } else if (IsKeyPressed(KEY_D)) {
                     gameState.pickedUpgrade = (Upgrade)((gameState.pickedUpgrade - 1 + UPGRADE_COUNT) % UPGRADE_COUNT);
                 }
                 if (IsKeyPressed(KEY_ENTER)) {                    
