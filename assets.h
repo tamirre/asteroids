@@ -25,6 +25,7 @@ typedef enum SpriteID {
    SPRITE_BULLET,
    SPRITE_ASTEROID1,
    SPRITE_ASTEROID2,
+   SPRITE_ASTEROID3,
    SPRITE_HEART,
    SPRITE_MULTISHOT_UPGRADE,
    SPRITE_DAMAGE_UPGRADE,
@@ -50,6 +51,7 @@ internal Sprite getSprite(SpriteID spriteID)
         // case SPRITE_ASTEROID2:        {s.coords = (Rectangle){0,  28,  27, 23}; break;}
         case SPRITE_ASTEROID1:        {s.coords = (Rectangle){192,   74,  50, 50}; break;}
         case SPRITE_ASTEROID2:        {s.coords = (Rectangle){242,   74,  50, 50}; break;}
+        case SPRITE_ASTEROID3:        {s.coords = (Rectangle){192,   124,  74, 88}; break;}
         case SPRITE_HEART:            {s.coords = (Rectangle){2,  52,  17, 17}; break;}
         case SPRITE_MULTISHOT_UPGRADE:{s.coords = (Rectangle){128,74,  64, 80}; break;}
         case SPRITE_DAMAGE_UPGRADE:   {s.coords = (Rectangle){0,  74,  64, 80}; break;}

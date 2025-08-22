@@ -408,21 +408,6 @@ int main() {
                         DrawTextureRec(atlas.textureAtlas, bullet->sprite.coords, bullet->position, WHITE);
                     }
                 }
-                // Update Player
-                const int texture_x = gameState.player.playerPosition.x - gameState.player.sprite.coords.width * gameState.player.size / gameState.player.animationFrames / 2.0;
-                const int texture_y = gameState.player.playerPosition.y - gameState.player.sprite.coords.height * gameState.player.size / 2.0;
-                // Rectangle destination = {texture_x, texture_y, gameState.player.sprite.coords.width/gameState.player.animationFrames*gameState.player.size, gameState.player.sprite.coords.height*gameState.player.size}; // origin in coordinates and scale
-                Rectangle destination = {texture_x, texture_y, 
-                                         gameState.player.sprite.coords.width / gameState.player.animationFrames * gameState.player.size, 
-                                         gameState.player.sprite.coords.height * gameState.player.size}; // origin in coordinates and scale
-                Vector2 origin = {0, 0}; // so it draws from top left of image
-                if (gameState.player.invulTime <= 0.0f) {
-                    DrawSpriteAnimationPro(atlas.playerAnimation, destination, origin, 0, WHITE);
-                } else {
-                    if (((int)(gameState.player.invulTime * 10)) % 2 == 0) {
-                        DrawSpriteAnimationPro(atlas.playerAnimation, destination, origin, 0, WHITE);
-                    }
-                }
                 // Spawn Enemies
                 {
                     gameState.spawnTime += GetFrameTime();
@@ -441,13 +426,13 @@ int main() {
                         };
                         int whichAsteroid = GetRandomValue(1,10);
                         Sprite asteroidSprite;
-                        if (whichAsteroid < 4)
-                        {
+                        if (whichAsteroid < 3) {
                             asteroidSprite = getSprite(SPRITE_ASTEROID1);
-                        } 
-                        else 
-                        {
+                        } else if (whichAsteroid < 6) {
                             asteroidSprite = getSprite(SPRITE_ASTEROID2);
+                        } else {
+                            asteroidSprite = getSprite(SPRITE_ASTEROID3);
+                            enemy.size = enemy.size / 2.0f;
                         }
                         enemy.sprite = asteroidSprite;
                         enemy.position.y -= enemy.sprite.coords.height; // to make them come into screen smoothly
@@ -491,8 +476,6 @@ int main() {
                                 }
                             }
                         }
-                        // float width = enemy->sprite.coords.width * player->size;
-                        // float height = enemy->sprite.coords.height * player->size;
                         float playerWidth = gameState.player.sprite.coords.width/gameState.player.animationFrames * gameState.player.size;
                         float playerHeight = gameState.player.sprite.coords.height * gameState.player.size;
                         Rectangle playerRec = {
@@ -528,12 +511,38 @@ int main() {
                         {
                             *enemy = gameState.enemies[--gameState.enemyCount];
                         }
-
-                        // float rotation = 0.0f;
-                        // float rotation = enemy->rotation * gameState.gameTime;
+                    }
+                    // Draw enemy in seperate loop to avoid removing drawing wrong enemy sprite in 
+                    // position of deleted one for one frame causing flickering
+                    for (int enemyIndex = 0; enemyIndex < gameState.enemyCount; enemyIndex++)
+                    {
+                        Enemy* enemy = &gameState.enemies[enemyIndex];
+                        float width = enemy->sprite.coords.width * enemy->size;
+                        float height = enemy->sprite.coords.height * enemy->size;
+                        Rectangle enemyRec = {
+                            .width = width,
+                            .height = height, 
+                            .x = enemy->position.x - width,
+                            .y = enemy->position.y - height, 
+                        };
                         float rotation = 0.0f;
                         // DrawTexturePro(atlas.textureAtlas, enemy->sprite.coords, enemyRec, (Vector2){enemy->sprite.coords.width/2.0f, enemy->sprite.coords.height/2.0f}, rotation, WHITE);
                         DrawTexturePro(atlas.textureAtlas, enemy->sprite.coords, enemyRec, (Vector2){0, 0}, rotation, WHITE);
+                    }
+                }
+                // Update Player
+                const int texture_x = gameState.player.playerPosition.x - gameState.player.sprite.coords.width * gameState.player.size / gameState.player.animationFrames / 2.0;
+                const int texture_y = gameState.player.playerPosition.y - gameState.player.sprite.coords.height * gameState.player.size / 2.0;
+                // Rectangle destination = {texture_x, texture_y, gameState.player.sprite.coords.width/gameState.player.animationFrames*gameState.player.size, gameState.player.sprite.coords.height*gameState.player.size}; // origin in coordinates and scale
+                Rectangle destination = {texture_x, texture_y, 
+                                         gameState.player.sprite.coords.width / gameState.player.animationFrames * gameState.player.size, 
+                                         gameState.player.sprite.coords.height * gameState.player.size}; // origin in coordinates and scale
+                Vector2 origin = {0, 0}; // so it draws from top left of image
+                if (gameState.player.invulTime <= 0.0f) {
+                    DrawSpriteAnimationPro(atlas.playerAnimation, destination, origin, 0, WHITE);
+                } else {
+                    if (((int)(gameState.player.invulTime * 10)) % 2 == 0) {
+                        DrawSpriteAnimationPro(atlas.playerAnimation, destination, origin, 0, WHITE);
                     }
                 }
                 // Update player health
