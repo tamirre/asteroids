@@ -14,7 +14,7 @@
 #define SCREEN_HEIGHT (700.0f)
 #define WINDOW_TITLE ("Asteroids")
 #define MAX_BULLETS (1000)
-#define MAX_ENEMIES (40)
+#define MAX_ASTEROIDS (40)
 #define MAX_STARS (50)
 #define TARGET_FPS (240)
 
@@ -47,7 +47,7 @@ typedef struct Star {
     Sprite sprite;
 } Star;
 
-typedef struct Enemy {
+typedef struct asteroid {
     Vector2 position;
     int health;
     float size;
@@ -56,14 +56,14 @@ typedef struct Enemy {
     char textureFile[100];
     int type;
     Sprite sprite;
-} Enemy;
+} asteroid;
 
 typedef struct Bullet {
     Vector2 position;
     Vector2 velocity;
     float damage;
-    // Texture2D texture;
     Sprite sprite;
+    float rotation;
 } Bullet;
 
 typedef struct Player {
@@ -77,6 +77,7 @@ typedef struct Player {
     float invulDuration;
     bool playerMultishot;
     float fireRate;
+    float shootTime;
     float damageMulti;
 } Player;
 
@@ -87,20 +88,15 @@ typedef struct GameState {
     float gameTime;
     // Player
     Player player;
-    // float playerVelocity;
-    // Vector2 playerPosition;
-    // int playerHealth;
-    // bool playerMultishot;
     // Projectiles
     Bullet bullets[MAX_BULLETS];
     int bulletCount;
-    float shootTime;
-    // Enemies
-    Enemy enemies[MAX_ENEMIES];
-    int enemyCount;
+    // asteroids
+    asteroid asteroids[MAX_ASTEROIDS];
+    int asteroidCount;
     float spawnTime;
-    float enemySpawnRate;
-    float lastEnemyXPosition;
+    float asteroidSpawnRate;
+    // float lastasteroidXPosition;
     // Parallax background stars
     Star stars[MAX_STARS];
     int starCount;
@@ -115,15 +111,14 @@ void initialize(GameState* gameState) {
         .state = STATE_MAIN_MENU,
         .gameTime = 0.0f,
         .bulletCount = 0,
-        .shootTime = 0.0f,
-        .enemyCount = 0,
-        .enemySpawnRate = 0.5f,
+        .asteroidCount = 0,
+        .asteroidSpawnRate = 0.5f,
         .spawnTime = 0.0,
         .experience = 999,
         .starCount = 0,
         .starTime = 0,
         .starSpawnRate = 0.25f,
-        .lastEnemyXPosition = 0.0f,
+        // .lastasteroidXPosition = 0.0f,
         .initStars = 0,
         .pickedUpgrade = UPGRADE_MULTISHOT,
     };
@@ -139,6 +134,7 @@ void initialize(GameState* gameState) {
         .invulTime = 0.0f,
         .invulDuration = 3.0f,
         .fireRate = 1.0f,
+        .shootTime = 1.0f,
         .damageMulti = 1.0f,
     };
 }
@@ -313,85 +309,96 @@ int main() {
                         gameState.player.playerPosition.x += gameState.player.playerVelocity * GetFrameTime();
                     }
                 }
-                if (gameState.shootTime < 1.0f/gameState.player.fireRate)
+                if (gameState.player.shootTime < 1.0f/gameState.player.fireRate)
                 {
-                    gameState.shootTime += GetFrameTime();
+                    gameState.player.shootTime += GetFrameTime();
                 } 
                 // Shoot bullets
                 while (IsKeyDown(KEY_SPACE) 
-                    && gameState.shootTime >= 1.0f/gameState.player.fireRate
+                    && gameState.player.shootTime >= 1.0f/gameState.player.fireRate
                     && gameState.bulletCount <= MAX_BULLETS)
                 {
-                    // if (gameState.bulletCount >= MAX_BULLETS)
-                    // {
-                    //     printf("DEBUG: Max bullets reached\n");
-                    //     break;
-                        // continue;
-                    // } else {
-                        if (gameState.player.playerMultishot == true && gameState.bulletCount < MAX_BULLETS-3)
+                    if (gameState.player.playerMultishot == true && gameState.bulletCount < MAX_BULLETS-3)
+                    {
+                        float bulletOffset = 0.0f;
+                        Bullet bullet1 = 
                         {
-                            float bulletOffset = 0.0f;
-                            Bullet bullet1 = 
-                            {
-                                .position = gameState.player.playerPosition,
-                                .velocity = (Vector2){0.0f, 100.0f},
-                                .damage = 1.0*gameState.player.damageMulti,
-                                .sprite = getSprite(SPRITE_BULLET),
-                            };
-                            bullet1.position.x -= bullet1.sprite.coords.width / 2.0f;
-                            bullet1.position.y -= gameState.player.sprite.coords.height * gameState.player.size / 2.0 + bullet1.sprite.coords.height;
-                            gameState.bullets[gameState.bulletCount++] = bullet1;
-                            float texture_x = gameState.player.playerPosition.x - bullet1.sprite.coords.width / 2.0;
-                            float texture_y = gameState.player.playerPosition.y - gameState.player.sprite.coords.height * gameState.player.size / 2.0 - bullet1.sprite.coords.height / 2.0;
-                            DrawTextureRec(atlas.textureAtlas, bullet1.sprite.coords, (Vector2){texture_x, texture_y}, WHITE);
-                            Bullet bullet2 = 
-                            {
-                                .position = (Vector2){gameState.player.playerPosition.x - bulletOffset, gameState.player.playerPosition.y + 0.0f},
-                                .velocity = (Vector2){sqrt(pow(100.0f,2) - pow(95.0f,2)), 95.0f},
-                                .damage = 1.0*gameState.player.damageMulti,
-                                .sprite = getSprite(SPRITE_BULLET),
-                            };
-                            bullet2.position.x -= bullet2.sprite.coords.width / 2.0f;
-                            bullet2.position.y -= gameState.player.sprite.coords.height * gameState.player.size / 2.0 + bullet2.sprite.coords.height;
-                            gameState.bullets[gameState.bulletCount++] = bullet2;
-                            texture_x = gameState.player.playerPosition.x - bulletOffset - bullet2.sprite.coords.width / 2.0;
-                            texture_y = gameState.player.playerPosition.y - gameState.player.sprite.coords.height * gameState.player.size / 2.0 - bullet2.sprite.coords.height / 2.0;
-                            DrawTextureRec(atlas.textureAtlas, bullet2.sprite.coords, (Vector2){texture_x, texture_y}, WHITE);
-                            Bullet bullet3 = 
-                            {
-                                .position = (Vector2){gameState.player.playerPosition.x + bulletOffset, gameState.player.playerPosition.y + 0.0f},
-                                .velocity = (Vector2){-sqrt(pow(100.0f,2) - pow(95.0f,2)), 95.0f},
-                                .damage = 1.0*gameState.player.damageMulti,
-                                .sprite = getSprite(SPRITE_BULLET),
-                            };
-                            bullet3.position.x -= bullet3.sprite.coords.width / 2.0f;
-                            bullet3.position.y -= gameState.player.sprite.coords.height * gameState.player.size / 2.0 + bullet3.sprite.coords.height;
-                            gameState.bullets[gameState.bulletCount++] = bullet3;
-                            texture_x = gameState.player.playerPosition.x + bulletOffset - bullet3.sprite.coords.width / 2.0;
-                            texture_y = gameState.player.playerPosition.y - gameState.player.sprite.coords.height * gameState.player.size / 2.0 - bullet3.sprite.coords.height / 2.0;
-                            DrawTextureRec(atlas.textureAtlas, bullet3.sprite.coords, (Vector2){texture_x, texture_y}, WHITE);
-                            gameState.shootTime -= 1.0f/gameState.player.fireRate;
-                        }
-                        else
+                            .position = gameState.player.playerPosition,
+                            .velocity = (Vector2){0.0f, 100.0f},
+                            .damage = 1.0*gameState.player.damageMulti,
+                            .sprite = getSprite(SPRITE_BULLET),
+                            .rotation = 0.0f,
+                        };
+                        bullet1.position.x -= bullet1.sprite.coords.width / 2.0f;
+                        bullet1.position.y -= gameState.player.sprite.coords.height * gameState.player.size / 2.0 + bullet1.sprite.coords.height;
+                        gameState.bullets[gameState.bulletCount++] = bullet1;
+                        Rectangle bullet1Rec = {
+                            .width = bullet1.sprite.coords.width,
+                            .height = bullet1.sprite.coords.height,
+                            .x = bullet1.position.x,
+                            .y = bullet1.position.y,
+                        };
+                        DrawTexturePro(atlas.textureAtlas, bullet1.sprite.coords, bullet1Rec, (Vector2){0, 0}, bullet1.rotation, WHITE);
+                        Bullet bullet2 = 
                         {
-                            Bullet bullet =
-                            {
-                                .position = gameState.player.playerPosition,
-                                .velocity = (Vector2){0.0f, 100.0f},
-                                .damage = 1.0*gameState.player.damageMulti,
-                                .sprite = getSprite(SPRITE_BULLET),
-                            };
-                            // bullet.position.x -= bullet.sprite.coords.width / 2.0;
-                            bullet.position.y -= gameState.player.sprite.coords.height * gameState.player.size / 2.0 + bullet.sprite.coords.height;
-                            gameState.bullets[gameState.bulletCount++] = bullet;
-                            gameState.shootTime -= 1.0f/gameState.player.fireRate;
-                            // const float texture_x = gameState.player.playerPosition.x - bullet.sprite.coords.width / 2.0;
-                            // const float texture_y = gameState.player.playerPosition.y - gameState.player.sprite.coords.height * gameState.player.size / 2.0 - bullet.sprite.coords.height / 2.0;
-
-                            // DrawTextureRec(atlas.textureAtlas, bullet.sprite.coords, (Vector2){texture_x, texture_y}, WHITE);
-                            DrawTextureRec(atlas.textureAtlas, bullet.sprite.coords, bullet.position, WHITE);
-                        }
-                    // }
+                            .position = (Vector2){gameState.player.playerPosition.x - bulletOffset, gameState.player.playerPosition.y + 0.0f},
+                            .velocity = (Vector2){sqrt(pow(100.0f,2) - pow(95.0f,2)), 95.0f},
+                            .damage = 1.0*gameState.player.damageMulti,
+                            .sprite = getSprite(SPRITE_BULLET),
+                            .rotation = -15.0f,
+                        };
+                        bullet2.position.x -= bullet2.sprite.coords.width / 2.0f;
+                        bullet2.position.y -= gameState.player.sprite.coords.height * gameState.player.size / 2.0 + bullet2.sprite.coords.height;
+                        gameState.bullets[gameState.bulletCount++] = bullet2;
+                        Rectangle bullet2Rec = {
+                            .width = bullet2.sprite.coords.width,
+                            .height = bullet2.sprite.coords.height,
+                            .x = bullet2.position.x,
+                            .y = bullet2.position.y,
+                        };
+                        DrawTexturePro(atlas.textureAtlas, bullet2.sprite.coords, bullet2Rec, (Vector2){0, 0}, bullet2.rotation, WHITE);
+                        Bullet bullet3 = 
+                        {
+                            .position = (Vector2){gameState.player.playerPosition.x + bulletOffset, gameState.player.playerPosition.y + 0.0f},
+                            .velocity = (Vector2){-sqrt(pow(100.0f,2) - pow(95.0f,2)), 95.0f},
+                            .damage = 1.0*gameState.player.damageMulti,
+                            .sprite = getSprite(SPRITE_BULLET),
+                            .rotation = 15.0f,
+                        };
+                        bullet3.position.x -= bullet3.sprite.coords.width / 2.0f;
+                        bullet3.position.y -= gameState.player.sprite.coords.height * gameState.player.size / 2.0 + bullet3.sprite.coords.height;
+                        gameState.bullets[gameState.bulletCount++] = bullet3;
+                        Rectangle bullet3Rec = {
+                            .width = bullet3.sprite.coords.width,
+                            .height = bullet3.sprite.coords.height,
+                            .x = bullet3.position.x,
+                            .y = bullet3.position.y,
+                        };
+                        DrawTexturePro(atlas.textureAtlas, bullet3.sprite.coords, bullet3Rec, (Vector2){0, 0}, bullet3.rotation, WHITE);
+                        gameState.player.shootTime -= 1.0f/gameState.player.fireRate;
+                    }
+                    else
+                    {
+                        Bullet bullet =
+                        {
+                            .position = gameState.player.playerPosition,
+                            .velocity = (Vector2){0.0f, 100.0f},
+                            .damage = 1.0*gameState.player.damageMulti,
+                            .sprite = getSprite(SPRITE_BULLET),
+                            .rotation = 0.0f,
+                        };
+                        // bullet.position.x -= bullet.sprite.coords.width / 2.0;
+                        bullet.position.y -= gameState.player.sprite.coords.height * gameState.player.size / 2.0 + bullet.sprite.coords.height;
+                        gameState.bullets[gameState.bulletCount++] = bullet;
+                        gameState.player.shootTime -= 1.0f/gameState.player.fireRate;
+                        Rectangle bulletRec = {
+                            .width = bullet.sprite.coords.width,
+                            .height = bullet.sprite.coords.height,
+                            .x = bullet.position.x,
+                            .y = bullet.position.y,
+                        };
+                        DrawTexturePro(atlas.textureAtlas, bullet.sprite.coords, bulletRec, (Vector2){0, 0}, bullet.rotation, WHITE);
+                    }
                 }
                 // Update Bullets
                 {
@@ -405,22 +412,29 @@ int main() {
 						}
                         bullet->position.x -= bullet->velocity.x * GetFrameTime();
                         bullet->position.y -= bullet->velocity.y * GetFrameTime();
-                        DrawTextureRec(atlas.textureAtlas, bullet->sprite.coords, bullet->position, WHITE);
+                        Rectangle bulletRec = {
+                            .width = bullet->sprite.coords.width,
+                            .height = bullet->sprite.coords.height,
+                            .x = bullet->position.x,
+                            .y = bullet->position.y,
+                        };
+                        DrawTexturePro(atlas.textureAtlas, bullet->sprite.coords, bulletRec, (Vector2){0, 0}, bullet->rotation, WHITE);
+                        // DrawTextureRec(atlas.textureAtlas, bullet->sprite.coords, bullet->position, WHITE);
                     }
                 }
-                // Spawn Enemies
+                // Spawn asteroids
                 {
                     gameState.spawnTime += GetFrameTime();
-                    if (gameState.spawnTime > gameState.enemySpawnRate && gameState.enemyCount < MAX_ENEMIES) 
+                    if (gameState.spawnTime > gameState.asteroidSpawnRate && gameState.asteroidCount < MAX_ASTEROIDS) 
                     {
                         float size = GetRandomValue(50.0, 200.0) / 100.0f;
                         float minSpawnDistance = 50.0f * size;  
-                        float enemyXPosition = MAX(minSpawnDistance, GetRandomValue(0, SCREEN_WIDTH)); 
-                        float enemyVelocity = GetRandomValue(30.0f, 65.0f) * 2.0f / (size);
-                        Enemy enemy = {
-                            .position = (Vector2) {enemyXPosition, 0},
+                        float asteroidXPosition = MAX(minSpawnDistance, GetRandomValue(0, SCREEN_WIDTH)); 
+                        float asteroidVelocity = GetRandomValue(30.0f, 65.0f) * 2.0f / (size);
+                        asteroid asteroid = {
+                            .position = (Vector2) {asteroidXPosition, 0},
                             .health = (int) (size+1.0) * 2.0,
-                            .velocity = enemyVelocity,
+                            .velocity = asteroidVelocity,
                             .size = size,
                             .rotation = 6.0f * (1 - GetRandomValue(1, 2)),
                         };
@@ -432,27 +446,27 @@ int main() {
                             asteroidSprite = getSprite(SPRITE_ASTEROID2);
                         } else {
                             asteroidSprite = getSprite(SPRITE_ASTEROID3);
-                            enemy.size = enemy.size / 2.0f;
+                            asteroid.size = asteroid.size / 2.0f;
                         }
-                        enemy.sprite = asteroidSprite;
-                        enemy.position.y -= enemy.sprite.coords.height; // to make them come into screen smoothly
+                        asteroid.sprite = asteroidSprite;
+                        asteroid.position.y -= asteroid.sprite.coords.height; // to make them come into screen smoothly
                         gameState.spawnTime = 0;
-                        gameState.enemies[gameState.enemyCount++] = enemy;
+                        gameState.asteroids[gameState.asteroidCount++] = asteroid;
                     }
                 }
-                // Update Enemies
+                // Update asteroids
                 {
-                    for (int enemyIndex = 0; enemyIndex < gameState.enemyCount; enemyIndex++)
+                    for (int asteroidIndex = 0; asteroidIndex < gameState.asteroidCount; asteroidIndex++)
                     {
-                        Enemy* enemy = &gameState.enemies[enemyIndex];
-                        enemy->position.y += enemy->velocity * GetFrameTime();
-                        float width = enemy->sprite.coords.width * enemy->size;
-                        float height = enemy->sprite.coords.height * enemy->size;
-                        Rectangle enemyRec = {
+                        asteroid* asteroid = &gameState.asteroids[asteroidIndex];
+                        asteroid->position.y += asteroid->velocity * GetFrameTime();
+                        float width = asteroid->sprite.coords.width * asteroid->size;
+                        float height = asteroid->sprite.coords.height * asteroid->size;
+                        Rectangle asteroidRec = {
                             .width = width,
                             .height = height, 
-                            .x = enemy->position.x - width,
-                            .y = enemy->position.y - height, 
+                            .x = asteroid->position.x - width,
+                            .y = asteroid->position.y - height, 
                         };
 
                         for (int bulletIndex = 0; bulletIndex < gameState.bulletCount; bulletIndex++)
@@ -465,14 +479,14 @@ int main() {
                                 .y = gameState.bullets[bulletIndex].position.y,
                             };
                             // DrawRectangleLines(bulletRec.x, bulletRec.y, bulletRec.width, bulletRec.height, GREEN);
-                            if(CheckCollisionRecs(enemyRec, bulletRec))
+                            if(CheckCollisionRecs(asteroidRec, bulletRec))
                             {
                                 // Replace with bullet with last bullet
                                 *bullet = gameState.bullets[--gameState.bulletCount];
-                                if (--enemy->health < 1)
+                                if (--asteroid->health < 1)
                                 {
-                                    gameState.experience += MAX((int)(enemy->size * 100),1);
-                                    *enemy = gameState.enemies[--gameState.enemyCount];
+                                    gameState.experience += MAX((int)(asteroid->size * 100),1);
+                                    *asteroid = gameState.asteroids[--gameState.asteroidCount];
                                 }
                             }
                         }
@@ -484,56 +498,54 @@ int main() {
                             .x = gameState.player.playerPosition.x - playerWidth/2.0f,
                             .y = gameState.player.playerPosition.y - playerHeight/2.0f,
                         };
-                        // DrawRectangleLines(enemyRec.x, enemyRec.y, enemyRec.width, enemyRec.height, RED);
+                        // DrawRectangleLines(asteroidRec.x, asteroidRec.y, asteroidRec.width, asteroidRec.height, RED);
                         // DrawRectangleLinesEx(playerRec, 1.0, BLUE);
                         Rectangle screenRectExtended = {
-                            .width = SCREEN_WIDTH + enemy->sprite.coords.width,
-                            .height = SCREEN_HEIGHT + enemy->sprite.coords.height,
+                            .width = SCREEN_WIDTH + asteroid->sprite.coords.width,
+                            .height = SCREEN_HEIGHT + asteroid->sprite.coords.height,
                             .x = 0.0,
-                            .y = enemy->position.y, // to make them scroll into screen smoothly
+                            .y = asteroid->position.y, // to make them scroll into screen smoothly
                         };
-                        if(!CheckCollisionPointRec(enemy->position, screenRectExtended))
+                        if(!CheckCollisionPointRec(asteroid->position, screenRectExtended))
                         {
-                            // Replace with last enemy
-                            *enemy = gameState.enemies[--gameState.enemyCount];
+                            // Replace with last asteroid
+                            *asteroid = gameState.asteroids[--gameState.asteroidCount];
                         }
-                        if(CheckCollisionRecs(enemyRec, playerRec) && gameState.player.invulTime <= 0.0f)
+                        if(CheckCollisionRecs(asteroidRec, playerRec) && gameState.player.invulTime <= 0.0f)
                         {
                             gameState.player.invulTime = gameState.player.invulDuration;
-                            *enemy = gameState.enemies[--gameState.enemyCount];
+                            *asteroid = gameState.asteroids[--gameState.asteroidCount];
                             if(--gameState.player.playerHealth < 1) 
                             {
                                 gameState.state = STATE_GAME_OVER;
                             }
                         }
                         // Check if asteroid is off-screen
-                        if (enemy->position.y > SCREEN_HEIGHT + enemy->sprite.coords.height * enemy->size)
+                        if (asteroid->position.y > SCREEN_HEIGHT + asteroid->sprite.coords.height * asteroid->size)
                         {
-                            *enemy = gameState.enemies[--gameState.enemyCount];
+                            *asteroid = gameState.asteroids[--gameState.asteroidCount];
                         }
                     }
-                    // Draw enemy in seperate loop to avoid removing drawing wrong enemy sprite in 
+                    // Draw asteroid in seperate loop to avoid removing drawing wrong asteroid sprite in 
                     // position of deleted one for one frame causing flickering
-                    for (int enemyIndex = 0; enemyIndex < gameState.enemyCount; enemyIndex++)
+                    for (int asteroidIndex = 0; asteroidIndex < gameState.asteroidCount; asteroidIndex++)
                     {
-                        Enemy* enemy = &gameState.enemies[enemyIndex];
-                        float width = enemy->sprite.coords.width * enemy->size;
-                        float height = enemy->sprite.coords.height * enemy->size;
-                        Rectangle enemyRec = {
+                        asteroid* asteroid = &gameState.asteroids[asteroidIndex];
+                        float width = asteroid->sprite.coords.width * asteroid->size;
+                        float height = asteroid->sprite.coords.height * asteroid->size;
+                        Rectangle asteroidRec = {
                             .width = width,
                             .height = height, 
-                            .x = enemy->position.x - width,
-                            .y = enemy->position.y - height, 
+                            .x = asteroid->position.x - width,
+                            .y = asteroid->position.y - height, 
                         };
                         float rotation = 0.0f;
-                        // DrawTexturePro(atlas.textureAtlas, enemy->sprite.coords, enemyRec, (Vector2){enemy->sprite.coords.width/2.0f, enemy->sprite.coords.height/2.0f}, rotation, WHITE);
-                        DrawTexturePro(atlas.textureAtlas, enemy->sprite.coords, enemyRec, (Vector2){0, 0}, rotation, WHITE);
+                        DrawTexturePro(atlas.textureAtlas, asteroid->sprite.coords, asteroidRec, (Vector2){0, 0}, rotation, WHITE);
                     }
                 }
                 // Update Player
                 const int texture_x = gameState.player.playerPosition.x - gameState.player.sprite.coords.width * gameState.player.size / gameState.player.animationFrames / 2.0;
                 const int texture_y = gameState.player.playerPosition.y - gameState.player.sprite.coords.height * gameState.player.size / 2.0;
-                // Rectangle destination = {texture_x, texture_y, gameState.player.sprite.coords.width/gameState.player.animationFrames*gameState.player.size, gameState.player.sprite.coords.height*gameState.player.size}; // origin in coordinates and scale
                 Rectangle destination = {texture_x, texture_y, 
                                          gameState.player.sprite.coords.width / gameState.player.animationFrames * gameState.player.size, 
                                          gameState.player.sprite.coords.height * gameState.player.size}; // origin in coordinates and scale
