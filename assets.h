@@ -15,6 +15,8 @@ typedef struct SpriteAnimation
 typedef struct TextureAtlas 
 {
     Texture2D textureAtlas;
+    Image imageAtlas;
+    Color* pixelsAtlas;
     SpriteAnimation playerAnimation;
 } TextureAtlas;
 
@@ -35,6 +37,7 @@ typedef enum SpriteID {
 } SpriteID;
 
 typedef struct Sprite {
+    Texture2D texture;
     Rectangle coords;
 } Sprite;
 
@@ -47,8 +50,6 @@ internal Sprite getSprite(SpriteID spriteID)
         case SPRITE_STAR1:            {s.coords = (Rectangle){0,  69,   5,  5}; break;}
         case SPRITE_STAR2:            {s.coords = (Rectangle){5,  69,   3,  3}; break;}
         case SPRITE_BULLET:           {s.coords = (Rectangle){0,  52,   2,  7}; break;}
-        // case SPRITE_ASTEROID1:        {s.coords = (Rectangle){0,   0,  31, 28}; break;}
-        // case SPRITE_ASTEROID2:        {s.coords = (Rectangle){0,  28,  27, 23}; break;}
         case SPRITE_ASTEROID1:        {s.coords = (Rectangle){192,   74,  50, 50}; break;}
         case SPRITE_ASTEROID2:        {s.coords = (Rectangle){242,   74,  50, 50}; break;}
         case SPRITE_ASTEROID3:        {s.coords = (Rectangle){192,   124,  74, 88}; break;}
@@ -107,6 +108,7 @@ TextureAtlas initTextureAtlas()
 {
     TextureAtlas atlas;
     atlas.textureAtlas = LoadTexture("assets/textureAtlas.png");
+    atlas.imageAtlas = LoadImageFromTexture(atlas.textureAtlas);
     // Texture2D playerTexture = LoadTexture("assets/rocketNew.png");
     // atlas.playerAnimation = createSpriteAnimation(playerTexture, 10, (Rectangle[]) {
     //         (Rectangle){0,0,32,62},   (Rectangle){32,0,32,62},  (Rectangle){64,0,32,62},  (Rectangle){96,0,32,62},
@@ -115,6 +117,8 @@ TextureAtlas initTextureAtlas()
     //         (Rectangle){384,0,32,62}, (Rectangle){416,0,32,62}, (Rectangle){448,0,32,62}, (Rectangle){480,0,32,62},
     //         (Rectangle){512,0,32,62}, (Rectangle){544,0,32,62}, (Rectangle){576,0,32,62}, (Rectangle){608,0,32,62},        
     //         }, 20);
+    //
+    //
     float textureWidth = 38;
     float textureHeight = 64;
     atlas.playerAnimation = createSpriteAnimation(atlas.textureAtlas, 7, (Rectangle[]) {

@@ -47,7 +47,7 @@ typedef struct Star {
     Sprite sprite;
 } Star;
 
-typedef struct asteroid {
+typedef struct Asteroid {
     Vector2 position;
     int health;
     float size;
@@ -56,7 +56,7 @@ typedef struct asteroid {
     char textureFile[100];
     int type;
     Sprite sprite;
-} asteroid;
+} Asteroid;
 
 typedef struct Bullet {
     Vector2 position;
@@ -92,7 +92,7 @@ typedef struct GameState {
     Bullet bullets[MAX_BULLETS];
     int bulletCount;
     // asteroids
-    asteroid asteroids[MAX_ASTEROIDS];
+    Asteroid asteroids[MAX_ASTEROIDS];
     int asteroidCount;
     float spawnTime;
     float asteroidSpawnRate;
@@ -137,6 +137,34 @@ void initialize(GameState* gameState) {
         .shootTime = 1.0f,
         .damageMulti = 1.0f,
     };
+}
+
+bool pixelPerfectCollision(Image imageAtlas, Rectangle rect1, Rectangle rect2, Rectangle collisionRec)
+{
+
+    Image image1 = ImageFromImage(imageAtlas, rect1);
+    Image image2 = ImageFromImage(imageAtlas, rect2);
+    Image subImage1 = ImageFromImage(image1, collisionRec);
+    Image subImage2 = ImageFromImage(image2, collisionRec);
+
+    Color* pixels1 = LoadImageColors(subImage1);
+    Color* pixels2 = LoadImageColors(subImage2);
+
+    for (int i = 0; i < collisionRec.width; i++) {
+        for (int j = 0; j < collisionRec.height; j++) {
+            Color ca = pixels1[(int)(j * collisionRec.width + i)];
+            Color cb = pixels2[(int)(j * collisionRec.width + i)];
+            if (ca.a > 0 && cb.a > 0) {
+                UnloadImageColors(pixels1);
+                UnloadImageColors(pixels2);
+                return true; 
+            }
+        }
+    }
+
+    UnloadImageColors(pixels1);
+    UnloadImageColors(pixels2);
+    return false;
 }
 
 void draw_text_centered(Font font, const char* text, Vector2 pos, float fontSize, float fontSpacing, Color color)
@@ -422,16 +450,17 @@ int main() {
                         // DrawTextureRec(atlas.textureAtlas, bullet->sprite.coords, bullet->position, WHITE);
                     }
                 }
-                // Spawn asteroids
+                // Spawn Asteroids
                 {
                     gameState.spawnTime += GetFrameTime();
                     if (gameState.spawnTime > gameState.asteroidSpawnRate && gameState.asteroidCount < MAX_ASTEROIDS) 
                     {
-                        float size = GetRandomValue(50.0, 200.0) / 100.0f;
+                        // float size = GetRandomValue(50.0, 200.0) / 100.0f;
+                        float size = 1.0f;
                         float minSpawnDistance = 50.0f * size;  
                         float asteroidXPosition = MAX(minSpawnDistance, GetRandomValue(0, SCREEN_WIDTH)); 
                         float asteroidVelocity = GetRandomValue(30.0f, 65.0f) * 2.0f / (size);
-                        asteroid asteroid = {
+                        Asteroid asteroid = {
                             .position = (Vector2) {asteroidXPosition, 0},
                             .health = (int) (size+1.0) * 2.0,
                             .velocity = asteroidVelocity,
@@ -446,7 +475,7 @@ int main() {
                             asteroidSprite = getSprite(SPRITE_ASTEROID2);
                         } else {
                             asteroidSprite = getSprite(SPRITE_ASTEROID3);
-                            asteroid.size = asteroid.size / 2.0f;
+                            // asteroid.size = asteroid.size / 2.0f;
                         }
                         asteroid.sprite = asteroidSprite;
                         asteroid.position.y -= asteroid.sprite.coords.height; // to make them come into screen smoothly
@@ -458,7 +487,7 @@ int main() {
                 {
                     for (int asteroidIndex = 0; asteroidIndex < gameState.asteroidCount; asteroidIndex++)
                     {
-                        asteroid* asteroid = &gameState.asteroids[asteroidIndex];
+                        Asteroid* asteroid = &gameState.asteroids[asteroidIndex];
                         asteroid->position.y += asteroid->velocity * GetFrameTime();
                         float width = asteroid->sprite.coords.width * asteroid->size;
                         float height = asteroid->sprite.coords.height * asteroid->size;
@@ -498,8 +527,8 @@ int main() {
                             .x = gameState.player.playerPosition.x - playerWidth/2.0f,
                             .y = gameState.player.playerPosition.y - playerHeight/2.0f,
                         };
-                        // DrawRectangleLines(asteroidRec.x, asteroidRec.y, asteroidRec.width, asteroidRec.height, RED);
-                        // DrawRectangleLinesEx(playerRec, 1.0, BLUE);
+                        DrawRectangleLines(asteroidRec.x, asteroidRec.y, asteroidRec.width, asteroidRec.height, GREEN);
+                        DrawRectangleLinesEx(playerRec, 1.0, BLUE);
                         Rectangle screenRectExtended = {
                             .width = SCREEN_WIDTH + asteroid->sprite.coords.width,
                             .height = SCREEN_HEIGHT + asteroid->sprite.coords.height,
@@ -513,12 +542,20 @@ int main() {
                         }
                         if(CheckCollisionRecs(asteroidRec, playerRec) && gameState.player.invulTime <= 0.0f)
                         {
-                            gameState.player.invulTime = gameState.player.invulDuration;
-                            *asteroid = gameState.asteroids[--gameState.asteroidCount];
-                            if(--gameState.player.playerHealth < 1) 
-                            {
-                                gameState.state = STATE_GAME_OVER;
-                            }
+                            
+
+                            Rectangle collisionRec;
+                            collisionRec = GetCollisionRec(asteroidRec, playerRec);
+                            DrawRectangleLinesEx(collisionRec, 2.0, RED);
+                            // if (pixelPerfectCollision(atlas.imageAtlas, playerRec, asteroidRec, collisionRec))
+                            // {
+                            //     gameState.player.invulTime = gameState.player.invulDuration;
+                            //     *asteroid = gameState.asteroids[--gameState.asteroidCount];
+                            //     if(--gameState.player.playerHealth < 1) 
+                            //     {
+                            //         gameState.state = STATE_GAME_OVER;
+                            //     }
+                            // }
                         }
                         // Check if asteroid is off-screen
                         if (asteroid->position.y > SCREEN_HEIGHT + asteroid->sprite.coords.height * asteroid->size)
@@ -530,7 +567,7 @@ int main() {
                     // position of deleted one for one frame causing flickering
                     for (int asteroidIndex = 0; asteroidIndex < gameState.asteroidCount; asteroidIndex++)
                     {
-                        asteroid* asteroid = &gameState.asteroids[asteroidIndex];
+                        Asteroid* asteroid = &gameState.asteroids[asteroidIndex];
                         float width = asteroid->sprite.coords.width * asteroid->size;
                         float height = asteroid->sprite.coords.height * asteroid->size;
                         Rectangle asteroidRec = {
@@ -609,8 +646,7 @@ int main() {
                         break;
                     }
                     case UPGRADE_DAMAGE:
-                    {
-                        DrawRectangle(pos_x - spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
+                    { DrawRectangle(pos_x - spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
                         break;
                     }
                     case UPGRADE_FIRERATE:
@@ -672,6 +708,7 @@ int main() {
     }
 
     FreeSpriteAnimation(atlas.playerAnimation);
+    UnloadImage(atlas.imageAtlas);
     UnloadFont(font);
     CloseWindow();
     return 0;
