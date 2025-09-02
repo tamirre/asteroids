@@ -64,6 +64,11 @@ internal Sprite getSprite(SpriteID spriteID)
 #define ASSETS_IMPLEMENTATION
 #ifdef ASSETS_IMPLEMENTATION
 
+Rectangle GetCurrentAnimationFrame(SpriteAnimation animation) {
+    int index = (int)(GetTime() * animation.framesPerSecond) % animation.rectanglesLentgh;
+    return animation.rectangles[index];
+}
+
 SpriteAnimation createSpriteAnimation(Texture2D atlas, int framesPerSecond, Rectangle rectangles[], int length)
 {
     SpriteAnimation spriteAnimation = 
