@@ -56,6 +56,7 @@ typedef struct Asteroid {
     char textureFile[100];
     int type;
     Sprite sprite;
+	Color* pixels;
 } Asteroid;
 
 typedef struct Bullet {
@@ -106,7 +107,7 @@ typedef struct GameState {
     Upgrade pickedUpgrade;
 } GameState;
 
-void initialize(GameState* gameState) {
+void initialize(GameState* gameState, TextureAtlas* atlas) {
     *gameState = (GameState) {
         .state = STATE_MAIN_MENU,
         .gameTime = 0.0f,
@@ -139,36 +140,22 @@ void initialize(GameState* gameState) {
     };
 }
 
-bool pixelPerfectCollision(Image atlas, Rectangle src1, Rectangle dst1,
-                           Rectangle src2, Rectangle dst2, Rectangle overlap)
+// bool pixelPerfectCollision(Image atlas, Rectangle src1, Rectangle dst1,
+//                            Rectangle src2, Rectangle dst2, Rectangle overlap)
+bool pixelPerfectCollision(Color* pixel1, Color* pixel2, int width1, int width2, int height1, int height2, int offset1, int offset2, Rectangle dst1, Rectangle dst2, Rectangle overlap)
 {
     // Quick rejects
     if (overlap.width <= 0 || overlap.height <= 0) return false;
 
-    // Crop the two source images out of the atlas (ATLAS SPACE!)
-    // TODO: this is not needed, if we load a spritemask once from the atlas and pass it
-    Image img1 = ImageFromImage(atlas, src1);
-    Image img2 = ImageFromImage(atlas, src2);
+    const float sx1 = (float)width1  / dst1.width;   // screen->src scale for sprite 1
+    const float sy1 = (float)height1 / dst1.height;
+    const float sx2 = (float)width2  / dst2.width;   // screen->src scale for sprite 2
+    const float sy2 = (float)height2 / dst2.height;
 
-    // Ensure we have uncompressed data
-    ImageFormat(&img1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-    ImageFormat(&img2, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-
-    Color *px1 = LoadImageColors(img1);
-    Color *px2 = LoadImageColors(img2);
-    if (!px1 || !px2) {
-        if (px1) UnloadImageColors(px1);
-        if (px2) UnloadImageColors(px2);
-        UnloadImage(img1);
-        UnloadImage(img2);
-        return false;
-    }
-
-    const float sx1 = (float)img1.width  / dst1.width;   // screen->src scale for sprite 1
-    const float sy1 = (float)img1.height / dst1.height;
-    const float sx2 = (float)img2.width  / dst2.width;   // screen->src scale for sprite 2
-    const float sy2 = (float)img2.height / dst2.height;
-
+    // const float sx1 = dst1.width/ (float)width1;   // screen->src scale for sprite 1
+    // const float sy1 = dst1.height / (float)height1;
+    // const float sx2 = dst2.width / (float)width2;   // screen->src scale for sprite 2
+    // const float sy2 = dst2.height / (float)height2;
     // Iterate overlap in SCREEN space, sample both images in their LOCAL space
     const int ox = (int)floorf(overlap.x);
     const int oy = (int)floorf(overlap.y);
@@ -187,72 +174,36 @@ bool pixelPerfectCollision(Image atlas, Rectangle src1, Rectangle dst1,
             int u2 = (int)((sx - dst2.x) * sx2);
             int v2 = (int)((sy - dst2.y) * sy2);
 
+			DrawPixel((int)sx, (int)sy, (Color){255,0,255,128});
+
             // Bounds check
             if (u1 < 0 || v1 < 0 || u2 < 0 || v2 < 0) continue;
-            if (u1 >= img1.width || v1 >= img1.height) continue;
-            if (u2 >= img2.width || v2 >= img2.height) continue;
+            // if (u1 >= img1.width || v1 >= img1.height) continue;
+            // if (u2 >= img2.width || v2 >= img2.height) continue;
+            if (u1 >= width1 || v1 >= height1) continue;
+            if (u2 >= width2 || v2 >= height2) continue;
+            // Color a = pixel1[v1 * width1 + u1];
+			Color a = pixel1[v1 * width1 + (offset1 + u1)];
+            Color b = pixel2[v2 * width2 + u2];
 
-            Color a = px1[v1 * img1.width + u1];
-            Color b = px2[v2 * img2.width + u2];
+// sample with stride of totalWidth and offset in x
 
             if (a.a > 0 && b.a > 0) {
-                UnloadImageColors(px1);
-                UnloadImageColors(px2);
-                UnloadImage(img1);
-                UnloadImage(img2);
+                // UnloadImageColors(px1);
+                // UnloadImageColors(px2);
+                // UnloadImage(img1);
+                // UnloadImage(img2);
                 return true;
             }
         }
     }
 
-    UnloadImageColors(px1);
-    UnloadImageColors(px2);
-    UnloadImage(img1);
-    UnloadImage(img2);
+    // UnloadImageColors(px1);
+    // UnloadImageColors(px2);
+    // UnloadImage(img1);
+    // UnloadImage(img2);
     return false;
 }
-
-// bool pixelPerfectCollision(Image imageAtlas, Rectangle rect1, Rectangle rect2, Rectangle collisionRec)
-// {
-//
-//     Image image1 = ImageFromImage(imageAtlas, rect1);
-//     Image image2 = ImageFromImage(imageAtlas, rect2);
-//     Rectangle intCollisionRec = {
-//         .x = (int)collisionRec.x,
-//         .y = (int)collisionRec.y,
-//         .width = (int)ceilf(collisionRec.width),
-//         .height = (int)ceilf(collisionRec.height),
-//     };
-//     Image subImage1 = ImageFromImage(image1, intCollisionRec);
-//     Image subImage2 = ImageFromImage(image2, intCollisionRec);
-//
-//     Color* pixels1 = LoadImageColors(subImage1);
-//     Color* pixels2 = LoadImageColors(subImage2);
-//
-//     for (int j = 0; j < intCollisionRec.width-1; j++) {
-//         for (int i = 0; i < intCollisionRec.height-1; i++) {
-//             Color ca = pixels1[(int)(j + (intCollisionRec.height-1) * i)];
-//             Color cb = pixels2[(int)(j + (intCollisionRec.height-1) * i)];
-//             if (ca.a > 0 && cb.a > 0) {
-//                 UnloadImageColors(pixels1);
-//                 UnloadImageColors(pixels2);
-//                 UnloadImage(subImage1);
-//                 UnloadImage(subImage2);
-//                 UnloadImage(image1);
-//                 UnloadImage(image2);
-//                 return true;
-//             }
-//         }
-//     }
-//
-//     UnloadImageColors(pixels1);
-//     UnloadImageColors(pixels2);
-//     UnloadImage(subImage1);
-//     UnloadImage(subImage2);
-//     UnloadImage(image1);
-//     UnloadImage(image2);
-//     return false;
-// }
 
 void draw_text_centered(Font font, const char* text, Vector2 pos, float fontSize, float fontSpacing, Color color)
 {
@@ -273,10 +224,11 @@ int main() {
     int fontSize = 15;
 
     GameState gameState;
-    initialize(&gameState);
 
     // gameState.bullets[0].position = (Vector2){0, 0};
-    TextureAtlas atlas = initTextureAtlas();
+	SpriteMaskCache spriteMasks;
+    TextureAtlas atlas = initTextureAtlas(&spriteMasks);
+	initialize(&gameState, &atlas);
 
     while (!WindowShouldClose())
     {
@@ -546,7 +498,7 @@ int main() {
                         float size = 1.0f;
                         float minSpawnDistance = 50.0f * size;  
                         float asteroidXPosition = MAX(minSpawnDistance, GetRandomValue(0, SCREEN_WIDTH)); 
-                        float asteroidVelocity = GetRandomValue(30.0f, 65.0f) * 2.0f / (size);
+                        float asteroidVelocity = GetRandomValue(30.0f, 65.0f) * 4.0f / (size);
                         Asteroid asteroid = {
                             .position = (Vector2) {asteroidXPosition, 0},
                             .health = (int) (size+1.0) * 2.0,
@@ -558,10 +510,13 @@ int main() {
                         Sprite asteroidSprite;
                         if (whichAsteroid < 3) {
                             asteroidSprite = getSprite(SPRITE_ASTEROID1);
+							asteroid.pixels = spriteMasks.asteroid1.pixels;
                         } else if (whichAsteroid < 6) {
                             asteroidSprite = getSprite(SPRITE_ASTEROID2);
+							asteroid.pixels = spriteMasks.asteroid2.pixels;
                         } else {
                             asteroidSprite = getSprite(SPRITE_ASTEROID3);
+							asteroid.pixels = spriteMasks.asteroid3.pixels;
                             // asteroid.size = asteroid.size / 2.0f;
                         }
                         asteroid.sprite = asteroidSprite;
@@ -602,6 +557,7 @@ int main() {
                                 if (--asteroid->health < 1)
                                 {
                                     gameState.experience += MAX((int)(asteroid->size * 100),1);
+									// if (asteroid->pixels) UnloadImageColors(asteroid->pixels);
                                     *asteroid = gameState.asteroids[--gameState.asteroidCount];
                                 }
                             }
@@ -614,8 +570,8 @@ int main() {
                             .x = gameState.player.playerPosition.x - playerWidth/2.0f,
                             .y = gameState.player.playerPosition.y - playerHeight/2.0f,
                         };
-                        // DrawRectangleLines(asteroidRec.x, asteroidRec.y, asteroidRec.width, asteroidRec.height, GREEN);
-                        // DrawRectangleLinesEx(playerRec, 1.0, BLUE);
+                        DrawRectangleLines(asteroidRec.x, asteroidRec.y, asteroidRec.width, asteroidRec.height, GREEN);
+                        DrawRectangleLinesEx(playerRec, 1.0, BLUE);
                         Rectangle screenRectExtended = {
                             .width = SCREEN_WIDTH + asteroid->sprite.coords.width,
                             .height = SCREEN_HEIGHT + asteroid->sprite.coords.height,
@@ -625,21 +581,39 @@ int main() {
                         if(!CheckCollisionPointRec(asteroid->position, screenRectExtended))
                         {
                             // Replace with last asteroid
+							// if (asteroid->pixels) UnloadImageColors(asteroid->pixels);
                             *asteroid = gameState.asteroids[--gameState.asteroidCount];
                         }
                         if(CheckCollisionRecs(asteroidRec, playerRec) && gameState.player.invulTime <= 0.0f)
                         {
                             Rectangle collisionRec;
                             collisionRec = GetCollisionRec(asteroidRec, playerRec);
-                            // DrawRectangleLinesEx(collisionRec, 2.0, RED);
+                            DrawRectangleLinesEx(collisionRec, 2.0, RED);
 
                             Rectangle playerDst = playerRec; // on-screen rectangle
-                            Rectangle playerSrc = GetCurrentAnimationFrame(atlas.playerAnimation); // atlas rect
+                            // Rectangle playerSrc = GetCurrentAnimationFrame(atlas.playerAnimation); // atlas rect
                             Rectangle asteroidDst = asteroidRec; // on-screen rectangle
-                            Rectangle asteroidSrc = asteroid->sprite.coords; // atlas rect
-                            if (pixelPerfectCollision(atlas.imageAtlas, playerSrc, playerDst, asteroidSrc, asteroidDst, collisionRec))
+                            // Rectangle asteroidSrc = asteroid->sprite.coords; // atlas rect
+
+							// float playerTmpWidth = (gameState.player.sprite.coords.width / gameState.player.animationFrames) * gameState.player.size;
+							// float playerTmpHeight = gameState.player.sprite.coords.height * gameState.player.size;
+							// float asteroidWidth = asteroid->sprite.coords.width * asteroid->size;
+							// float asteroidHeight = asteroid->sprite.coords.height * asteroid->size;
+							int playerTmpWidth = (int)(gameState.player.sprite.coords.width / gameState.player.animationFrames);
+							int playerTmpHeight = gameState.player.sprite.coords.height;
+							int asteroidWidth = asteroid->sprite.coords.width;
+							int asteroidHeight = asteroid->sprite.coords.height;
+
+                            // Rectangle playerSrc = GetCurrentAnimationFrame(atlas.playerAnimation); 
+							int frame = GetCurrentAnimationFrameIndex(atlas.playerAnimation);
+							int frameWidth  = playerTmpWidth;  // currently this is just one frame width
+							// int totalWidth  = frameWidth * gameState.player.animationFrames;
+							int frameOffset = frame * frameWidth;
+
+							if (pixelPerfectCollision(spriteMasks.player.pixels, asteroid->pixels, playerTmpWidth, asteroidWidth, playerTmpHeight, asteroidHeight, frameOffset, 0, playerDst, asteroidDst, collisionRec))
                             {
                                 gameState.player.invulTime = gameState.player.invulDuration;
+								// if (asteroid->pixels) UnloadImageColors(asteroid->pixels);
                                 *asteroid = gameState.asteroids[--gameState.asteroidCount];
                                 if(--gameState.player.playerHealth < 1) 
                                 {
@@ -650,6 +624,7 @@ int main() {
                         // Check if asteroid is off-screen
                         if (asteroid->position.y > SCREEN_HEIGHT + asteroid->sprite.coords.height * asteroid->size)
                         {
+							// if (asteroid->pixels) UnloadImageColors(asteroid->pixels);
                             *asteroid = gameState.asteroids[--gameState.asteroidCount];
                         }
                     }
@@ -778,7 +753,7 @@ int main() {
                 draw_text_centered(font, scoreText, (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 30}, 20, fontSpacing, WHITE);
                 draw_text_centered(font, "<Press enter to try again>", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 60}, 20, fontSpacing, WHITE);
                 if (IsKeyPressed(KEY_ENTER)) {
-                    initialize(&gameState);
+                    initialize(&gameState, &atlas);
                     gameState.state = STATE_RUNNING;
 
                 }
@@ -798,8 +773,12 @@ int main() {
     }
 
     FreeSpriteAnimation(atlas.playerAnimation);
-    UnloadImage(atlas.imageAtlas);
     UnloadFont(font);
+	UnloadImageColors(spriteMasks.player.pixels);
+	UnloadImageColors(spriteMasks.asteroid1.pixels);
+	UnloadImageColors(spriteMasks.asteroid2.pixels);
+	UnloadImageColors(spriteMasks.asteroid3.pixels);
+
     CloseWindow();
     return 0;
 }

@@ -41,6 +41,20 @@ typedef struct Sprite {
     Rectangle coords;
 } Sprite;
 
+typedef struct SpriteMask {
+    Color* pixels;
+    int width;
+    int height;
+} SpriteMask;
+
+typedef struct SpriteMaskCache {
+    SpriteMask player;
+    SpriteMask asteroid1;
+    SpriteMask asteroid2;
+    SpriteMask asteroid3;
+} SpriteMaskCache;
+
+
 internal Sprite getSprite(SpriteID spriteID)
 {
     Sprite s = {};
@@ -61,12 +75,31 @@ internal Sprite getSprite(SpriteID spriteID)
     }
     return s;
 }
+
+internal Color* getPixelsFromAtlas(Image atlasImage, Sprite sprite)
+{
+    // Extract the sprite rectangle as an Image from the atlas image
+    Image img = ImageFromImage(atlasImage, sprite.coords);
+    // Ensure uncompressed RGBA8 format
+    ImageFormat(&img, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    // Allocate pixel data (must be freed with UnloadImageColors)
+    Color *pixels = LoadImageColors(img);
+    // Free temporary Image (LoadImageColors copies pixel data)
+    UnloadImage(img);
+    return pixels;
+}
+
 #define ASSETS_IMPLEMENTATION
 #ifdef ASSETS_IMPLEMENTATION
 
 Rectangle GetCurrentAnimationFrame(SpriteAnimation animation) {
     int index = (int)(GetTime() * animation.framesPerSecond) % animation.rectanglesLentgh;
     return animation.rectangles[index];
+}
+
+int GetCurrentAnimationFrameIndex(SpriteAnimation animation) {
+    int index = (int)(GetTime() * animation.framesPerSecond) % animation.rectanglesLentgh;
+    return index;
 }
 
 SpriteAnimation createSpriteAnimation(Texture2D atlas, int framesPerSecond, Rectangle rectangles[], int length)
@@ -109,21 +142,14 @@ void FreeSpriteAnimation(SpriteAnimation animation)
     free(animation.rectangles);
 }
 
-TextureAtlas initTextureAtlas()
+TextureAtlas initTextureAtlas(SpriteMaskCache* spriteMasks)
 {
     TextureAtlas atlas;
     atlas.textureAtlas = LoadTexture("assets/textureAtlas.png");
-    atlas.imageAtlas = LoadImageFromTexture(atlas.textureAtlas);
-    // Texture2D playerTexture = LoadTexture("assets/rocketNew.png");
-    // atlas.playerAnimation = createSpriteAnimation(playerTexture, 10, (Rectangle[]) {
-    //         (Rectangle){0,0,32,62},   (Rectangle){32,0,32,62},  (Rectangle){64,0,32,62},  (Rectangle){96,0,32,62},
-    //         (Rectangle){128,0,32,62}, (Rectangle){160,0,32,62}, (Rectangle){192,0,32,62}, (Rectangle){224,0,32,62},
-    //         (Rectangle){256,0,32,62}, (Rectangle){288,0,32,62}, (Rectangle){320,0,32,62}, (Rectangle){352,0,32,62},
-    //         (Rectangle){384,0,32,62}, (Rectangle){416,0,32,62}, (Rectangle){448,0,32,62}, (Rectangle){480,0,32,62},
-    //         (Rectangle){512,0,32,62}, (Rectangle){544,0,32,62}, (Rectangle){576,0,32,62}, (Rectangle){608,0,32,62},        
-    //         }, 20);
-    //
-    //
+
+	Image atlasImage = LoadImageFromTexture(atlas.textureAtlas);
+    ImageFormat(&atlasImage, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+
     float textureWidth = 38;
     float textureHeight = 64;
     atlas.playerAnimation = createSpriteAnimation(atlas.textureAtlas, 7, (Rectangle[]) {
@@ -133,6 +159,25 @@ TextureAtlas initTextureAtlas()
                         (Rectangle){292+3*textureWidth,74,textureWidth,textureHeight},
                         (Rectangle){292+4*textureWidth,74,textureWidth,textureHeight},
                         }, 5);
+
+	spriteMasks->player.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_PLAYER));
+	spriteMasks->player.width = getSprite(SPRITE_PLAYER).coords.width / 5;
+	spriteMasks->player.height = getSprite(SPRITE_PLAYER).coords.height;
+
+	spriteMasks->asteroid1.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_ASTEROID1));
+	spriteMasks->asteroid1.width = getSprite(SPRITE_ASTEROID1).coords.width;
+	spriteMasks->asteroid1.height = getSprite(SPRITE_ASTEROID1).coords.height;
+
+	spriteMasks->asteroid2.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_ASTEROID2));
+	spriteMasks->asteroid2.width = getSprite(SPRITE_ASTEROID2).coords.width;
+	spriteMasks->asteroid2.height = getSprite(SPRITE_ASTEROID2).coords.height;
+
+	spriteMasks->asteroid3.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_ASTEROID3));
+	spriteMasks->asteroid3.width = getSprite(SPRITE_ASTEROID3).coords.width;
+	spriteMasks->asteroid3.height = getSprite(SPRITE_ASTEROID3).coords.height;
+
+    UnloadImage(atlasImage);
+
     return atlas;
 }
 
