@@ -76,10 +76,12 @@ internal Sprite getSprite(SpriteID spriteID)
     return s;
 }
 
-internal Color* getPixelsFromAtlas(Image atlasImage, Sprite sprite)
+internal Color* getPixelsFromAtlas(Image atlasImage, Sprite sprite, int numberOfFrames)
 {
     // Extract the sprite rectangle as an Image from the atlas image
-    Image img = ImageFromImage(atlasImage, sprite.coords);
+	Rectangle src = sprite.coords;
+	src.width = src.width / numberOfFrames;
+    Image img = ImageFromImage(atlasImage, src);
     // Ensure uncompressed RGBA8 format
     ImageFormat(&img, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
     // Allocate pixel data (must be freed with UnloadImageColors)
@@ -160,19 +162,19 @@ TextureAtlas initTextureAtlas(SpriteMaskCache* spriteMasks)
                         (Rectangle){292+4*textureWidth,74,textureWidth,textureHeight},
                         }, 5);
 
-	spriteMasks->player.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_PLAYER));
+	spriteMasks->player.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_PLAYER), 5);
 	spriteMasks->player.width = getSprite(SPRITE_PLAYER).coords.width / 5;
 	spriteMasks->player.height = getSprite(SPRITE_PLAYER).coords.height;
 
-	spriteMasks->asteroid1.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_ASTEROID1));
+	spriteMasks->asteroid1.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_ASTEROID1), 1);
 	spriteMasks->asteroid1.width = getSprite(SPRITE_ASTEROID1).coords.width;
 	spriteMasks->asteroid1.height = getSprite(SPRITE_ASTEROID1).coords.height;
 
-	spriteMasks->asteroid2.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_ASTEROID2));
+	spriteMasks->asteroid2.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_ASTEROID2), 1);
 	spriteMasks->asteroid2.width = getSprite(SPRITE_ASTEROID2).coords.width;
 	spriteMasks->asteroid2.height = getSprite(SPRITE_ASTEROID2).coords.height;
 
-	spriteMasks->asteroid3.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_ASTEROID3));
+	spriteMasks->asteroid3.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_ASTEROID3), 1);
 	spriteMasks->asteroid3.width = getSprite(SPRITE_ASTEROID3).coords.width;
 	spriteMasks->asteroid3.height = getSprite(SPRITE_ASTEROID3).coords.height;
 
