@@ -72,7 +72,7 @@ typedef struct Player {
     Vector2 playerPosition;
     int playerHealth;
     Sprite sprite;
-    float size;
+    int size;
     int animationFrames;
     float invulTime;
     float invulDuration;
@@ -135,7 +135,7 @@ void initialize(GameState* gameState, TextureAtlas* atlas) {
     gameState->player = (Player) {
         .playerVelocity = 200,
         .playerPosition = (Vector2){SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f},
-        .playerHealth = 3,
+        .playerHealth = 10,
         .playerMultishot = false,
         .sprite = getSprite(SPRITE_PLAYER),
         .size = 2,
@@ -480,11 +480,12 @@ int main() {
                     gameState.spawnTime += GetFrameTime();
                     if (gameState.spawnTime > gameState.asteroidSpawnRate && gameState.asteroidCount < MAX_ASTEROIDS) 
                     {
-                        // float size = GetRandomValue(50.0, 200.0) / 100.0f;
-                        float size = 1.0f;
+                        // int size = (int)GetRandomValue(1, 3);
+                        float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
+                        // float size = 1.0f;
                         float minSpawnDistance = 50.0f * size;  
                         float asteroidXPosition = MAX(minSpawnDistance, GetRandomValue(0, SCREEN_WIDTH)); 
-                        float asteroidVelocity = GetRandomValue(30.0f, 65.0f) * 5.0f / (size);
+                        float asteroidVelocity = GetRandomValue(30.0f, 65.0f) * 5.0f / (float)size;
                         Asteroid asteroid = {
                             .position = (Vector2) {asteroidXPosition, 0},
                             .health = (int) (size+1.0) * 2.0,
