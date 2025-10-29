@@ -132,10 +132,13 @@ SpriteAnimation createSpriteAnimation(Texture2D atlas, int framesPerSecond, Rect
     return spriteAnimation;
 }
 
-void DrawSpriteAnimationPro(SpriteAnimation animation, Rectangle destination, Vector2 origin, float rotation, Color tint)
+void DrawSpriteAnimationPro(SpriteAnimation animation, Rectangle destination, Vector2 origin, float rotation, Color tint, Shader shader)
 {
+	int texSizeLoc = GetShaderLocation(shader, "textureSize");
     int index = (int)(GetTime() * animation.framesPerSecond) % animation.rectanglesLentgh;
     Rectangle source = animation.rectangles[index];
+	Vector2 texSize = { animation.rectangles->width, animation.rectangles->height };
+	SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
     DrawTexturePro(animation.atlas, source, destination, origin, rotation, tint);
 }
 
@@ -148,6 +151,7 @@ TextureAtlas initTextureAtlas(SpriteMaskCache* spriteMasks)
 {
     TextureAtlas atlas;
     atlas.textureAtlas = LoadTexture("assets/textureAtlas.png");
+	// SetTextureFilter(atlas.textureAtlas, TEXTURE_FILTER_BILINEAR);
 
 	Image atlasImage = LoadImageFromTexture(atlas.textureAtlas);
     ImageFormat(&atlasImage, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);

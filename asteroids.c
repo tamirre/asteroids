@@ -21,6 +21,8 @@
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
+#define GLSL_VERSION 330
+
 typedef enum State
 {
     STATE_MAIN_MENU,
@@ -217,9 +219,13 @@ int main() {
     TextureAtlas atlas = initTextureAtlas(&spriteMasks);
 	initialize(&gameState, &atlas);
 
+	fprintf(stderr, "GLSL_VERSION: %d\n", GLSL_VERSION);
+	Shader shader = LoadShader(0, TextFormat("shaders/test.glsl", GLSL_VERSION));
+	int texSizeLoc = GetShaderLocation(shader, "textureSize");
     while (!WindowShouldClose())
     {
         BeginDrawing();
+		BeginShaderMode(shader);
         ClearBackground(BLACK);
         
         const Rectangle screenRect = {
@@ -392,6 +398,8 @@ int main() {
                             .x = bullet1.position.x,
                             .y = bullet1.position.y,
                         };
+						Vector2 texSize = { bullet1Rec.width, bullet1Rec.height };
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
                         DrawTexturePro(atlas.textureAtlas, bullet1.sprite.coords, bullet1Rec, (Vector2){0, 0}, bullet1.rotation, WHITE);
                         Bullet bullet2 = 
                         {
@@ -410,6 +418,8 @@ int main() {
                             .x = bullet2.position.x,
                             .y = bullet2.position.y,
                         };
+						texSize = (Vector2){ bullet2Rec.width, bullet2Rec.height };
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
                         DrawTexturePro(atlas.textureAtlas, bullet2.sprite.coords, bullet2Rec, (Vector2){0, 0}, bullet2.rotation, WHITE);
                         Bullet bullet3 = 
                         {
@@ -428,6 +438,8 @@ int main() {
                             .x = bullet3.position.x,
                             .y = bullet3.position.y,
                         };
+						texSize = (Vector2){ bullet3Rec.width, bullet3Rec.height };
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
                         DrawTexturePro(atlas.textureAtlas, bullet3.sprite.coords, bullet3Rec, (Vector2){0, 0}, bullet3.rotation, WHITE);
                         gameState.player.shootTime -= 1.0f/gameState.player.fireRate;
                     }
@@ -450,6 +462,8 @@ int main() {
                             .x = bullet.position.x,
                             .y = bullet.position.y,
                         };
+						Vector2 texSize = { bulletRec.width, bulletRec.height };
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
                         DrawTexturePro(atlas.textureAtlas, bullet.sprite.coords, bulletRec, (Vector2){0, 0}, bullet.rotation, WHITE);
                     }
                 }
@@ -471,6 +485,8 @@ int main() {
                             .x = bullet->position.x,
                             .y = bullet->position.y,
                         };
+						Vector2 texSize = { bulletRec.width, bulletRec.height };
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
                         DrawTexturePro(atlas.textureAtlas, bullet->sprite.coords, bulletRec, (Vector2){0, 0}, bullet->rotation, WHITE);
                         // DrawTextureRec(atlas.textureAtlas, bullet->sprite.coords, bullet->position, WHITE);
                     }
@@ -606,6 +622,9 @@ int main() {
                             .y = asteroid->position.y - height, 
                         };
                         float rotation = 0.0f;
+
+						Vector2 texSize = { width, height };
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
                         DrawTexturePro(atlas.textureAtlas, asteroid->sprite.coords, asteroidRec, (Vector2){0, 0}, rotation, WHITE);
                     }
                 }
@@ -617,10 +636,10 @@ int main() {
                                          gameState.player.sprite.coords.height * gameState.player.size}; // origin in coordinates and scale
                 Vector2 origin = {0, 0}; // so it draws from top left of image
                 if (gameState.player.invulTime <= 0.0f) {
-                    DrawSpriteAnimationPro(atlas.playerAnimation, destination, origin, 0, WHITE);
+                    DrawSpriteAnimationPro(atlas.playerAnimation, destination, origin, 0, WHITE, shader);
                 } else {
                     if (((int)(gameState.player.invulTime * 10)) % 2 == 0) {
-                        DrawSpriteAnimationPro(atlas.playerAnimation, destination, origin, 0, WHITE);
+                        DrawSpriteAnimationPro(atlas.playerAnimation, destination, origin, 0, WHITE, shader);
                     }
                 }
                 // Update player health
@@ -691,9 +710,9 @@ int main() {
                 DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_MULTISHOT_UPGRADE).coords, (Vector2){pos_x, pos_y}, WHITE);
                 DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_DAMAGE_UPGRADE).coords, (Vector2){pos_x - spacing_x, pos_y}, WHITE);
                 DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_FIRERATE_UPGRADE).coords, (Vector2){pos_x + spacing_x, pos_y}, WHITE);
-                if (IsKeyPressed(KEY_A)) {
+                if (IsKeyPressed(KEY_LEFT)) {
                     gameState.pickedUpgrade = (Upgrade)((gameState.pickedUpgrade + 1) % UPGRADE_COUNT);
-                } else if (IsKeyPressed(KEY_D)) {
+                } else if (IsKeyPressed(KEY_RIGHT)) {
                     gameState.pickedUpgrade = (Upgrade)((gameState.pickedUpgrade - 1 + UPGRADE_COUNT) % UPGRADE_COUNT);
                 }
                 if (IsKeyPressed(KEY_ENTER)) {                    
@@ -733,9 +752,12 @@ int main() {
             }
         }
         DrawFPS(10, 40);
+
+		EndShaderMode();
         EndDrawing();
     }
 
+	UnloadShader(shader);
 	cleanup(atlas, font, spriteMasks);
 
     CloseWindow();
