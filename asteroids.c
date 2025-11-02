@@ -23,6 +23,8 @@
 
 #define GLSL_VERSION 330
 
+#define ASSERT(x) if (!(x)) { printf("Assertion failed on line %d: %s\n", __LINE__, #x); exit(1); }
+
 typedef enum State
 {
     STATE_MAIN_MENU,
@@ -116,6 +118,7 @@ void cleanup(TextureAtlas atlas, Font font, SpriteMaskCache spriteMasks) {
 	UnloadImageColors(spriteMasks.asteroid1.pixels);
 	UnloadImageColors(spriteMasks.asteroid2.pixels);
 	UnloadImageColors(spriteMasks.asteroid3.pixels);
+	UnloadImageColors(spriteMasks.bullet.pixels);
 }
 
 void initialize(GameState* gameState, TextureAtlas* atlas) {
@@ -218,8 +221,19 @@ int main() {
 	SpriteMaskCache spriteMasks;
     TextureAtlas atlas = initTextureAtlas(&spriteMasks);
 	initialize(&gameState, &atlas);
+	InitAudioDevice();
+	ASSERT(IsAudioDeviceReady());
+	Music music = LoadMusicStream("audio/soundtrack.mp3");
+	ASSERT(IsMusicValid(music));
+	Sound hitFx = LoadSound("audio/hit.wav");
+	ASSERT(IsSoundValid(hitFx));
+	// Sound gunFx = LoadSound("audio/gun.mp3");
+	Sound laserFx = LoadSound("audio/laser.wav");
+	ASSERT(IsSoundValid(laserFx));
+	PlayMusicStream(music);
+	SetMusicVolume(music, 0.25);
 
-	fprintf(stderr, "GLSL_VERSION: %d\n", GLSL_VERSION);
+	// fprintf(stderr, "GLSL_VERSION: %d\n", GLSL_VERSION);
 	Shader shader = LoadShader(0, TextFormat("shaders/test.glsl", GLSL_VERSION));
 	int texSizeLoc = GetShaderLocation(shader, "textureSize");
     while (!WindowShouldClose())
@@ -254,6 +268,7 @@ int main() {
                 Color backgroundColor = ColorFromHSV(258, 1, 0.07);
                 ClearBackground(backgroundColor);
 
+				UpdateMusicStream(music);
                 // Spawn initial stars for parallax
                 {
                     if (gameState.initStars == 0)
@@ -378,6 +393,8 @@ int main() {
                     && gameState.player.shootTime >= 1.0f/gameState.player.fireRate
                     && gameState.bulletCount <= MAX_BULLETS)
                 {
+					// PlaySound(gunFx);
+					PlaySound(laserFx);
                     if (gameState.player.playerMultishot == true && gameState.bulletCount < MAX_BULLETS-3)
                     {
                         float bulletOffset = 0.0f;
@@ -552,16 +569,23 @@ int main() {
                                 .y = gameState.bullets[bulletIndex].position.y,
                             };
                             // DrawRectangleLines(bulletRec.x, bulletRec.y, bulletRec.width, bulletRec.height, GREEN);
-                            if(CheckCollisionRecs(asteroidRec, bulletRec))
-                            {
-                                // Replace with bullet with last bullet
-                                *bullet = gameState.bullets[--gameState.bulletCount];
-                                if (--asteroid->health < 1)
-                                {
-                                    gameState.experience += MAX((int)(asteroid->size * 100),1);
-                                    *asteroid = gameState.asteroids[--gameState.asteroidCount];
-                                }
-                            }
+							if(CheckCollisionRecs(asteroidRec, bulletRec))
+							{
+								Rectangle collisionRec = GetCollisionRec(asteroidRec, bulletRec);
+								if (pixelPerfectCollision(spriteMasks.bullet.pixels, asteroid->pixels, 
+											bullet->sprite.coords.width, asteroid->sprite.coords.width,
+											bullet->sprite.coords.height, asteroid->sprite.coords.height,
+											bulletRec, asteroidRec, collisionRec))
+								{
+									// Replace with bullet with last bullet
+									*bullet = gameState.bullets[--gameState.bulletCount];
+									if (--asteroid->health < 1)
+									{
+										gameState.experience += MAX((int)(asteroid->size * 100),1);
+										*asteroid = gameState.asteroids[--gameState.asteroidCount];
+									}
+								}
+							}
                         }
                         float playerWidth = gameState.player.sprite.coords.width/gameState.player.animationFrames * gameState.player.size;
                         float playerHeight = gameState.player.sprite.coords.height * gameState.player.size;
@@ -594,6 +618,7 @@ int main() {
 													  gameState.player.sprite.coords.height, asteroid->sprite.coords.height, 
 													  playerRec, asteroidRec, collisionRec))
                             {
+								PlaySound(hitFx);
                                 gameState.player.invulTime = gameState.player.invulDuration;
                                 *asteroid = gameState.asteroids[--gameState.asteroidCount];
                                 if(--gameState.player.playerHealth < 1) 
@@ -677,7 +702,7 @@ int main() {
             }
             case STATE_UPGRADE:
             {
-                
+				UpdateMusicStream(music);
                 ClearBackground(BLACK);
                 draw_text_centered(font, "LEVEL UP!", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f - 80.0}, 40, fontSpacing, WHITE);
                 draw_text_centered(font, "CHOOSE UPGRADE", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f - 35.0}, 40, fontSpacing, WHITE);
@@ -744,9 +769,11 @@ int main() {
             }
             case STATE_PAUSED:
             {
+				PauseMusicStream(music);
                 draw_text_centered(font, "Game is paused...", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f}, 40, fontSpacing, WHITE);
                 if (IsKeyPressed(KEY_P)) {
                     gameState.state = STATE_RUNNING;
+					ResumeMusicStream(music);
                 }
                 break;
             }
@@ -757,6 +784,10 @@ int main() {
         EndDrawing();
     }
 
+	UnloadMusicStream(music);
+	UnloadSound(hitFx);
+	UnloadSound(laserFx);
+	CloseAudioDevice();
 	UnloadShader(shader);
 	cleanup(atlas, font, spriteMasks);
 

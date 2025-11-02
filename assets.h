@@ -52,6 +52,7 @@ typedef struct SpriteMaskCache {
     SpriteMask asteroid1;
     SpriteMask asteroid2;
     SpriteMask asteroid3;
+	SpriteMask bullet;
 } SpriteMaskCache;
 
 
@@ -169,6 +170,10 @@ TextureAtlas initTextureAtlas(SpriteMaskCache* spriteMasks)
 	spriteMasks->player.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_PLAYER), 5);
 	spriteMasks->player.width = getSprite(SPRITE_PLAYER).coords.width / 5;
 	spriteMasks->player.height = getSprite(SPRITE_PLAYER).coords.height;
+
+	spriteMasks->bullet.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_BULLET), 1);
+	spriteMasks->bullet.width = getSprite(SPRITE_BULLET).coords.width;
+	spriteMasks->bullet.height = getSprite(SPRITE_BULLET).coords.height;
 
 	spriteMasks->asteroid1.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_ASTEROID1), 1);
 	spriteMasks->asteroid1.width = getSprite(SPRITE_ASTEROID1).coords.width;
