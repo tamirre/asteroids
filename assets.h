@@ -61,17 +61,17 @@ internal Sprite getSprite(SpriteID spriteID)
     Sprite s = {};
     switch(spriteID)
     {
-        case SPRITE_PLAYER:           {s.coords = (Rectangle){292,  74, 190, 64}; break;}
-        case SPRITE_STAR1:            {s.coords = (Rectangle){0,  69,   5,  5}; break;}
-        case SPRITE_STAR2:            {s.coords = (Rectangle){5,  69,   3,  3}; break;}
-        case SPRITE_BULLET:           {s.coords = (Rectangle){0,  52,   2,  7}; break;}
-        case SPRITE_ASTEROID1:        {s.coords = (Rectangle){192,   74,  50, 50}; break;}
-        case SPRITE_ASTEROID2:        {s.coords = (Rectangle){242,   74,  50, 50}; break;}
-        case SPRITE_ASTEROID3:        {s.coords = (Rectangle){192,   124,  74, 88}; break;}
-        case SPRITE_HEART:            {s.coords = (Rectangle){2,  52,  17, 17}; break;}
-        case SPRITE_MULTISHOT_UPGRADE:{s.coords = (Rectangle){128,74,  64, 80}; break;}
-        case SPRITE_DAMAGE_UPGRADE:   {s.coords = (Rectangle){0,  74,  64, 80}; break;}
-        case SPRITE_FIRERATE_UPGRADE: {s.coords = (Rectangle){64, 74,  64, 80}; break;}
+        case SPRITE_PLAYER:           {s.coords = (Rectangle){292, 74, 190, 64}; break;}
+        case SPRITE_STAR1:            {s.coords = (Rectangle){0,   69,   5,  5}; break;}
+        case SPRITE_STAR2:            {s.coords = (Rectangle){5,   69,   3,  3}; break;}
+        case SPRITE_BULLET:           {s.coords = (Rectangle){0,   52,   2,  7}; break;}
+        case SPRITE_ASTEROID1:        {s.coords = (Rectangle){1,   155,  50, 50}; break;}
+        case SPRITE_ASTEROID2:        {s.coords = (Rectangle){52,  155,  50, 50}; break;}
+        case SPRITE_ASTEROID3:        {s.coords = (Rectangle){1,   206,  74, 88}; break;}
+        case SPRITE_HEART:            {s.coords = (Rectangle){2,   52,   17, 17}; break;}
+        case SPRITE_MULTISHOT_UPGRADE:{s.coords = (Rectangle){128, 74,   64, 80}; break;}
+        case SPRITE_DAMAGE_UPGRADE:   {s.coords = (Rectangle){0,   74,   64, 80}; break;}
+        case SPRITE_FIRERATE_UPGRADE: {s.coords = (Rectangle){64,  74,   64, 80}; break;}
         default: { } 
     }
     return s;
@@ -139,7 +139,7 @@ void DrawSpriteAnimationPro(SpriteAnimation animation, Rectangle destination, Ve
     int index = (int)(GetTime() * animation.framesPerSecond) % animation.rectanglesLentgh;
     Rectangle source = animation.rectangles[index];
 	Vector2 texSize = { animation.rectangles->width, animation.rectangles->height };
-	SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
+	SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
     DrawTexturePro(animation.atlas, source, destination, origin, rotation, tint);
 }
 
@@ -152,7 +152,7 @@ TextureAtlas initTextureAtlas(SpriteMaskCache* spriteMasks)
 {
     TextureAtlas atlas;
     atlas.textureAtlas = LoadTexture("assets/textureAtlas.png");
-	// SetTextureFilter(atlas.textureAtlas, TEXTURE_FILTER_BILINEAR);
+	SetTextureFilter(atlas.textureAtlas, TEXTURE_FILTER_BILINEAR);
 
 	Image atlasImage = LoadImageFromTexture(atlas.textureAtlas);
     ImageFormat(&atlasImage, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);

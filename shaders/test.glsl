@@ -1,22 +1,25 @@
 #version 330
 
-in vec2 fragTexCoord;
-in vec4 fragColor;
-
 uniform sampler2D texture0;
-uniform vec2 textureSize; // set from Raylib: (texture.width, texture.height)
-
+uniform ivec2 textureSize; // <-- you must set this from C++
+in vec2 fragTexCoord;
 out vec4 finalColor;
+
+vec2 uv_klems(vec2 uv, ivec2 textureSize) {
+    vec2 pixels = uv * textureSize + 0.5;
+
+    vec2 fl = floor(pixels);
+    vec2 fr = fract(pixels);
+    vec2 aa = fwidth(pixels) * 0.75;
+
+    fr = smoothstep(vec2(0.5) - aa, vec2(0.5) + aa, fr);
+
+    return (fl + fr - 0.5) / textureSize;
+}
 
 void main()
 {
-    // Compute subpixel-correct UV sampling
-    // Offsets half a pixel back into the texel to avoid sampling drift
-    vec2 uv = fragTexCoord;
-    uv = uv * textureSize - 0.5;
-    uv = floor(uv) + fract(uv);
-    uv = (uv + 0.5) / textureSize;
-
-    finalColor = texture(texture0, uv) * fragColor;
+    vec2 uv = uv_klems(fragTexCoord, textureSize);
+    finalColor = texture(texture0, uv);
 }
 

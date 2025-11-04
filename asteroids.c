@@ -10,8 +10,8 @@
 
 // #define SCREEN_WIDTH (700.0f)
 // #define SCREEN_HEIGHT (400.0f)
-#define SCREEN_WIDTH (1400.0f)
-#define SCREEN_HEIGHT (700.0f)
+#define SCREEN_WIDTH (1080.0f)
+#define SCREEN_HEIGHT (720.0f)
 #define WINDOW_TITLE ("Asteroids")
 #define MAX_BULLETS (1000)
 #define MAX_ASTEROIDS (100)
@@ -231,10 +231,14 @@ int main() {
 	Sound laserFx = LoadSound("audio/laser.wav");
 	ASSERT(IsSoundValid(laserFx));
 	PlayMusicStream(music);
-	SetMusicVolume(music, 0.25);
+	SetMusicVolume(music, 0.15);
+	SetSoundVolume(hitFx, 0.5);
+	SetSoundVolume(laserFx, 0.5);
+	// fprintf(stderr, "GLSL_VERSION: %d\n", GLSL_VERSION);
 
 	// fprintf(stderr, "GLSL_VERSION: %d\n", GLSL_VERSION);
 	Shader shader = LoadShader(0, TextFormat("shaders/test.glsl", GLSL_VERSION));
+	// Shader shader = LoadShader(0, TextFormat("shaders/test2.glsl", GLSL_VERSION));
 	int texSizeLoc = GetShaderLocation(shader, "textureSize");
     while (!WindowShouldClose())
     {
@@ -416,7 +420,7 @@ int main() {
                             .y = bullet1.position.y,
                         };
 						Vector2 texSize = { bullet1Rec.width, bullet1Rec.height };
-						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
                         DrawTexturePro(atlas.textureAtlas, bullet1.sprite.coords, bullet1Rec, (Vector2){0, 0}, bullet1.rotation, WHITE);
                         Bullet bullet2 = 
                         {
@@ -436,7 +440,7 @@ int main() {
                             .y = bullet2.position.y,
                         };
 						texSize = (Vector2){ bullet2Rec.width, bullet2Rec.height };
-						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
                         DrawTexturePro(atlas.textureAtlas, bullet2.sprite.coords, bullet2Rec, (Vector2){0, 0}, bullet2.rotation, WHITE);
                         Bullet bullet3 = 
                         {
@@ -456,7 +460,7 @@ int main() {
                             .y = bullet3.position.y,
                         };
 						texSize = (Vector2){ bullet3Rec.width, bullet3Rec.height };
-						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
                         DrawTexturePro(atlas.textureAtlas, bullet3.sprite.coords, bullet3Rec, (Vector2){0, 0}, bullet3.rotation, WHITE);
                         gameState.player.shootTime -= 1.0f/gameState.player.fireRate;
                     }
@@ -480,7 +484,7 @@ int main() {
                             .y = bullet.position.y,
                         };
 						Vector2 texSize = { bulletRec.width, bulletRec.height };
-						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
                         DrawTexturePro(atlas.textureAtlas, bullet.sprite.coords, bulletRec, (Vector2){0, 0}, bullet.rotation, WHITE);
                     }
                 }
@@ -503,7 +507,7 @@ int main() {
                             .y = bullet->position.y,
                         };
 						Vector2 texSize = { bulletRec.width, bulletRec.height };
-						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
                         DrawTexturePro(atlas.textureAtlas, bullet->sprite.coords, bulletRec, (Vector2){0, 0}, bullet->rotation, WHITE);
                         // DrawTextureRec(atlas.textureAtlas, bullet->sprite.coords, bullet->position, WHITE);
                     }
@@ -649,7 +653,7 @@ int main() {
                         float rotation = 0.0f;
 
 						Vector2 texSize = { width, height };
-						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
                         DrawTexturePro(atlas.textureAtlas, asteroid->sprite.coords, asteroidRec, (Vector2){0, 0}, rotation, WHITE);
                     }
                 }
