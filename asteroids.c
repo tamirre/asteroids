@@ -240,10 +240,10 @@ int main() {
 	Shader shader = LoadShader(0, TextFormat("shaders/test.glsl", GLSL_VERSION));
 	// Shader shader = LoadShader(0, TextFormat("shaders/test2.glsl", GLSL_VERSION));
 	int texSizeLoc = GetShaderLocation(shader, "textureSize");
+	static bool cursorHidden = true;
     while (!WindowShouldClose())
     {
         BeginDrawing();
-		BeginShaderMode(shader);
         ClearBackground(BLACK);
         
         const Rectangle screenRect = {
@@ -269,6 +269,13 @@ int main() {
             }
             case STATE_RUNNING:
             {
+				if (IsKeyPressed(KEY_TAB)) // press Tab to toggle cursor
+				{
+					if (cursorHidden) EnableCursor();
+					else DisableCursor();
+					cursorHidden = !cursorHidden;
+				}
+
                 Color backgroundColor = ColorFromHSV(258, 1, 0.07);
                 ClearBackground(backgroundColor);
 
@@ -399,6 +406,7 @@ int main() {
                 {
 					// PlaySound(gunFx);
 					PlaySound(laserFx);
+					BeginShaderMode(shader);
                     if (gameState.player.playerMultishot == true && gameState.bulletCount < MAX_BULLETS-3)
                     {
                         float bulletOffset = 0.0f;
@@ -487,9 +495,11 @@ int main() {
 						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
                         DrawTexturePro(atlas.textureAtlas, bullet.sprite.coords, bulletRec, (Vector2){0, 0}, bullet.rotation, WHITE);
                     }
+					EndShaderMode();
                 }
                 // Update Bullets
                 {
+					BeginShaderMode(shader);
                     for (int bulletIndex = 0; bulletIndex < gameState.bulletCount; bulletIndex++)
                     {
                         Bullet* bullet = &gameState.bullets[bulletIndex];
@@ -511,6 +521,7 @@ int main() {
                         DrawTexturePro(atlas.textureAtlas, bullet->sprite.coords, bulletRec, (Vector2){0, 0}, bullet->rotation, WHITE);
                         // DrawTextureRec(atlas.textureAtlas, bullet->sprite.coords, bullet->position, WHITE);
                     }
+					EndShaderMode();
                 }
                 // Spawn Asteroids
                 {
@@ -550,6 +561,7 @@ int main() {
                 }
                 // Update asteroids
                 {
+					BeginShaderMode(shader);
                     for (int asteroidIndex = 0; asteroidIndex < gameState.asteroidCount; asteroidIndex++)
                     {
                         Asteroid* asteroid = &gameState.asteroids[asteroidIndex];
@@ -671,6 +683,7 @@ int main() {
                         DrawSpriteAnimationPro(atlas.playerAnimation, destination, origin, 0, WHITE, shader);
                     }
                 }
+				EndShaderMode();
                 // Update player health
                 {
                     for (int i = 1; i <= gameState.player.playerHealth; i++)
@@ -723,7 +736,8 @@ int main() {
                         break;
                     }
                     case UPGRADE_DAMAGE:
-                    { DrawRectangle(pos_x - spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
+                    { 
+						DrawRectangle(pos_x - spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
                         break;
                     }
                     case UPGRADE_FIRERATE:
@@ -784,7 +798,6 @@ int main() {
         }
         DrawFPS(10, 40);
 
-		EndShaderMode();
         EndDrawing();
     }
 
