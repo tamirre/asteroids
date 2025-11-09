@@ -247,14 +247,14 @@ int main() {
 	int uAspect = GetShaderLocation(lightShader, "aspect");
 	// Shader shader = LoadShader(0, TextFormat("shaders/test2.glsl", GLSL_VERSION));
 	int texSizeLoc = GetShaderLocation(shader, "textureSize");
-    float lightRadius = 0.35f;  // normalized radius
+    float lightRadius = 0.15f;  // normalized radius
 	float aspect = (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT;
 	static bool cursorHidden = true;
     while (!WindowShouldClose())
     {
 		// BeginDrawing();
 		BeginTextureMode(scene);
-        ClearBackground(BLACK);
+        // ClearBackground(BLACK);
         
         const Rectangle screenRect = {
             .height = SCREEN_HEIGHT,
@@ -415,12 +415,7 @@ int main() {
                     && gameState.bulletCount <= MAX_BULLETS)
                 {
 
-					ClearBackground(BLACK);
-					// SetShaderValue(lightShader, uAspect, &aspect, SHADER_UNIFORM_FLOAT);
-					// SetShaderValue(lightShader, uLightRadius, &lightRadius, SHADER_UNIFORM_FLOAT);
-					// PlaySound(gunFx);
 					PlaySound(laserFx);
-					// BeginShaderMode(shader);
 					BeginShaderMode(shader);
                     if (gameState.player.playerMultishot == true && gameState.bulletCount < MAX_BULLETS-3)
                     {
@@ -840,7 +835,7 @@ int main() {
 					};
 					SetShaderValue(lightShader, uLightPos, &lightPosNorm, SHADER_UNIFORM_VEC2);
 					// draw a white circle or sprite — not the scene!
-					DrawCircleV(bullet->position, 25, WHITE);
+					DrawCircleV(bullet->position, 1, WHITE);
 				}
 				EndShaderMode();
 				// EndBlendMode();
@@ -849,7 +844,7 @@ int main() {
 		}
 
 		BeginDrawing();
-		ClearBackground(BLACK);
+		// ClearBackground(BLACK);
 
 		SetShaderValueTexture(lightShader, GetShaderLocation(lightShader, "lightTexture"), litScene.texture);
 
@@ -858,6 +853,10 @@ int main() {
 		EndShaderMode();
 
 		EndDrawing();
+
+		// BeginDrawing();
+		// DrawTextureRec(scene.texture, (Rectangle){0,0,(float)scene.texture.width,-(float)scene.texture.height}, (Vector2){0,0}, WHITE);
+		// EndDrawing();
     }
 
 	UnloadMusicStream(music);
