@@ -237,13 +237,23 @@ int main() {
 	// fprintf(stderr, "GLSL_VERSION: %d\n", GLSL_VERSION);
 
 	// fprintf(stderr, "GLSL_VERSION: %d\n", GLSL_VERSION);
+	RenderTexture2D scene = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
+	RenderTexture2D litScene = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
+
 	Shader shader = LoadShader(0, TextFormat("shaders/test.glsl", GLSL_VERSION));
+	Shader lightShader = LoadShader(0, TextFormat("shaders/light.fs", GLSL_VERSION));
+    int uLightPos = GetShaderLocation(lightShader, "lightPos");
+    int uLightRadius = GetShaderLocation(lightShader, "lightRadius");
+	int uAspect = GetShaderLocation(lightShader, "aspect");
 	// Shader shader = LoadShader(0, TextFormat("shaders/test2.glsl", GLSL_VERSION));
 	int texSizeLoc = GetShaderLocation(shader, "textureSize");
+    float lightRadius = 0.35f;  // normalized radius
+	float aspect = (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT;
 	static bool cursorHidden = true;
     while (!WindowShouldClose())
     {
-        BeginDrawing();
+		// BeginDrawing();
+		BeginTextureMode(scene);
         ClearBackground(BLACK);
         
         const Rectangle screenRect = {
@@ -404,8 +414,13 @@ int main() {
                     && gameState.player.shootTime >= 1.0f/gameState.player.fireRate
                     && gameState.bulletCount <= MAX_BULLETS)
                 {
+
+					ClearBackground(BLACK);
+					// SetShaderValue(lightShader, uAspect, &aspect, SHADER_UNIFORM_FLOAT);
+					// SetShaderValue(lightShader, uLightRadius, &lightRadius, SHADER_UNIFORM_FLOAT);
 					// PlaySound(gunFx);
 					PlaySound(laserFx);
+					// BeginShaderMode(shader);
 					BeginShaderMode(shader);
                     if (gameState.player.playerMultishot == true && gameState.bulletCount < MAX_BULLETS-3)
                     {
@@ -449,6 +464,7 @@ int main() {
                         };
 						texSize = (Vector2){ bullet2Rec.width, bullet2Rec.height };
 						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						// SetShaderValue(lightShader, uLightPos, &bullet2.position, SHADER_UNIFORM_VEC2);
                         DrawTexturePro(atlas.textureAtlas, bullet2.sprite.coords, bullet2Rec, (Vector2){0, 0}, bullet2.rotation, WHITE);
                         Bullet bullet3 = 
                         {
@@ -469,6 +485,7 @@ int main() {
                         };
 						texSize = (Vector2){ bullet3Rec.width, bullet3Rec.height };
 						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						// SetShaderValue(lightShader, uLightPos, &bullet3.position, SHADER_UNIFORM_VEC2);
                         DrawTexturePro(atlas.textureAtlas, bullet3.sprite.coords, bullet3Rec, (Vector2){0, 0}, bullet3.rotation, WHITE);
                         gameState.player.shootTime -= 1.0f/gameState.player.fireRate;
                     }
@@ -493,6 +510,7 @@ int main() {
                         };
 						Vector2 texSize = { bulletRec.width, bulletRec.height };
 						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						// SetShaderValue(lightShader, uLightPos, &bullet.position, SHADER_UNIFORM_VEC2);
                         DrawTexturePro(atlas.textureAtlas, bullet.sprite.coords, bulletRec, (Vector2){0, 0}, bullet.rotation, WHITE);
                     }
 					EndShaderMode();
@@ -518,6 +536,7 @@ int main() {
                         };
 						Vector2 texSize = { bulletRec.width, bulletRec.height };
 						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						// SetShaderValue(lightShader, uLightPos, &bullet->position, SHADER_UNIFORM_VEC2);
                         DrawTexturePro(atlas.textureAtlas, bullet->sprite.coords, bulletRec, (Vector2){0, 0}, bullet->rotation, WHITE);
                         // DrawTextureRec(atlas.textureAtlas, bullet->sprite.coords, bullet->position, WHITE);
                     }
@@ -796,9 +815,49 @@ int main() {
                 break;
             }
         }
+		
         DrawFPS(10, 40);
+		EndTextureMode(); // scene
 
-        EndDrawing();
+		// Vector2 mouse = GetMousePosition();
+		// Vector2 lightPosNorm = { mouse.x / SCREEN_WIDTH, 1.0f - mouse.y / SCREEN_HEIGHT };
+		{
+			BeginTextureMode(litScene);
+			ClearBackground(BLACK);
+			// BeginBlendMode(BLEND_ADDITIVE);
+			{
+				BeginShaderMode(lightShader);
+
+				SetShaderValue(lightShader, uAspect, &aspect, SHADER_UNIFORM_FLOAT);
+				SetShaderValue(lightShader, uLightRadius, &lightRadius, SHADER_UNIFORM_FLOAT);
+
+				for (int bulletIndex = 0; bulletIndex < gameState.bulletCount; bulletIndex++)
+				{
+					Bullet* bullet = &gameState.bullets[bulletIndex];
+					Vector2 lightPosNorm = {
+						bullet->position.x / SCREEN_WIDTH,
+						1.0f - bullet->position.y / SCREEN_HEIGHT
+					};
+					SetShaderValue(lightShader, uLightPos, &lightPosNorm, SHADER_UNIFORM_VEC2);
+					// draw a white circle or sprite — not the scene!
+					DrawCircleV(bullet->position, 25, WHITE);
+				}
+				EndShaderMode();
+				// EndBlendMode();
+			}
+			EndTextureMode();
+		}
+
+		BeginDrawing();
+		ClearBackground(BLACK);
+
+		SetShaderValueTexture(lightShader, GetShaderLocation(lightShader, "lightTexture"), litScene.texture);
+
+		BeginShaderMode(lightShader);
+		DrawTextureRec(scene.texture, (Rectangle){0,0,(float)scene.texture.width,-(float)scene.texture.height}, (Vector2){0,0}, WHITE);
+		EndShaderMode();
+
+		EndDrawing();
     }
 
 	UnloadMusicStream(music);
@@ -806,6 +865,7 @@ int main() {
 	UnloadSound(laserFx);
 	CloseAudioDevice();
 	UnloadShader(shader);
+	UnloadShader(lightShader);
 	cleanup(atlas, font, spriteMasks);
 
     CloseWindow();
