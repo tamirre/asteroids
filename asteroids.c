@@ -153,6 +153,41 @@ void initialize(GameState* gameState, TextureAtlas* atlas) {
     };
 }
 
+void DrawUI(GameState gameState, TextureAtlas atlas, Font font, int fontSize, int fontSpacing)
+{
+	// Update player health
+	{
+		for (int i = 1; i <= gameState.player.playerHealth; i++)
+		{
+			const int texture_x = i * 16;
+			const int texture_y = getSprite(SPRITE_HEART).coords.height;
+			DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_HEART).coords, (Vector2){texture_x, texture_y}, WHITE);
+		}
+	}
+	// Update Score
+	{
+		if (gameState.experience > 1000.0 && gameState.state != STATE_UPGRADE)
+		{
+			gameState.state = STATE_UPGRADE;
+			gameState.experience -= 1000.0;
+		}
+		float recPosX = SCREEN_WIDTH - 115.0;
+		float recPosY = 20.0;
+		float recHeight = 30.0;
+		float recWidth = 100.0;
+		DrawRectangle(recPosX, recPosY, gameState.experience / 10.0, recHeight, ColorAlpha(BLUE, 0.5));
+		DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
+		char experienceText[100] = "XP";
+		Vector2 textSize = MeasureTextEx(font, experienceText, fontSize, fontSpacing);
+		DrawTextEx(font, experienceText, (Vector2){recPosX + recWidth / 2.0 - textSize.x / 2.0, recPosY + recHeight / 2.0 - textSize.y / 2.0}, 20.0, fontSpacing, WHITE);
+	}
+
+	DrawFPS(10, 40);
+}
+
+
+
+
 bool pixelPerfectCollision(Color* pixel1, Color* pixel2, int width1, int width2, int height1, int height2, Rectangle dst1, Rectangle dst2, Rectangle overlap)
 {
     // Quick rejects
@@ -698,32 +733,6 @@ int main() {
                     }
                 }
 				EndShaderMode();
-                // Update player health
-                {
-                    for (int i = 1; i <= gameState.player.playerHealth; i++)
-                    {
-                        const int texture_x = i * 16;
-                        const int texture_y = getSprite(SPRITE_HEART).coords.height;
-                        DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_HEART).coords, (Vector2){texture_x, texture_y}, WHITE);
-                    }
-                }
-                // Update Score
-                {
-                    if (gameState.experience > 1000.0 && gameState.state != STATE_UPGRADE)
-                    {
-                        gameState.state = STATE_UPGRADE;
-                        gameState.experience -= 1000.0;
-                    }
-                    float recPosX = SCREEN_WIDTH - 115.0;
-                    float recPosY = 20.0;
-                    float recHeight = 30.0;
-                    float recWidth = 100.0;
-                    DrawRectangle(recPosX, recPosY, gameState.experience / 10.0, recHeight, ColorAlpha(BLUE, 0.5));
-                    DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
-                    char experienceText[100] = "XP";
-                    Vector2 textSize = MeasureTextEx(font, experienceText, fontSize, fontSpacing);
-                    DrawTextEx(font, experienceText, (Vector2){recPosX + recWidth / 2.0 - textSize.x / 2.0, recPosY + recHeight / 2.0 - textSize.y / 2.0}, 20.0, fontSpacing, WHITE);
-                }
 
                 if (IsKeyPressed(KEY_P)) {
                     gameState.state = STATE_PAUSED;
@@ -811,47 +820,65 @@ int main() {
             }
         }
 		
-        DrawFPS(10, 40);
 		EndTextureMode(); // scene
 
-		// Vector2 mouse = GetMousePosition();
-		// Vector2 lightPosNorm = { mouse.x / SCREEN_WIDTH, 1.0f - mouse.y / SCREEN_HEIGHT };
 		{
+			// BeginTextureMode(litScene);
+			// ClearBackground(BLACK);
+			// // BeginBlendMode(BLEND_ADDITIVE);
+			// {
+			// 	BeginShaderMode(lightShader);
+			//
+			//
+			// 	DrawCircleV(gameState.player.playerPosition, 1, WHITE);
+			// 	for (int bulletIndex = 0; bulletIndex < gameState.bulletCount; bulletIndex++)
+			// 	{
+			// 		Bullet* bullet = &gameState.bullets[bulletIndex];
+			// 		Vector2 lightPosNorm = {
+			// 			bullet->position.x / SCREEN_WIDTH,
+			// 			1.0f - bullet->position.y / SCREEN_HEIGHT
+			// 		};
+			// 		SetShaderValue(lightShader, uLightPos, &lightPosNorm, SHADER_UNIFORM_VEC2);
+			// 		// draw a white circle or sprite — not the scene!
+			// 		DrawCircleV(bullet->position, 1, WHITE);
+			// 	}
+			// 	EndShaderMode();
+			// 	// EndBlendMode();
+			// }
+			// EndTextureMode();
+			// --- Build lightmap ---
 			BeginTextureMode(litScene);
 			ClearBackground(BLACK);
-			// BeginBlendMode(BLEND_ADDITIVE);
+			BeginBlendMode(BLEND_ADDITIVE);
+
+			for (int i = 0; i < gameState.bulletCount; i++)
 			{
-				BeginShaderMode(lightShader);
-
-				SetShaderValue(lightShader, uAspect, &aspect, SHADER_UNIFORM_FLOAT);
-				SetShaderValue(lightShader, uLightRadius, &lightRadius, SHADER_UNIFORM_FLOAT);
-
-				for (int bulletIndex = 0; bulletIndex < gameState.bulletCount; bulletIndex++)
-				{
-					Bullet* bullet = &gameState.bullets[bulletIndex];
-					Vector2 lightPosNorm = {
-						bullet->position.x / SCREEN_WIDTH,
-						1.0f - bullet->position.y / SCREEN_HEIGHT
-					};
-					SetShaderValue(lightShader, uLightPos, &lightPosNorm, SHADER_UNIFORM_VEC2);
-					// draw a white circle or sprite — not the scene!
-					DrawCircleV(bullet->position, 1, WHITE);
-				}
-				EndShaderMode();
-				// EndBlendMode();
+				Bullet* bullet = &gameState.bullets[i];
+				// 	Vector2 lightPosNorm = {
+				// 		bullet->position.x / SCREEN_WIDTH,
+				// 		1.0f - bullet->position.y / SCREEN_HEIGHT
+				// 	};
+				// 	SetShaderValue(lightShader, uLightPos, &lightPosNorm, SHADER_UNIFORM_VEC2);
+				// draw a light shape: small white circle or texture
+				DrawCircleV(bullet->position, 40, WHITE);    // 50 = light radius
 			}
+
+			EndBlendMode();
 			EndTextureMode();
 		}
 
+		SetShaderValueTexture(lightShader, GetShaderLocation(lightShader, "lightTexture"), litScene.texture);
+		SetShaderValue(lightShader, uLightRadius, &lightRadius, SHADER_UNIFORM_FLOAT);
+		SetShaderValue(lightShader, uAspect, &aspect, SHADER_UNIFORM_FLOAT);
+
 		BeginDrawing();
 		// ClearBackground(BLACK);
-
-		SetShaderValueTexture(lightShader, GetShaderLocation(lightShader, "lightTexture"), litScene.texture);
 
 		BeginShaderMode(lightShader);
 		DrawTextureRec(scene.texture, (Rectangle){0,0,(float)scene.texture.width,-(float)scene.texture.height}, (Vector2){0,0}, WHITE);
 		EndShaderMode();
 
+		DrawUI(gameState, atlas, font, fontSize, fontSpacing);
 		EndDrawing();
 
 		// BeginDrawing();
