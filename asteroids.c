@@ -16,7 +16,7 @@
 #define MAX_BULLETS (1000)
 #define MAX_ASTEROIDS (100)
 #define MAX_STARS (50)
-#define TARGET_FPS (240)
+#define TARGET_FPS (30)
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -266,9 +266,9 @@ int main() {
 	Sound laserFx = LoadSound("audio/laser.wav");
 	ASSERT(IsSoundValid(laserFx));
 	PlayMusicStream(music);
-	SetMusicVolume(music, 0.15);
-	SetSoundVolume(hitFx, 0.5);
-	SetSoundVolume(laserFx, 0.5);
+	SetMusicVolume(music, 0.05);
+	SetSoundVolume(hitFx, 0.25);
+	SetSoundVolume(laserFx, 0.25);
 	// fprintf(stderr, "GLSL_VERSION: %d\n", GLSL_VERSION);
 
 	// fprintf(stderr, "GLSL_VERSION: %d\n", GLSL_VERSION);
@@ -282,7 +282,7 @@ int main() {
 	int uAspect = GetShaderLocation(lightShader, "aspect");
 	// Shader shader = LoadShader(0, TextFormat("shaders/test2.glsl", GLSL_VERSION));
 	int texSizeLoc = GetShaderLocation(shader, "textureSize");
-    float lightRadius = 0.15f;  // normalized radius
+    float lightRadius = 0.1f;  // normalized radius
 	float aspect = (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT;
 	static bool cursorHidden = true;
     while (!WindowShouldClose())
@@ -847,21 +847,39 @@ int main() {
 			// }
 			// EndTextureMode();
 			// --- Build lightmap ---
+			int uLightCount = GetShaderLocation(lightShader, "lightCount");
 			BeginTextureMode(litScene);
 			ClearBackground(BLACK);
 			BeginBlendMode(BLEND_ADDITIVE);
+			// Prepare arrays
+			Vector2 lights[128];
+			int lc = 0;
 
-			for (int i = 0; i < gameState.bulletCount; i++)
-			{
-				Bullet* bullet = &gameState.bullets[i];
-				// 	Vector2 lightPosNorm = {
-				// 		bullet->position.x / SCREEN_WIDTH,
-				// 		1.0f - bullet->position.y / SCREEN_HEIGHT
-				// 	};
-				// 	SetShaderValue(lightShader, uLightPos, &lightPosNorm, SHADER_UNIFORM_VEC2);
-				// draw a light shape: small white circle or texture
-				DrawCircleV(bullet->position, 40, WHITE);    // 50 = light radius
+			for (int i = 0; i < gameState.bulletCount; i++) {
+				// convert pixel -> normalized UV (0–1)
+				lights[lc].x = gameState.bullets[i].position.x / (float)SCREEN_WIDTH;
+				lights[lc].y = 1.0f - gameState.bullets[i].position.y / (float)SCREEN_HEIGHT;
+				lc++;
 			}
+
+			lights[lc].x = gameState.player.playerPosition.x / (float)SCREEN_WIDTH;
+			lights[lc].y = 1.0f - gameState.player.playerPosition.y / (float)SCREEN_HEIGHT;
+			lc++;
+			// Upload array
+			SetShaderValue(lightShader, uLightCount, &lc, SHADER_UNIFORM_INT);
+			SetShaderValueV(lightShader, uLightPos, lights, SHADER_UNIFORM_VEC2, lc);
+
+			// for (int i = 0; i < gameState.bulletCount; i++)
+			// {
+			// 	Bullet* bullet = &gameState.bullets[i];
+			// 	// 	Vector2 lightPosNorm = {
+			// 	// 		bullet->position.x / SCREEN_WIDTH,
+			// 	// 		1.0f - bullet->position.y / SCREEN_HEIGHT
+			// 	// 	};
+			// 	// 	SetShaderValue(lightShader, uLightPos, &lightPosNorm, SHADER_UNIFORM_VEC2);
+			// 	// draw a light shape: small white circle or texture
+			// 	DrawCircleV(bullet->position, 40, WHITE);    // 50 = light radius
+			// }
 
 			EndBlendMode();
 			EndTextureMode();
