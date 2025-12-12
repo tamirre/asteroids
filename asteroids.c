@@ -153,41 +153,13 @@ void initialize(GameState* gameState, TextureAtlas* atlas) {
     };
 }
 
-void DrawUI(GameState gameState, TextureAtlas atlas, Font font, int fontSize, int fontSpacing)
+void draw_text_centered(Font font, const char* text, Vector2 pos, float fontSize, float fontSpacing, Color color)
 {
-	// Update player health
-	{
-		for (int i = 1; i <= gameState.player.playerHealth; i++)
-		{
-			const int texture_x = i * 16;
-			const int texture_y = getSprite(SPRITE_HEART).coords.height;
-			DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_HEART).coords, (Vector2){texture_x, texture_y}, WHITE);
-		}
-	}
-	// Update Score
-	{
-		if (gameState.experience > 1000.0 && gameState.state != STATE_UPGRADE)
-		{
-			gameState.state = STATE_UPGRADE;
-			gameState.experience -= 1000.0;
-		}
-		float recPosX = SCREEN_WIDTH - 115.0;
-		float recPosY = 20.0;
-		float recHeight = 30.0;
-		float recWidth = 100.0;
-		DrawRectangle(recPosX, recPosY, gameState.experience / 10.0, recHeight, ColorAlpha(BLUE, 0.5));
-		DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
-		char experienceText[100] = "XP";
-		Vector2 textSize = MeasureTextEx(font, experienceText, fontSize, fontSpacing);
-		DrawTextEx(font, experienceText, (Vector2){recPosX + recWidth / 2.0 - textSize.x / 2.0, recPosY + recHeight / 2.0 - textSize.y / 2.0}, 20.0, fontSpacing, WHITE);
-	}
-
-	DrawFPS(10, 40);
+	const Vector2 textSize = MeasureTextEx(font, text, fontSize, fontSpacing);
+    pos.x -= textSize.x / 2.0f;
+    pos.y -= textSize.y / 2.0f;
+	DrawTextEx(font, text, (Vector2){pos.x, pos.y}, fontSize, fontSpacing, color);
 }
-
-
-
-
 bool pixelPerfectCollision(Color* pixel1, Color* pixel2, int width1, int width2, int height1, int height2, Rectangle dst1, Rectangle dst2, Rectangle overlap)
 {
     // Quick rejects
@@ -232,14 +204,596 @@ bool pixelPerfectCollision(Color* pixel1, Color* pixel2, int width1, int width2,
 
     return false;
 }
-
-void draw_text_centered(Font font, const char* text, Vector2 pos, float fontSize, float fontSpacing, Color color)
+void UpdateGame(GameState gameState, int dt) 
 {
-	const Vector2 textSize = MeasureTextEx(font, text, fontSize, fontSpacing);
-    pos.x -= textSize.x / 2.0f;
-    pos.y -= textSize.y / 2.0f;
-	DrawTextEx(font, text, (Vector2){pos.x, pos.y}, fontSize, fontSpacing, color);
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_TITLE);
+    SetTargetFPS(TARGET_FPS);
+    
+    // Font font = LoadFont("fonts/setback.png");
+
+
+	SpriteMaskCache spriteMasks;
+    TextureAtlas atlas = initTextureAtlas(&spriteMasks);
+	initialize(&gameState, &atlas);
+
+	InitAudioDevice();
+	ASSERT(IsAudioDeviceReady());
+	Music music = LoadMusicStream("audio/soundtrack.mp3");
+	ASSERT(IsMusicValid(music));
+	Sound hitFx = LoadSound("audio/hit.wav");
+	ASSERT(IsSoundValid(hitFx));
+	Sound laserFx = LoadSound("audio/laser.wav");
+	ASSERT(IsSoundValid(laserFx));
+	PlayMusicStream(music);
+	SetMusicVolume(music, 0.05);
+	SetSoundVolume(hitFx, 0.25);
+	SetSoundVolume(laserFx, 0.25);
+
+	static bool cursorHidden = true;
+	// Update score
+	if (gameState.experience > 1000.0 && gameState.state != STATE_UPGRADE)
+	{
+		gameState.state = STATE_UPGRADE;
+		gameState.experience -= 1000.0;
+	}
+
+        switch (gameState.state) {
+            case STATE_MAIN_MENU:
+            {
+                if (IsKeyPressed(KEY_ENTER)) {                    
+                    gameState.state = STATE_RUNNING;
+                }
+                break;
+            }
+            case STATE_RUNNING:
+            {
+				if (IsKeyPressed(KEY_TAB)) // press Tab to toggle cursor
+				{
+					if (cursorHidden) EnableCursor();
+					else DisableCursor();
+					cursorHidden = !cursorHidden;
+				}
+
+				UpdateMusicStream(music);
+                // Spawn initial stars for parallax
+                {
+                    if (gameState.initStars == 0)
+                    {
+                        while(gameState.starCount < MAX_STARS)
+                        {                            
+                            int imgIndex = GetRandomValue(1, 2);   
+                            float starXPosition = GetRandomValue(0, SCREEN_WIDTH); 
+                            float starYPosition = GetRandomValue(0, SCREEN_HEIGHT); 
+                            Sprite sprite;
+                            if (imgIndex == 1)
+                            {
+                                sprite = getSprite(SPRITE_STAR1);
+                            } 
+                            else
+                            {
+                                sprite = getSprite(SPRITE_STAR2);
+                            }
+
+                            Star star = {
+                                .position = (Vector2) {starXPosition, starYPosition},
+                                .velocity = 30.0f * GetRandomValue(1,2) * imgIndex,
+                                .size = 1,
+                                .sprite = sprite,
+                                .alpha = 0.5 * imgIndex,
+                            };
+                            gameState.stars[gameState.starCount++] = star;
+                        }
+                        gameState.initStars = 1;
+                    }
+                }
+                // Spawn new stars for parallax
+                {
+                    gameState.starTime += GetFrameTime();
+                    if (gameState.starTime > gameState.starSpawnRate) 
+                    {
+                        gameState.starTime = 0;
+                        if (gameState.starCount < MAX_STARS)
+                        {
+                            int imgIndex = GetRandomValue(1, 2);  
+                            Sprite starSprite;
+                            if (imgIndex == 1)
+                            {
+                                starSprite = getSprite(SPRITE_STAR1);
+                            } 
+                            else if (imgIndex == 2)
+                            {
+                                starSprite = getSprite(SPRITE_STAR2);
+                            }
+                            float starXPosition = GetRandomValue(0, SCREEN_WIDTH); 
+                            Star star = {
+                                .position = (Vector2) {starXPosition, 0},
+                                .velocity = 30.0f * GetRandomValue(1,2) * imgIndex,
+                                .size = 1,
+                                .alpha = 0.5f * imgIndex,
+                                .sprite = starSprite,
+                            };
+                            gameState.stars[gameState.starCount++]= star;
+                        }
+                    }
+                }
+                // Update game time
+                gameState.gameTime += GetFrameTime(); 
+                if (gameState.player.invulTime < 0.0f)
+                {
+                    gameState.player.invulTime = 0.0f;
+                } else {
+                    gameState.player.invulTime -= GetFrameTime();
+                }
+
+                if (IsKeyDown(KEY_W)) {
+                    if(!CheckCollisionPointLine(gameState.player.playerPosition, (Vector2) {0, 0}, (Vector2) {SCREEN_WIDTH, 0}, gameState.player.sprite.coords.width/gameState.player.animationFrames / 2))
+                    {
+                        gameState.player.playerPosition.y -= gameState.player.playerVelocity * GetFrameTime();
+                    }   
+                }
+                if (IsKeyDown(KEY_S)) {
+                    if(!CheckCollisionPointLine(gameState.player.playerPosition, (Vector2) {0, SCREEN_HEIGHT}, (Vector2) {SCREEN_WIDTH, SCREEN_HEIGHT}, gameState.player.sprite.coords.height / 2))
+                    {
+                        gameState.player.playerPosition.y += gameState.player.playerVelocity * GetFrameTime();
+                    }
+                }
+                if (IsKeyDown(KEY_A)) {
+                    if(!CheckCollisionPointLine(gameState.player.playerPosition, (Vector2) {0, 0}, (Vector2) {0, SCREEN_HEIGHT}, gameState.player.sprite.coords.width/gameState.player.animationFrames / 2))
+                    {
+                        gameState.player.playerPosition.x -= gameState.player.playerVelocity * GetFrameTime();
+                    }
+                }
+                if (IsKeyDown(KEY_D)) {
+                    if(!CheckCollisionPointLine(gameState.player.playerPosition, 
+                                                (Vector2) {SCREEN_WIDTH, 0},
+                                                (Vector2) {SCREEN_WIDTH, SCREEN_HEIGHT}, 
+                                                gameState.player.sprite.coords.width/gameState.player.animationFrames / 2))
+                    {
+                        gameState.player.playerPosition.x += gameState.player.playerVelocity * GetFrameTime();
+                    }
+                }
+                if (gameState.player.shootTime < 1.0f/gameState.player.fireRate)
+                {
+                    gameState.player.shootTime += GetFrameTime();
+                } 
+                // Shoot bullets
+                while (IsKeyDown(KEY_SPACE) 
+                    && gameState.player.shootTime >= 1.0f/gameState.player.fireRate
+                    && gameState.bulletCount <= MAX_BULLETS)
+                {
+
+					PlaySound(laserFx);
+                    if (gameState.player.playerMultishot == true && gameState.bulletCount < MAX_BULLETS-3)
+                    {
+                        float bulletOffset = 0.0f;
+                        Bullet bullet1 = 
+                        {
+                            .position = gameState.player.playerPosition,
+                            .velocity = (Vector2){0.0f, 100.0f},
+                            .damage = 1.0*gameState.player.damageMulti,
+                            .sprite = getSprite(SPRITE_BULLET),
+                            .rotation = 0.0f,
+                        };
+                        bullet1.position.x -= bullet1.sprite.coords.width / 2.0f;
+                        bullet1.position.y -= gameState.player.sprite.coords.height * gameState.player.size / 2.0 + bullet1.sprite.coords.height;
+                        gameState.bullets[gameState.bulletCount++] = bullet1;
+                        Bullet bullet2 = 
+                        {
+                            .position = (Vector2){gameState.player.playerPosition.x - bulletOffset, gameState.player.playerPosition.y + 0.0f},
+                            .velocity = (Vector2){sqrt(pow(100.0f,2) - pow(95.0f,2)), 95.0f},
+                            .damage = 1.0*gameState.player.damageMulti,
+                            .sprite = getSprite(SPRITE_BULLET),
+                            .rotation = -15.0f,
+                        };
+                        bullet2.position.x -= bullet2.sprite.coords.width / 2.0f;
+                        bullet2.position.y -= gameState.player.sprite.coords.height * gameState.player.size / 2.0 + bullet2.sprite.coords.height;
+                        gameState.bullets[gameState.bulletCount++] = bullet2;
+                        Bullet bullet3 = 
+                        {
+                            .position = (Vector2){gameState.player.playerPosition.x + bulletOffset, gameState.player.playerPosition.y + 0.0f},
+                            .velocity = (Vector2){-sqrt(pow(100.0f,2) - pow(95.0f,2)), 95.0f},
+                            .damage = 1.0*gameState.player.damageMulti,
+                            .sprite = getSprite(SPRITE_BULLET),
+                            .rotation = 15.0f,
+                        };
+                        bullet3.position.x -= bullet3.sprite.coords.width / 2.0f;
+                        bullet3.position.y -= gameState.player.sprite.coords.height * gameState.player.size / 2.0 + bullet3.sprite.coords.height;
+                        gameState.bullets[gameState.bulletCount++] = bullet3;
+
+                        gameState.player.shootTime -= 1.0f/gameState.player.fireRate;
+                    }
+                    else
+                    {
+                        Bullet bullet =
+                        {
+                            .position = gameState.player.playerPosition,
+                            .velocity = (Vector2){0.0f, 100.0f},
+                            .damage = 1.0*gameState.player.damageMulti,
+                            .sprite = getSprite(SPRITE_BULLET),
+                            .rotation = 0.0f,
+                        };
+                        bullet.position.y -= gameState.player.sprite.coords.height * gameState.player.size / 2.0 + bullet.sprite.coords.height;
+                        gameState.bullets[gameState.bulletCount++] = bullet;
+                        gameState.player.shootTime -= 1.0f/gameState.player.fireRate;
+                    }
+                }
+                // Spawn Asteroids
+                {
+                    gameState.spawnTime += GetFrameTime();
+                    if (gameState.spawnTime > gameState.asteroidSpawnRate && gameState.asteroidCount < MAX_ASTEROIDS) 
+                    {
+                        // int size = (int)GetRandomValue(1, 3);
+                        float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
+                        // float size = 1.0f;
+                        float minSpawnDistance = 50.0f * size;  
+                        float asteroidXPosition = MAX(minSpawnDistance, GetRandomValue(0, SCREEN_WIDTH)); 
+                        float asteroidVelocity = GetRandomValue(30.0f, 65.0f) * 5.0f / (float)size;
+                        Asteroid asteroid = {
+                            .position = (Vector2) {asteroidXPosition, 0},
+                            .health = (int) (size+1.0) * 2.0,
+                            .velocity = asteroidVelocity,
+                            .size = size,
+                            .rotation = 6.0f * (1 - GetRandomValue(1, 2)),
+                        };
+                        int whichAsteroid = GetRandomValue(1,10);
+                        Sprite asteroidSprite;
+                        if (whichAsteroid < 6) {
+                            asteroidSprite = getSprite(SPRITE_ASTEROID1);
+							asteroid.pixels = spriteMasks.asteroid1.pixels;
+                        } else if (whichAsteroid < 9) {
+                            asteroidSprite = getSprite(SPRITE_ASTEROID2);
+							asteroid.pixels = spriteMasks.asteroid2.pixels;
+                        } else {
+                            asteroidSprite = getSprite(SPRITE_ASTEROID3);
+							asteroid.pixels = spriteMasks.asteroid3.pixels;
+                        }
+                        asteroid.sprite = asteroidSprite;
+                        asteroid.position.y -= asteroid.sprite.coords.height; // to make them come into screen smoothly
+                        gameState.spawnTime = 0;
+                        gameState.asteroids[gameState.asteroidCount++] = asteroid;
+                    }
+                }
+                // Update asteroids
+                {
+                    for (int asteroidIndex = 0; asteroidIndex < gameState.asteroidCount; asteroidIndex++)
+                    {
+                        Asteroid* asteroid = &gameState.asteroids[asteroidIndex];
+                        asteroid->position.y += asteroid->velocity * GetFrameTime();
+                        float width = asteroid->sprite.coords.width * asteroid->size;
+                        float height = asteroid->sprite.coords.height * asteroid->size;
+                        Rectangle asteroidRec = {
+                            .width = width,
+                            .height = height, 
+                            .x = asteroid->position.x - width,
+                            .y = asteroid->position.y - height, 
+                        };
+
+                        for (int bulletIndex = 0; bulletIndex < gameState.bulletCount; bulletIndex++)
+                        {
+                            Bullet* bullet = &gameState.bullets[bulletIndex];
+                            Rectangle bulletRec = {
+                                .width = 2.0f,
+                                .height = 7.0f,
+                                .x = gameState.bullets[bulletIndex].position.x,
+                                .y = gameState.bullets[bulletIndex].position.y,
+                            };
+                            // DrawRectangleLines(bulletRec.x, bulletRec.y, bulletRec.width, bulletRec.height, GREEN);
+							if(CheckCollisionRecs(asteroidRec, bulletRec))
+							{
+								Rectangle collisionRec = GetCollisionRec(asteroidRec, bulletRec);
+								if (pixelPerfectCollision(spriteMasks.bullet.pixels, asteroid->pixels, 
+											bullet->sprite.coords.width, asteroid->sprite.coords.width,
+											bullet->sprite.coords.height, asteroid->sprite.coords.height,
+											bulletRec, asteroidRec, collisionRec))
+								{
+									// Replace with bullet with last bullet
+									*bullet = gameState.bullets[--gameState.bulletCount];
+									if (--asteroid->health < 1)
+									{
+										gameState.experience += MAX((int)(asteroid->size * 100),1);
+										*asteroid = gameState.asteroids[--gameState.asteroidCount];
+									}
+								}
+							}
+                        }
+                        float playerWidth = gameState.player.sprite.coords.width/gameState.player.animationFrames * gameState.player.size;
+                        float playerHeight = gameState.player.sprite.coords.height * gameState.player.size;
+                        Rectangle playerRec = {
+                            .width = playerWidth,
+                            .height =  playerHeight,
+                            .x = gameState.player.playerPosition.x - playerWidth/2.0f,
+                            .y = gameState.player.playerPosition.y - playerHeight/2.0f,
+                        };
+                        // DrawRectangleLines(asteroidRec.x, asteroidRec.y, asteroidRec.width, asteroidRec.height, GREEN);
+                        // DrawRectangleLinesEx(playerRec, 1.0, BLUE);
+                        Rectangle screenRectExtended = {
+                            .width = SCREEN_WIDTH + asteroid->sprite.coords.width,
+                            .height = SCREEN_HEIGHT + asteroid->sprite.coords.height,
+                            .x = 0.0,
+                            .y = asteroid->position.y, // to make them scroll into screen smoothly
+                        };
+                        if(!CheckCollisionPointRec(asteroid->position, screenRectExtended))
+                        {
+                            // Replace with last asteroid
+                            *asteroid = gameState.asteroids[--gameState.asteroidCount];
+                        }
+                        if(CheckCollisionRecs(asteroidRec, playerRec) && gameState.player.invulTime <= 0.0f)
+                        {
+                            Rectangle collisionRec = GetCollisionRec(asteroidRec, playerRec);
+                            // DrawRectangleLinesEx(collisionRec, 2.0, RED);
+							Rectangle playerSrc = GetCurrentAnimationFrame(atlas.playerAnimation); 
+							if (pixelPerfectCollision(spriteMasks.player.pixels, asteroid->pixels, 
+										              playerSrc.width, asteroid->sprite.coords.width,
+													  gameState.player.sprite.coords.height, asteroid->sprite.coords.height, 
+													  playerRec, asteroidRec, collisionRec))
+                            {
+								PlaySound(hitFx);
+                                gameState.player.invulTime = gameState.player.invulDuration;
+                                *asteroid = gameState.asteroids[--gameState.asteroidCount];
+                                if(--gameState.player.playerHealth < 1) 
+                                {
+                                    gameState.state = STATE_GAME_OVER;
+                                }
+                            }
+                        }
+                        // Check if asteroid is off-screen
+                        if (asteroid->position.y > SCREEN_HEIGHT + asteroid->sprite.coords.height * asteroid->size)
+                        {
+                            *asteroid = gameState.asteroids[--gameState.asteroidCount];
+                        }
+                    }
+                }
+
+                if (IsKeyPressed(KEY_P)) {
+                    gameState.state = STATE_PAUSED;
+                }
+                
+                break;
+            }
+            case STATE_UPGRADE:
+            {
+				UpdateMusicStream(music);
+                if (IsKeyPressed(KEY_LEFT)) {
+                    gameState.pickedUpgrade = (Upgrade)((gameState.pickedUpgrade + 1) % UPGRADE_COUNT);
+                } else if (IsKeyPressed(KEY_RIGHT)) {
+                    gameState.pickedUpgrade = (Upgrade)((gameState.pickedUpgrade - 1 + UPGRADE_COUNT) % UPGRADE_COUNT);
+                }
+                if (IsKeyPressed(KEY_ENTER)) {                    
+                    if (gameState.pickedUpgrade == UPGRADE_MULTISHOT) {
+                        gameState.player.playerMultishot = true;
+                    } else if (gameState.pickedUpgrade == UPGRADE_DAMAGE) {
+                        gameState.player.damageMulti += 0.2f;
+                    } else if (gameState.pickedUpgrade == UPGRADE_FIRERATE) {
+                        gameState.player.fireRate += 2.0f;
+                    }
+                    gameState.state = STATE_RUNNING;
+                }
+                break;
+            }
+            case STATE_GAME_OVER:
+            {
+                if (IsKeyPressed(KEY_ENTER)) {
+                    initialize(&gameState, &atlas);
+                    gameState.state = STATE_RUNNING;
+
+                }
+                break;
+            }
+            case STATE_PAUSED:
+            {
+				PauseMusicStream(music);
+                if (IsKeyPressed(KEY_P)) {
+                    gameState.state = STATE_RUNNING;
+					ResumeMusicStream(music);
+                }
+                break;
+            }
+        }
 }
+
+void DrawScene(GameState gameState, TextureAtlas atlas, Font font, int fontSize, int fontSpacing)
+{
+	// fprintf(stderr, "GLSL_VERSION: %d\n", GLSL_VERSION);
+	RenderTexture2D scene = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+	Shader shader = LoadShader(0, TextFormat("shaders/test.glsl", GLSL_VERSION));
+	// Shader shader = LoadShader(0, TextFormat("shaders/test2.glsl", GLSL_VERSION));
+	int texSizeLoc = GetShaderLocation(shader, "textureSize");
+	BeginTextureMode(scene);
+
+	const Rectangle screenRect = {
+		.height = SCREEN_HEIGHT,
+		.width = SCREEN_WIDTH,
+		.x = 0,
+		.y = 0
+	};
+
+	switch (gameState.state) {
+		case STATE_MAIN_MENU:
+			{
+				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
+				ClearBackground(backgroundColor);
+				draw_text_centered(font, "Asteroids", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f}, 40, fontSpacing, WHITE);
+				draw_text_centered(font, "<Press enter to play>", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 30}, 20, fontSpacing, WHITE);
+				draw_text_centered(font, "<WASD to move, space to shoot, p to pause>", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 50}, 20,fontSpacing, WHITE);
+				draw_text_centered(font, "v0.1", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT - 15}, 15, fontSpacing, WHITE);
+				break;
+			}
+		case STATE_RUNNING:
+			{
+				Color backgroundColor = ColorFromHSV(258, 1, 0.07);
+				ClearBackground(backgroundColor);
+
+				// Draw Stars
+				{
+					for (int starIndex = 0; starIndex < gameState.starCount; starIndex++)
+					{
+						Star* star = &gameState.stars[starIndex];
+						if(!CheckCollisionPointRec(star->position, screenRect))
+						{
+							// Replace with last star
+							*star = gameState.stars[--gameState.starCount];
+						}
+
+						const int texture_x = star->position.x - star->sprite.coords.width / 2.0 * star->size;
+						const int texture_y = star->position.y - star->sprite.coords.height / 2.0 * star->size;
+						Color starColor = ColorAlpha(WHITE, star->alpha);
+						DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_STAR1).coords, (Vector2) {texture_x, texture_y}, starColor);
+					}
+				}
+
+				// Draw Bullets
+				{
+					BeginShaderMode(shader);
+					for (int bulletIndex = 0; bulletIndex < gameState.bulletCount; bulletIndex++)
+					{
+						Bullet* bullet = &gameState.bullets[bulletIndex];
+						Rectangle bulletRec = {
+							.width = bullet->sprite.coords.width,
+							.height = bullet->sprite.coords.height,
+							.x = bullet->position.x,
+							.y = bullet->position.y,
+						};
+						Vector2 texSize = { bulletRec.width, bulletRec.height };
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						// SetShaderValue(lightShader, uLightPos, &bullet->position, SHADER_UNIFORM_VEC2);
+						DrawTexturePro(atlas.textureAtlas, bullet->sprite.coords, bulletRec, (Vector2){0, 0}, bullet->rotation, WHITE);
+						// DrawTextureRec(atlas.textureAtlas, bullet->sprite.coords, bullet->position, WHITE);
+					}
+					EndShaderMode();
+				}
+				// Draw asteroids
+				{
+					BeginShaderMode(shader);
+					for (int asteroidIndex = 0; asteroidIndex < gameState.asteroidCount; asteroidIndex++)
+					{
+						Asteroid* asteroid = &gameState.asteroids[asteroidIndex];
+						float width = asteroid->sprite.coords.width * asteroid->size;
+						float height = asteroid->sprite.coords.height * asteroid->size;
+						Rectangle asteroidRec = {
+							.width = width,
+							.height = height, 
+							.x = asteroid->position.x - width,
+							.y = asteroid->position.y - height, 
+						};
+						float rotation = 0.0f;
+
+						Vector2 texSize = { width, height };
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						DrawTexturePro(atlas.textureAtlas, asteroid->sprite.coords, asteroidRec, (Vector2){0, 0}, rotation, WHITE);
+					}
+					EndShaderMode();
+				}
+				// Draw Player
+				BeginShaderMode(shader);
+				const int texture_x = gameState.player.playerPosition.x - gameState.player.sprite.coords.width * gameState.player.size / gameState.player.animationFrames / 2.0;
+				const int texture_y = gameState.player.playerPosition.y - gameState.player.sprite.coords.height * gameState.player.size / 2.0;
+				Rectangle destination = {texture_x, texture_y, 
+					gameState.player.sprite.coords.width / gameState.player.animationFrames * gameState.player.size, 
+					gameState.player.sprite.coords.height * gameState.player.size}; // origin in coordinates and scale
+				Vector2 origin = {0, 0}; // so it draws from top left of image
+				if (gameState.player.invulTime <= 0.0f) {
+					DrawSpriteAnimationPro(atlas.playerAnimation, destination, origin, 0, WHITE, shader);
+				} else {
+					if (((int)(gameState.player.invulTime * 10)) % 2 == 0) {
+						DrawSpriteAnimationPro(atlas.playerAnimation, destination, origin, 0, WHITE, shader);
+					}
+				}
+				EndShaderMode();
+
+				break;
+			}
+		case STATE_UPGRADE:
+			{
+				ClearBackground(BLACK);
+				draw_text_centered(font, "LEVEL UP!", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f - 80.0}, 40, fontSpacing, WHITE);
+				draw_text_centered(font, "CHOOSE UPGRADE", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f - 35.0}, 40, fontSpacing, WHITE);
+				const int width = getSprite(SPRITE_MULTISHOT_UPGRADE).coords.width;
+				const int height = getSprite(SPRITE_MULTISHOT_UPGRADE).coords.height;                
+				const int pos_x = SCREEN_WIDTH/2.0f - width/2.0f;
+				const int pos_y = SCREEN_HEIGHT/2.0f - height/2.0f + 30.0;
+				const int spacing_x = 80;
+				switch (gameState.pickedUpgrade)
+				{
+					case UPGRADE_MULTISHOT:
+						{
+							DrawRectangle(pos_x-5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
+							break;
+						}
+					case UPGRADE_DAMAGE:
+						{ 
+							DrawRectangle(pos_x - spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
+							break;
+						}
+					case UPGRADE_FIRERATE:
+						{
+							DrawRectangle(pos_x + spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
+							break;
+						}
+					case UPGRADE_COUNT:
+						{
+							break;
+						}
+				}
+				DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_MULTISHOT_UPGRADE).coords, (Vector2){pos_x, pos_y}, WHITE);
+				DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_DAMAGE_UPGRADE).coords, (Vector2){pos_x - spacing_x, pos_y}, WHITE);
+				DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_FIRERATE_UPGRADE).coords, (Vector2){pos_x + spacing_x, pos_y}, WHITE);
+			}
+		case STATE_GAME_OVER:
+			{
+				ClearBackground(BLACK);
+				draw_text_centered(font, "GAME OVER", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f}, 40, fontSpacing, WHITE);
+				char scoreText[100] = {0};
+				sprintf(scoreText, "Final score: %d", gameState.experience);
+				draw_text_centered(font, scoreText, (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 30}, 20, fontSpacing, WHITE);
+				draw_text_centered(font, "<Press enter to try again>", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f + 60}, 20, fontSpacing, WHITE);
+				break;
+			}
+		case STATE_PAUSED:
+			{
+				draw_text_centered(font, "Game is paused...", (Vector2){SCREEN_WIDTH/2.0f, SCREEN_HEIGHT/2.0f}, 40, fontSpacing, WHITE);
+				break;
+			}
+	}
+	EndTextureMode(); // scene
+}
+
+void DrawLightmap(GameState gameState, TextureAtlas atlas, Font font, int fontSize, int fontSpacing)
+{
+
+}
+
+void DrawUI(GameState gameState, TextureAtlas atlas, Font font, int fontSize, int fontSpacing)
+{
+	// Draw player health
+	{
+		for (int i = 1; i <= gameState.player.playerHealth; i++)
+		{
+			const int texture_x = i * 16;
+			const int texture_y = getSprite(SPRITE_HEART).coords.height;
+			DrawTextureRec(atlas.textureAtlas, getSprite(SPRITE_HEART).coords, (Vector2){texture_x, texture_y}, WHITE);
+		}
+	}
+	// Draw Score
+	{
+		float recPosX = SCREEN_WIDTH - 115.0;
+		float recPosY = 20.0;
+		float recHeight = 30.0;
+		float recWidth = 100.0;
+		DrawRectangle(recPosX, recPosY, gameState.experience / 10.0, recHeight, ColorAlpha(BLUE, 0.5));
+		DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
+		char experienceText[100] = "XP";
+		Vector2 textSize = MeasureTextEx(font, experienceText, fontSize, fontSpacing);
+		DrawTextEx(font, experienceText, (Vector2){recPosX + recWidth / 2.0 - textSize.x / 2.0, recPosY + recHeight / 2.0 - textSize.y / 2.0}, 20.0, fontSpacing, WHITE);
+	}
+
+	DrawFPS(10, 40);
+}
+
+
+
+
+
 
 int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_TITLE);
@@ -256,20 +810,21 @@ int main() {
 	SpriteMaskCache spriteMasks;
     TextureAtlas atlas = initTextureAtlas(&spriteMasks);
 	initialize(&gameState, &atlas);
+
+	// Init audio
+	// TODO: move to separate function
 	InitAudioDevice();
 	ASSERT(IsAudioDeviceReady());
 	Music music = LoadMusicStream("audio/soundtrack.mp3");
 	ASSERT(IsMusicValid(music));
 	Sound hitFx = LoadSound("audio/hit.wav");
 	ASSERT(IsSoundValid(hitFx));
-	// Sound gunFx = LoadSound("audio/gun.mp3");
 	Sound laserFx = LoadSound("audio/laser.wav");
 	ASSERT(IsSoundValid(laserFx));
 	PlayMusicStream(music);
 	SetMusicVolume(music, 0.05);
 	SetSoundVolume(hitFx, 0.25);
 	SetSoundVolume(laserFx, 0.25);
-	// fprintf(stderr, "GLSL_VERSION: %d\n", GLSL_VERSION);
 
 	// fprintf(stderr, "GLSL_VERSION: %d\n", GLSL_VERSION);
 	RenderTexture2D scene = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
