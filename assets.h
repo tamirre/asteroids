@@ -150,6 +150,7 @@ void FreeSpriteAnimation(SpriteAnimation animation)
 
 TextureAtlas initTextureAtlas(SpriteMaskCache* spriteMasks)
 {
+
     TextureAtlas atlas;
     atlas.textureAtlas = LoadTexture("assets/textureAtlas.png");
 	SetTextureFilter(atlas.textureAtlas, TEXTURE_FILTER_BILINEAR);
