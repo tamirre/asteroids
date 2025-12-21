@@ -98,6 +98,8 @@ typedef struct GameState {
     // General
     int experience;
     State state;
+	float timeScale;
+	bool disableShaders;
     // Player
     Player player;
     // Projectiles
@@ -150,6 +152,8 @@ void initializeAudio(Audio* audio) {
 void initializeGameState(GameState* gameState) {
     *gameState = (GameState) {
         .state = STATE_MAIN_MENU,
+		.timeScale = 1.0f,
+		.disableShaders = false,
         .bulletCount = 0,
         .asteroidCount = 0,
         .asteroidSpawnRate = 0.2f,
@@ -185,7 +189,7 @@ void draw_text_centered(Font font, const char* text, Vector2 pos, float fontSize
     pos.y -= textSize.y / 2.0f;
 	DrawTextEx(font, text, (Vector2){pos.x, pos.y}, fontSize, fontSpacing, color);
 }
-bool pixelPerfectCollision(Color* pixel1, Color* pixel2, int width1, int width2, int height1, int height2, Rectangle dst1, Rectangle dst2, Rectangle overlap)
+bool pixelPerfectCollision(Color* pixel1, Color* pixel2, int width1, int width2, int height1, int height2, Rectangle dst1, Rectangle dst2, Rectangle overlap, RenderTexture2D* scene)
 {
     // Quick rejects
     if (overlap.width <= 0 || overlap.height <= 0) return false;
@@ -212,7 +216,11 @@ bool pixelPerfectCollision(Color* pixel1, Color* pixel2, int width1, int width2,
             int v1 = (int)((sy - dst1.y) * sy1);
             int u2 = (int)((sx - dst2.x) * sx2);
             int v2 = (int)((sy - dst2.y) * sy2);
-			// DrawPixel((int)sx, (int)sy, (Color){255,0,255,128});
+
+			// color for debugging
+			BeginTextureMode(*scene);
+			DrawPixel((int)sx, (int)sy, (Color){255,0,255,128});
+			EndTextureMode();
 
             // Bounds check
             if (u1 < 0 || v1 < 0 || u2 < 0 || v2 < 0) continue;
@@ -229,12 +237,14 @@ bool pixelPerfectCollision(Color* pixel1, Color* pixel2, int width1, int width2,
 
     return false;
 }
-void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMaskCache* spriteMasks, Audio* audio, float dt)
+void UpdateGame(GameState* gameState, TextureAtlas* atlas, RenderTexture2D* scene, SpriteMaskCache* spriteMasks, Audio* audio, float dt)
 {
     
     // TextureAtlas atlas = initTextureAtlas(&spriteMasks);
 
 	static bool cursorHidden = true;
+	static bool stepMode = false;
+	static bool stepOnce = false;
 
 	switch (gameState->state) 
 	{
@@ -247,6 +257,15 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMaskCache* spri
 			}
 		case STATE_RUNNING:
 			{
+				// Step debugging mode
+				if (IsKeyPressed(KEY_J)) stepMode = !stepMode;
+				if (IsKeyPressed(KEY_K)) stepOnce = true;
+				if (IsKeyPressed(KEY_O)) gameState->disableShaders = !gameState->disableShaders;
+
+
+				if (stepMode && !stepOnce) return;
+				stepOnce = false;
+
 				const Rectangle screenRect = {
 					.height = SCREEN_HEIGHT,
 					.width = SCREEN_WIDTH,
@@ -258,6 +277,14 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMaskCache* spri
 				{
 					gameState->state = STATE_UPGRADE;
 					gameState->experience -= 1000.0;
+				}
+				if (IsKeyPressed(KEY_H))
+				{
+					gameState->timeScale -= 0.1f;
+				}
+				if (IsKeyPressed(KEY_L)) 
+				{
+					gameState->timeScale += 0.1f;
 				}
 				if (IsKeyPressed(KEY_TAB)) // press Tab to toggle cursor
 				{
@@ -449,8 +476,8 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMaskCache* spri
 							// Replace with last projectile
 							*bullet = gameState->bullets[--gameState->bulletCount];
 						}
-                        bullet->position.x -= bullet->velocity.x * GetFrameTime();
-                        bullet->position.y -= bullet->velocity.y * GetFrameTime();
+                        bullet->position.x -= bullet->velocity.x * dt;
+                        bullet->position.y -= bullet->velocity.y * dt;
 					}
 				}
 				// Spawn Asteroids
@@ -521,7 +548,7 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMaskCache* spri
 								if (pixelPerfectCollision(spriteMasks->bullet.pixels, asteroid->pixels, 
 											bullet->sprite.coords.width, asteroid->sprite.coords.width,
 											bullet->sprite.coords.height, asteroid->sprite.coords.height,
-											bulletRec, asteroid->collider, collisionRec))
+											bulletRec, asteroid->collider, collisionRec, scene))
 								{
 									// Replace with bullet with last bullet
 									*bullet = gameState->bullets[--gameState->bulletCount];
@@ -541,7 +568,7 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMaskCache* spri
 							.x = gameState->player.playerPosition.x - playerWidth/2.0f,
 							.y = gameState->player.playerPosition.y - playerHeight/2.0f,
 						};
-						// DrawRectangleLinesEx(playerRec, 1.0, BLUE);
+						DrawRectangleLinesEx(playerRec, 1.0, BLUE);
 						Rectangle screenRectExtended = {
 							.width = SCREEN_WIDTH + asteroid->sprite.coords.width,
 							.height = SCREEN_HEIGHT + asteroid->sprite.coords.height,
@@ -556,12 +583,14 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMaskCache* spri
 						if(CheckCollisionRecs(asteroid->collider, playerRec) && gameState->player.invulTime <= 0.0f)
 						{
 							Rectangle collisionRec = GetCollisionRec(asteroid->collider, playerRec);
-							// DrawRectangleLinesEx(collisionRec, 2.0, RED);
+							BeginTextureMode(*scene);
+							DrawRectangleLinesEx(collisionRec, 2.0, RED);
+							EndTextureMode();
 							Rectangle playerSrc = GetCurrentAnimationFrame(atlas->playerAnimation); 
 							if (pixelPerfectCollision(spriteMasks->player.pixels, asteroid->pixels, 
 										playerSrc.width, asteroid->sprite.coords.width,
 										gameState->player.sprite.coords.height, asteroid->sprite.coords.height, 
-										playerRec, asteroid->collider, collisionRec))
+										playerRec, asteroid->collider, collisionRec, scene))
 							{
 								PlaySound(audio->hitFx);
 								gameState->player.invulTime = gameState->player.invulDuration;
@@ -583,7 +612,6 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMaskCache* spri
 				if (IsKeyPressed(KEY_P)) {
 					gameState->state = STATE_PAUSED;
 				}
-
 				break;
 			}
 		case STATE_UPGRADE:
@@ -667,7 +695,7 @@ void DrawScene(GameState* gameState, TextureAtlas* atlas, RenderTexture2D* scene
 					}
 				}
 
-				BeginShaderMode(shader);
+				if(!gameState->disableShaders) BeginShaderMode(shader);
 				// Draw Bullets
 				{
 					for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
@@ -685,11 +713,9 @@ void DrawScene(GameState* gameState, TextureAtlas* atlas, RenderTexture2D* scene
 						DrawTexturePro(atlas->textureAtlas, bullet->sprite.coords, bulletRec, (Vector2){0, 0}, bullet->rotation, WHITE);
 						// DrawTextureRec(atlas->textureAtlas, bullet->sprite.coords, bullet->position, WHITE);
 					}
-					// EndShaderMode();
 				}
 				// Draw asteroids
 				{
-					// BeginShaderMode(shader);
 					for (int asteroidIndex = 0; asteroidIndex < gameState->asteroidCount; asteroidIndex++)
 					{
 						Asteroid* asteroid = &gameState->asteroids[asteroidIndex];
@@ -705,13 +731,10 @@ void DrawScene(GameState* gameState, TextureAtlas* atlas, RenderTexture2D* scene
 						Vector2 texSize = { width, height };
 						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, (Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
-						// DrawCircleV(asteroid->position, 3, RED);
-						// DrawRectangleLines(asteroid->collider.x, asteroid->collider.y, asteroid->collider.width, asteroid->collider.height, GREEN);
+						DrawRectangleLines(asteroid->collider.x, asteroid->collider.y, asteroid->collider.width, asteroid->collider.height, GREEN);
 					}
-					// EndShaderMode();
 				}
 				// Draw Player
-				// BeginShaderMode(shader);
 				const int texture_x = gameState->player.playerPosition.x - gameState->player.sprite.coords.width * gameState->player.size / gameState->player.animationFrames / 2.0;
 				const int texture_y = gameState->player.playerPosition.y - gameState->player.sprite.coords.height * gameState->player.size / 2.0;
 				Rectangle destination = {texture_x, texture_y, 
@@ -725,8 +748,8 @@ void DrawScene(GameState* gameState, TextureAtlas* atlas, RenderTexture2D* scene
 						DrawSpriteAnimationPro(atlas->playerAnimation, destination, origin, 0, WHITE, shader);
 					}
 				}
-				EndShaderMode();
-
+				DrawRectangleLines(destination.x, destination.y, destination.width, destination.height, RED);
+				if(!gameState->disableShaders) EndShaderMode();
 				break;
 			}
 		case STATE_UPGRADE:
@@ -876,11 +899,11 @@ void DrawUI(GameState* gameState, TextureAtlas* atlas, Font font, int fontSize, 
 	DrawFPS(10, 40);
 }
 
-void DrawComposite(RenderTexture2D* scene, RenderTexture2D* litScene, Shader lightShader)
+void DrawComposite(RenderTexture2D* scene, RenderTexture2D* litScene, GameState* gameState, Shader lightShader)
 {
-	BeginShaderMode(lightShader);
+	if(!gameState->disableShaders) BeginShaderMode(lightShader);
 	DrawTextureRec(scene->texture, (Rectangle){0,0,(float)scene->texture.width,-(float)scene->texture.height}, (Vector2){0,0}, WHITE);
-	EndShaderMode();
+	if(!gameState->disableShaders) EndShaderMode();
 }
 
 int main() {
@@ -909,12 +932,12 @@ int main() {
 	Shader lightShader = LoadShader(0, TextFormat("shaders/light.fs", GLSL_VERSION));
     while (!WindowShouldClose())
     {
-		float dt = GetFrameTime();
-		UpdateGame(&gameState, &atlas, &spriteMasks, &audio, dt);
+		float dt = GetFrameTime() * gameState.timeScale;
+		UpdateGame(&gameState, &atlas, &scene, &spriteMasks, &audio, dt);
 		DrawLightmap(&gameState, &litScene, lightShader);
 		DrawScene(&gameState, &atlas, &scene, shader, font, fontSize, fontSpacing);
 		BeginDrawing();
-		DrawComposite(&scene, &litScene, lightShader);
+		DrawComposite(&scene, &litScene, &gameState, lightShader);
 		DrawUI(&gameState, &atlas, font, fontSize, fontSpacing);
 		EndDrawing();
     }
