@@ -171,7 +171,7 @@ void initializeGameState(GameState* gameState) {
     gameState->player = (Player) {
         .playerVelocity = 200,
         // .playerPosition = (Vector2){SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f},
-        .playerHealth = 10,
+        .playerHealth = 1,
         .playerMultishot = false,
         .sprite = getSprite(SPRITE_PLAYER),
         .size = 2,
@@ -642,7 +642,7 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMaskCache* spri
 				if (IsKeyPressed(KEY_ENTER)) {
 					initializeGameState(gameState);
 					gameState->state = STATE_RUNNING;
-
+					gameState->player.playerPosition = (Vector2){gameState->screenWidth / 2.0f, gameState->screenHeight / 2.0f};
 				}
 				break;
 			}
@@ -872,21 +872,21 @@ void DrawUI(GameState* gameState, TextureAtlas* atlas, Font font, int fontSize, 
 			{
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
-				draw_text_centered(font, "Asteroids", (Vector2){gameState->screenWidth/2.0f, gameState->screenHeight/2.0f}, 40, fontSpacing, WHITE);
-				draw_text_centered(font, "<Press enter to play>", (Vector2){gameState->screenWidth/2.0f, gameState->screenHeight/2.0f + 30}, 20, fontSpacing, WHITE);
-				draw_text_centered(font, "<WASD to move, space to shoot, p to pause>", (Vector2){gameState->screenWidth/2.0f, gameState->screenHeight/2.0f + 50}, 20,fontSpacing, WHITE);
-				draw_text_centered(font, "v0.1", (Vector2){gameState->screenWidth/2.0f, gameState->screenHeight - 15}, 15, fontSpacing, WHITE);
+				draw_text_centered(font, "Asteroids", (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, fontSpacing, WHITE);
+				draw_text_centered(font, "<Press enter to play>", (Vector2){dst.width/2.0f, dst.height/2.0f + 30}, 20, fontSpacing, WHITE);
+				draw_text_centered(font, "<WASD to move, space to shoot, p to pause>", (Vector2){dst.width/2.0f, dst.height/2.0f + 50}, 20,fontSpacing, WHITE);
+				draw_text_centered(font, "v0.1", (Vector2){dst.width/2.0f, dst.height - 15}, 15, fontSpacing, WHITE);
 				break;
 			}
 		case STATE_GAME_OVER:
 			{
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
-				draw_text_centered(font, "GAME OVER", (Vector2){gameState->screenWidth/2.0f, gameState->screenHeight/2.0f}, 40, fontSpacing, WHITE);
+				draw_text_centered(font, "GAME OVER", (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, fontSpacing, WHITE);
 				char scoreText[100] = {0};
 				sprintf(scoreText, "Final score: %d", gameState->experience);
-				draw_text_centered(font, scoreText, (Vector2){gameState->screenWidth/2.0f, gameState->screenHeight/2.0f + 30}, 20, fontSpacing, WHITE);
-				draw_text_centered(font, "<Press enter to try again>", (Vector2){gameState->screenWidth/2.0f, gameState->screenHeight/2.0f + 60}, 20, fontSpacing, WHITE);
+				draw_text_centered(font, scoreText, (Vector2){dst.width/2.0f, dst.height/2.0f + 30.0f}, 20.0f, fontSpacing, WHITE);
+				draw_text_centered(font, "<Press enter to try again>", (Vector2){dst.width/2.0f, dst.height/2.0f + 60.0f}, 20.0f, fontSpacing, WHITE);
 				break;
 			}
 		case STATE_PAUSED:
@@ -906,22 +906,22 @@ void DrawUI(GameState* gameState, TextureAtlas* atlas, Font font, int fontSize, 
 					DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_HEART).coords, (Vector2){texture_x, texture_y}, WHITE);
 				}
 				// Draw Score
-				float recPosX = gameState->screenWidth * 0.8;
-				float recPosY = 20.0;
-				float recHeight = 30.0;
-				float recWidth = 100.0;
-				DrawRectangle(recPosX, recPosY, gameState->experience / 10.0, recHeight, ColorAlpha(BLUE, 0.5));
+				float recPosX = dst.width * 0.9;
+				float recPosY = dst.height * 0.1;
+				float recHeight = 30.0f;
+				float recWidth = 100.0f;
+				DrawRectangle(recPosX, recPosY, gameState->experience / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
 				DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
 				char experienceText[100] = "XP";
 				Vector2 textSize = MeasureTextEx(font, experienceText, fontSize, fontSpacing);
-				DrawTextEx(font, experienceText, (Vector2){recPosX + recWidth / 2.0 - textSize.x / 2.0, recPosY + recHeight / 2.0 - textSize.y / 2.0}, 20.0, fontSpacing, WHITE);
+				DrawTextEx(font, experienceText, (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, fontSpacing, WHITE);
 
-				draw_text_centered(font, "LEVEL UP!", (Vector2){gameState->screenWidth/2.0f, gameState->screenHeight/2.0f - 80.0}, 40, fontSpacing, WHITE);
-				draw_text_centered(font, "CHOOSE UPGRADE", (Vector2){gameState->screenWidth/2.0f, gameState->screenHeight/2.0f - 35.0}, 40, fontSpacing, WHITE);
+				draw_text_centered(font, "LEVEL UP!", (Vector2){dst.width/2.0f, dst.height/2.0f - 80.0f}, 40, fontSpacing, WHITE);
+				draw_text_centered(font, "CHOOSE UPGRADE", (Vector2){dst.width/2.0f, dst.height/2.0f - 35.0f}, 40, fontSpacing, WHITE);
 				const int width = getSprite(SPRITE_MULTISHOT_UPGRADE).coords.width;
 				const int height = getSprite(SPRITE_MULTISHOT_UPGRADE).coords.height;                
-				const int pos_x = gameState->screenWidth/2.0f - width/2.0f;
-				const int pos_y = gameState->screenHeight/2.0f - height/2.0f + 30.0;
+				const int pos_x = dst.width/2.0f - width/2.0f;
+				const int pos_y = dst.height/2.0f - height/2.0f + 30.0f;
 				const int spacing_x = 80;
 				switch (gameState->pickedUpgrade)
 				{
@@ -950,7 +950,6 @@ void DrawUI(GameState* gameState, TextureAtlas* atlas, Font font, int fontSize, 
 				DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_FIRERATE_UPGRADE).coords, (Vector2){pos_x + spacing_x, pos_y}, WHITE);
 			}
 	}
-
 	DrawFPS(10, 40);
 }
 
