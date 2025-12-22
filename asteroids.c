@@ -191,33 +191,79 @@ void draw_text_centered(Font font, const char* text, Vector2 pos, float fontSize
     pos.y -= textSize.y / 2.0f;
 	DrawTextEx(font, text, (Vector2){pos.x, pos.y}, fontSize, fontSpacing, color);
 }
-bool pixelPerfectCollision(Color* pixel1, Color* pixel2, int width1, int width2, int height1, int height2, Rectangle dst1, Rectangle dst2, Rectangle overlap)
-{
-    // Quick rejects
-    if (overlap.width <= 0 || overlap.height <= 0) return false;
 
-    const float sx1 = (float)width1  / dst1.width;   // screen->src scale for sprite 1
+bool pixelPerfectCollision(
+    Color* pixel1,
+    Color* pixel2,
+    int width1, int width2,
+    int height1, int height2,
+    Rectangle dst1, Rectangle dst2,
+    Rectangle overlap,
+    float rotationDeg1,
+    float rotationDeg2
+)
+{
+    if (overlap.width <= 0 || overlap.height <= 0)
+        return false;
+
+    // Screen -> texture scale
+    const float sx1 = (float)width1  / dst1.width;
     const float sy1 = (float)height1 / dst1.height;
-    const float sx2 = (float)width2  / dst2.width;   // screen->src scale for sprite 2
+    const float sx2 = (float)width2  / dst2.width;
     const float sy2 = (float)height2 / dst2.height;
 
-    // Iterate overlap in SCREEN space, sample both images in their LOCAL space
-    const int ox = (int)floorf(overlap.x);
-    const int oy = (int)floorf(overlap.y);
-    const int ow = (int)ceilf(overlap.width);
-    const int oh = (int)ceilf(overlap.height);
+    // Centers (screen space)
+    Vector2 center1 = {
+        dst1.x + dst1.width  * 0.5f,
+        dst1.y + dst1.height * 0.5f
+    };
+    Vector2 center2 = {
+        dst2.x + dst2.width  * 0.5f,
+        dst2.y + dst2.height * 0.5f
+    };
 
-    for (int y = 0; y < oh; ++y) {
-        for (int x = 0; x < ow; ++x) {
-            // Current point in screen space
-            float sx = (float)(ox + x);
-            float sy = (float)(oy + y);
+    // Inverse rotations
+    float r1 = -rotationDeg1 * DEG2RAD;
+    float r2 = -rotationDeg2 * DEG2RAD;
 
-            // Map to local coordinates in each source image
-            int u1 = (int)((sx - dst1.x) * sx1);
-            int v1 = (int)((sy - dst1.y) * sy1);
-            int u2 = (int)((sx - dst2.x) * sx2);
-            int v2 = (int)((sy - dst2.y) * sy2);
+    float cos1 = cosf(r1), sin1 = sinf(r1);
+    float cos2 = cosf(r2), sin2 = sinf(r2);
+
+    int ox = (int)floorf(overlap.x);
+    int oy = (int)floorf(overlap.y);
+    int ow = (int)ceilf(overlap.width);
+    int oh = (int)ceilf(overlap.height);
+
+    for (int y = 0; y < oh; y++) {
+        for (int x = 0; x < ow; x++) {
+            float sx = ox + x;
+            float sy = oy + y;
+
+            /* ---------- sprite 1 ---------- */
+            float rx1 = sx - center1.x;
+            float ry1 = sy - center1.y;
+
+            float lx1 = cos1 * rx1 - sin1 * ry1;
+            float ly1 = sin1 * rx1 + cos1 * ry1;
+
+            lx1 += dst1.width  * 0.5f;
+            ly1 += dst1.height * 0.5f;
+
+            int u1 = (int)(lx1 * sx1);
+            int v1 = (int)(ly1 * sy1);
+
+            /* ---------- sprite 2 ---------- */
+            float rx2 = sx - center2.x;
+            float ry2 = sy - center2.y;
+
+            float lx2 = cos2 * rx2 - sin2 * ry2;
+            float ly2 = sin2 * rx2 + cos2 * ry2;
+
+            lx2 += dst2.width  * 0.5f;
+            ly2 += dst2.height * 0.5f;
+
+            int u2 = (int)(lx2 * sx2);
+            int v2 = (int)(ly2 * sy2);
 
             // Bounds check
             if (u1 < 0 || v1 < 0 || u2 < 0 || v2 < 0) continue;
@@ -234,6 +280,7 @@ bool pixelPerfectCollision(Color* pixel1, Color* pixel2, int width1, int width2,
 
     return false;
 }
+
 void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMaskCache* spriteMasks, Audio* audio, float dt)
 {
 	static bool cursorHidden = true;
@@ -553,7 +600,7 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMaskCache* spri
 								if (pixelPerfectCollision(spriteMasks->bullet.pixels, asteroid->pixels, 
 											bullet->sprite.coords.width, asteroid->sprite.coords.width,
 											bullet->sprite.coords.height, asteroid->sprite.coords.height,
-											bulletRec, asteroid->collider, collisionRec))
+											bulletRec, asteroid->collider, collisionRec, bullet->rotation, asteroid->rotation))
 								{
 									// Replace with bullet with last bullet
 									*bullet = gameState->bullets[--gameState->bulletCount];
@@ -593,7 +640,7 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMaskCache* spri
 							if (pixelPerfectCollision(spriteMasks->player.pixels, asteroid->pixels, 
 										playerSrc.width, asteroid->sprite.coords.width,
 										gameState->player.sprite.coords.height, asteroid->sprite.coords.height, 
-										playerRec, asteroid->collider, collisionRec))
+										playerRec, asteroid->collider, collisionRec, 0.0f, asteroid->rotation))
 							{
 								PlaySound(audio->hitFx);
 								gameState->player.invulTime = gameState->player.invulDuration;
@@ -769,7 +816,7 @@ void DrawScene(GameState* gameState, TextureAtlas* atlas, RenderTexture2D* scene
 						Vector2 texSize = { width, height };
 						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, (Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
-						// DrawRectangleLines(asteroid->collider.x, asteroid->collider.y, asteroid->collider.width, asteroid->collider.height, GREEN);
+						DrawRectangleLines(asteroid->collider.x, asteroid->collider.y, asteroid->collider.width, asteroid->collider.height, GREEN);
 					}
 				}
 				// Draw Player
@@ -786,7 +833,7 @@ void DrawScene(GameState* gameState, TextureAtlas* atlas, RenderTexture2D* scene
 						DrawSpriteAnimationPro(atlas->playerAnimation, destination, origin, 0, WHITE, shader);
 					}
 				}
-				// DrawRectangleLines(destination.x, destination.y, destination.width, destination.height, RED);
+				DrawRectangleLines(destination.x, destination.y, destination.width, destination.height, RED);
 				if(!gameState->disableShaders) EndShaderMode();
 				break;
 			}
