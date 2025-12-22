@@ -170,8 +170,8 @@ void initializeGameState(GameState* gameState) {
 
     gameState->player = (Player) {
         .playerVelocity = 200,
-        // .playerPosition = (Vector2){SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f},
-        .playerHealth = 1,
+        .playerPosition = (Vector2){VIRTUAL_WIDTH / 2.0f, VIRTUAL_HEIGHT / 2.0f},
+        .playerHealth = 7,
         .playerMultishot = false,
         .sprite = getSprite(SPRITE_PLAYER),
         .size = 2,
@@ -642,7 +642,7 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMaskCache* spri
 				if (IsKeyPressed(KEY_ENTER)) {
 					initializeGameState(gameState);
 					gameState->state = STATE_RUNNING;
-					gameState->player.playerPosition = (Vector2){gameState->screenWidth / 2.0f, gameState->screenHeight / 2.0f};
+					// gameState->player.playerPosition = (Vector2){gameState->screenWidth / 2.0f, gameState->screenHeight / 2.0f};
 				}
 				break;
 			}
@@ -858,7 +858,7 @@ void DrawUI(GameState* gameState, TextureAtlas* atlas, Font font, int fontSize, 
 				}
 				// Draw Score
 				float recPosX = dst.width * 0.9;
-				float recPosY = dst.height * 0.1;
+				float recPosY = dst.height * 0.05;
 				float recHeight = 30.0f;
 				float recWidth = 100.0f;
 				DrawRectangle(recPosX, recPosY, gameState->experience / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
@@ -907,7 +907,7 @@ void DrawUI(GameState* gameState, TextureAtlas* atlas, Font font, int fontSize, 
 				}
 				// Draw Score
 				float recPosX = dst.width * 0.9;
-				float recPosY = dst.height * 0.1;
+				float recPosY = dst.height * 0.05;
 				float recHeight = 30.0f;
 				float recWidth = 100.0f;
 				DrawRectangle(recPosX, recPosY, gameState->experience / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
