@@ -55,7 +55,6 @@ typedef struct SpriteMaskCache {
 	SpriteMask bullet;
 } SpriteMaskCache;
 
-
 internal Sprite getSprite(SpriteID spriteID)
 {
     Sprite s = {};
