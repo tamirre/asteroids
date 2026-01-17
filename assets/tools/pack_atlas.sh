@@ -20,14 +20,15 @@ aseprite -b \
   "$SPRITE_DIR"/*.aseprite \
   --sheet "$OUTDIR/atlas.png" \
   --data  "$OUTDIR/atlas.json" \
-  --sheet-type rows \
+  # --list-layers \
+  # --split-tags \
+  # --list-slices \
+  --sheet-pack \
   --format json-array \
   --border-padding 2 \
-  --shape-padding 2 \
-  --inner-padding 0
 
-echo "Generating sprites.h"
-python $SPRITE_DIR/../tools/jsonToC.py \
-  "$OUTDIR/atlas.json" \
-  "$OUTDIR/sprites.h"
+# echo "Generating sprites.h"
+# python $SPRITE_DIR/../tools/jsonToC.py \
+#   "$OUTDIR/atlas.json" \
+#   "$OUTDIR/sprites.h"
 echo "DONE"

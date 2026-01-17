@@ -4,7 +4,7 @@
 #include "raylib.h"
 #include <stdio.h>
 #include <math.h>
-#include "assets.h"
+#include "assetsData.h"
 
 #define MIN_SCREEN_WIDTH (1280.0f)
 #define MIN_SCREEN_HEIGHT (720.0f)
