@@ -40,6 +40,7 @@ internal Sprite getSprite(SpriteID spriteID)
 	return s;
 }
 
+// TODO: Fix this with the new texture atlas that has been generated
 TextureAtlas initTextureAtlas(SpriteMaskCache* spriteMasks)
 {
 
@@ -50,18 +51,17 @@ TextureAtlas initTextureAtlas(SpriteMaskCache* spriteMasks)
 	Image atlasImage = LoadImageFromTexture(atlas.textureAtlas);
     ImageFormat(&atlasImage, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
 
-    float textureWidth = 38;
-    float textureHeight = 64;
+
     atlas.playerAnimation = createSpriteAnimation(atlas.textureAtlas, 7, (Rectangle[]) {
-                        (Rectangle){292,74,textureWidth,textureHeight},   
-                        (Rectangle){292+1*textureWidth,74,textureWidth,textureHeight},  
-                        (Rectangle){292+2*textureWidth,74,textureWidth,textureHeight},  
-                        (Rectangle){292+3*textureWidth,74,textureWidth,textureHeight},
-                        (Rectangle){292+4*textureWidth,74,textureWidth,textureHeight},
+                        (Rectangle){292,74,getSprite(SPRITE_PLAYER).coords.width/5,getSprite(SPRITE_PLAYER).coords.height},   
+                        (Rectangle){292+1*getSprite(SPRITE_PLAYER).coords.width/5,74,getSprite(SPRITE_PLAYER).coords.width/5,getSprite(SPRITE_PLAYER).coords.height},  
+                        (Rectangle){292+2*getSprite(SPRITE_PLAYER).coords.width/5,74,getSprite(SPRITE_PLAYER).coords.width/5,getSprite(SPRITE_PLAYER).coords.height},  
+                        (Rectangle){292+3*getSprite(SPRITE_PLAYER).coords.width/5,74,getSprite(SPRITE_PLAYER).coords.width/5,getSprite(SPRITE_PLAYER).coords.height},
+                        (Rectangle){292+4*getSprite(SPRITE_PLAYER).coords.width/5,74,getSprite(SPRITE_PLAYER).coords.width/5,getSprite(SPRITE_PLAYER).coords.height},
                         }, 5);
 
 	spriteMasks->player.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_PLAYER), 5);
-	spriteMasks->player.width = getSprite(SPRITE_PLAYER).coords.width / 5;
+	spriteMasks->player.width  = getSprite(SPRITE_PLAYER).coords.width / 5;
 	spriteMasks->player.height = getSprite(SPRITE_PLAYER).coords.height;
 
 	spriteMasks->bullet.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_BULLET), 1);

@@ -3,6 +3,13 @@
 
 #include "raylib.h"
 
+typedef struct Sprite {
+	Texture2D texture;
+	Rectangle coords;
+	Vector2 pivotOffset;
+	int numFrames;
+} Sprite;
+
 typedef enum SpriteID {
     SPRITE_ASTEROID1,
     SPRITE_ASTEROID2,
@@ -16,13 +23,6 @@ typedef enum SpriteID {
     SPRITE_UPGRADEMULTISHOT,
     SPRITE_COUNT
 } SpriteID;
-
-typedef struct Sprite {
-    Texture2D texture;
-    Rectangle coords;
-    Vector2 pivotOffset;
-    int numFrames;
-} Sprite;
 
 static inline Sprite getSprite(SpriteID spriteID) {
     Sprite s = {0};
