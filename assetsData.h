@@ -52,6 +52,16 @@ TextureAtlas initTextureAtlas(SpriteMaskCache* spriteMasks)
     ImageFormat(&atlasImage, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
 
 
+	int animCount = 0;
+	for (int i = 0; i < SPRITE_COUNT; i++)
+	{
+		if (getSprite(i).numFrames > 1) animCount++;
+	}
+
+	for (int i = 0; i < animCount; i++) {
+		
+	}
+
     atlas.playerAnimation = createSpriteAnimation(atlas.textureAtlas, 7, (Rectangle[]) {
                         (Rectangle){292,74,getSprite(SPRITE_PLAYER).coords.width/5,getSprite(SPRITE_PLAYER).coords.height},   
                         (Rectangle){292+1*getSprite(SPRITE_PLAYER).coords.width/5,74,getSprite(SPRITE_PLAYER).coords.width/5,getSprite(SPRITE_PLAYER).coords.height},  
@@ -59,6 +69,15 @@ TextureAtlas initTextureAtlas(SpriteMaskCache* spriteMasks)
                         (Rectangle){292+3*getSprite(SPRITE_PLAYER).coords.width/5,74,getSprite(SPRITE_PLAYER).coords.width/5,getSprite(SPRITE_PLAYER).coords.height},
                         (Rectangle){292+4*getSprite(SPRITE_PLAYER).coords.width/5,74,getSprite(SPRITE_PLAYER).coords.width/5,getSprite(SPRITE_PLAYER).coords.height},
                         }, 5);
+
+
+	SpriteMask spriteMasks2[SPRITE_COUNT];
+	for (int i = 0; i < SPRITE_COUNT; i++)
+	{
+		spriteMasks2[i].pixels = getPixelsFromAtlas(atlasImage, getSprite(i), getSprite(i).numFrames);
+		spriteMasks2[i].width = getSprite(i).coords.width / getSprite(i).numFrames;
+		spriteMasks2[i].height = getSprite(i).coords.height;
+	}
 
 	spriteMasks->player.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_PLAYER), 5);
 	spriteMasks->player.width  = getSprite(SPRITE_PLAYER).coords.width / 5;

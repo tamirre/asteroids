@@ -1,6 +1,6 @@
 # TODO list: 
 
-- [ ] make pixel perfect collision work with rotating asteroids
+- [x] make pixel perfect collision work with rotating asteroids
 - [ ] build a texture packer for sprites with aseprite
 - [ ] figure out how to build for web
 - [ ] make it fun
