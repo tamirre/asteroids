@@ -816,7 +816,7 @@ void DrawScene(GameState* gameState, TextureAtlas* atlas, RenderTexture2D* scene
 						Vector2 texSize = { width, height };
 						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, (Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
-						DrawRectangleLines(asteroid->collider.x, asteroid->collider.y, asteroid->collider.width, asteroid->collider.height, GREEN);
+						// DrawRectangleLines(asteroid->collider.x, asteroid->collider.y, asteroid->collider.width, asteroid->collider.height, GREEN);
 					}
 				}
 				// Draw Player
@@ -833,7 +833,7 @@ void DrawScene(GameState* gameState, TextureAtlas* atlas, RenderTexture2D* scene
 						DrawSpriteAnimationPro(atlas->playerAnimation, destination, origin, 0, WHITE, shader);
 					}
 				}
-				DrawRectangleLines(destination.x, destination.y, destination.width, destination.height, RED);
+				// DrawRectangleLines(destination.x, destination.y, destination.width, destination.height, RED);
 				if(!gameState->disableShaders) EndShaderMode();
 				break;
 			}
@@ -1026,10 +1026,10 @@ int main() {
 
 	ConfigFlags configFlags = FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT | FLAG_BORDERLESS_WINDOWED_MODE;
 	SetConfigFlags(configFlags);
-	SetWindowMinSize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
 	gameState.player.playerPosition = (Vector2){gameState.screenWidth / 2.0f, gameState.screenHeight / 2.0f};
 	// InitWindow(gameState.screenWidth, gameState.screenHeight, WINDOW_TITLE);
 	InitWindow(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_TITLE);
+	SetWindowMinSize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
 	// Font font = LoadFont("fonts/setback.png");
 	// Font font = LoadFont("fonts/mecha.png");
 	Font font = LoadFont("fonts/jupiter_crash.png");
