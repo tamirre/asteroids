@@ -1,105 +1,45 @@
+// AUTO-GENERATED — DO NOT EDIT
 #pragma once
-#include "assetsUtils.h"
-
+#include "raylib.h"
 #define internal static
 
-typedef enum SpriteID {
-   SPRITE_PLAYER,
-   SPRITE_STAR1,
-   SPRITE_STAR2,
-   SPRITE_BULLET,
-   SPRITE_ASTEROID1,
-   SPRITE_ASTEROID2,
-   SPRITE_ASTEROID3,
-   SPRITE_HEART,
-   SPRITE_MULTISHOT_UPGRADE,
-   SPRITE_DAMAGE_UPGRADE,
-   SPRITE_FIRERATE_UPGRADE,
+typedef struct Sprite {
+    Texture2D texture;
+    Rectangle coords;
+    Vector2 pivotOffset;
+    int numFrames;
+} Sprite;
 
-   SPRITE_COUNT,
+typedef enum SpriteID {
+    SPRITE_ASTEROID1,
+    SPRITE_ASTEROID2,
+    SPRITE_ASTEROID3,
+    SPRITE_BULLET,
+    SPRITE_HEART,
+    SPRITE_PLAYER,
+    SPRITE_STAR1,
+    SPRITE_STAR2,
+    SPRITE_UPGRADEDAMAGE,
+    SPRITE_UPGRADEFIRERATE,
+    SPRITE_UPGRADEMULTISHOT,
+    SPRITE_COUNT
 } SpriteID;
 
-internal Sprite getSprite(SpriteID spriteID)
-{
-	Sprite s = {};
-	switch(spriteID)
-	{
-		case SPRITE_PLAYER:           {s.coords = (Rectangle){292, 74, 190, 64}; break;}
-		case SPRITE_STAR1:            {s.coords = (Rectangle){0,   69,   5,  5}; break;}
-		case SPRITE_STAR2:            {s.coords = (Rectangle){5,   69,   3,  3}; break;}
-		case SPRITE_BULLET:           {s.coords = (Rectangle){0,   52,   2,  7}; break;}
-		case SPRITE_ASTEROID1:        {s.coords = (Rectangle){160, 160,  64, 64}; break;}
-		case SPRITE_ASTEROID2:        {s.coords = (Rectangle){96,  160,  64, 64}; break;}
-		case SPRITE_ASTEROID3:        {s.coords = (Rectangle){0,   160,  96, 96}; break;}
-		case SPRITE_HEART:            {s.coords = (Rectangle){2,   52,   17, 17}; break;}
-		case SPRITE_MULTISHOT_UPGRADE:{s.coords = (Rectangle){128, 74,   64, 80}; break;}
-		case SPRITE_DAMAGE_UPGRADE:   {s.coords = (Rectangle){0,   74,   64, 80}; break;}
-		case SPRITE_FIRERATE_UPGRADE: {s.coords = (Rectangle){64,  74,   64, 80}; break;}
-		default: { } 
-	}
-	return s;
-}
-
-// TODO: Fix this with the new texture atlas that has been generated
-TextureAtlas initTextureAtlas(SpriteMaskCache* spriteMasks)
-{
-
-    TextureAtlas atlas;
-    atlas.textureAtlas = LoadTexture("assets/textureAtlas.png");
-	SetTextureFilter(atlas.textureAtlas, TEXTURE_FILTER_BILINEAR);
-
-	Image atlasImage = LoadImageFromTexture(atlas.textureAtlas);
-    ImageFormat(&atlasImage, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-
-
-	int animCount = 0;
-	for (int i = 0; i < SPRITE_COUNT; i++)
-	{
-		if (getSprite(i).numFrames > 1) animCount++;
-	}
-
-	for (int i = 0; i < animCount; i++) {
-		
-	}
-
-    atlas.playerAnimation = createSpriteAnimation(atlas.textureAtlas, 7, (Rectangle[]) {
-                        (Rectangle){292,74,getSprite(SPRITE_PLAYER).coords.width/5,getSprite(SPRITE_PLAYER).coords.height},   
-                        (Rectangle){292+1*getSprite(SPRITE_PLAYER).coords.width/5,74,getSprite(SPRITE_PLAYER).coords.width/5,getSprite(SPRITE_PLAYER).coords.height},  
-                        (Rectangle){292+2*getSprite(SPRITE_PLAYER).coords.width/5,74,getSprite(SPRITE_PLAYER).coords.width/5,getSprite(SPRITE_PLAYER).coords.height},  
-                        (Rectangle){292+3*getSprite(SPRITE_PLAYER).coords.width/5,74,getSprite(SPRITE_PLAYER).coords.width/5,getSprite(SPRITE_PLAYER).coords.height},
-                        (Rectangle){292+4*getSprite(SPRITE_PLAYER).coords.width/5,74,getSprite(SPRITE_PLAYER).coords.width/5,getSprite(SPRITE_PLAYER).coords.height},
-                        }, 5);
-
-
-	SpriteMask spriteMasks2[SPRITE_COUNT];
-	for (int i = 0; i < SPRITE_COUNT; i++)
-	{
-		spriteMasks2[i].pixels = getPixelsFromAtlas(atlasImage, getSprite(i), getSprite(i).numFrames);
-		spriteMasks2[i].width = getSprite(i).coords.width / getSprite(i).numFrames;
-		spriteMasks2[i].height = getSprite(i).coords.height;
-	}
-
-	spriteMasks->player.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_PLAYER), 5);
-	spriteMasks->player.width  = getSprite(SPRITE_PLAYER).coords.width / 5;
-	spriteMasks->player.height = getSprite(SPRITE_PLAYER).coords.height;
-
-	spriteMasks->bullet.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_BULLET), 1);
-	spriteMasks->bullet.width = getSprite(SPRITE_BULLET).coords.width;
-	spriteMasks->bullet.height = getSprite(SPRITE_BULLET).coords.height;
-
-	spriteMasks->asteroid1.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_ASTEROID1), 1);
-	spriteMasks->asteroid1.width = getSprite(SPRITE_ASTEROID1).coords.width;
-	spriteMasks->asteroid1.height = getSprite(SPRITE_ASTEROID1).coords.height;
-
-	spriteMasks->asteroid2.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_ASTEROID2), 1);
-	spriteMasks->asteroid2.width = getSprite(SPRITE_ASTEROID2).coords.width;
-	spriteMasks->asteroid2.height = getSprite(SPRITE_ASTEROID2).coords.height;
-
-	spriteMasks->asteroid3.pixels = getPixelsFromAtlas(atlasImage, getSprite(SPRITE_ASTEROID3), 1);
-	spriteMasks->asteroid3.width = getSprite(SPRITE_ASTEROID3).coords.width;
-	spriteMasks->asteroid3.height = getSprite(SPRITE_ASTEROID3).coords.height;
-
-    UnloadImage(atlasImage);
-
-    return atlas;
+static inline Sprite getSprite(SpriteID spriteID) {
+    Sprite s = {0};
+    switch(spriteID) {
+        case SPRITE_ASTEROID1: { s.coords = (Rectangle){422, 0, 64, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_ASTEROID2: { s.coords = (Rectangle){0, 0, 64, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_ASTEROID3: { s.coords = (Rectangle){131, 0, 96, 96}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_BULLET: { s.coords = (Rectangle){631, 0, 2, 7}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_HEART: { s.coords = (Rectangle){486, 0, 17, 17}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_PLAYER: { s.coords = (Rectangle){227, 0, 190, 64}; s.pivotOffset = (Vector2){-1, -24}; s.numFrames = 5; break; }
+        case SPRITE_STAR1: { s.coords = (Rectangle){417, 0, 5, 5}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_STAR2: { s.coords = (Rectangle){64, 0, 3, 3}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_UPGRADEDAMAGE: { s.coords = (Rectangle){567, 0, 64, 80}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_UPGRADEFIRERATE: { s.coords = (Rectangle){67, 0, 64, 80}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_UPGRADEMULTISHOT: { s.coords = (Rectangle){503, 0, 64, 80}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        default: break;
+    }
+    return s;
 }

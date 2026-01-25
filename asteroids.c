@@ -1,10 +1,11 @@
 // To build on linux: 
 // gcc asteroids.c -Wall -o asteroids -Ithird_party/include -lraylib -lm -ldl -lpthread -lGL
+#include "assetsData.h"
 #define RAYMATH_IMPLEMENTATION
 #include "raylib.h"
 #include <stdio.h>
 #include <math.h>
-#include "assetsData.h"
+#include "assetsUtils.h"
 
 #define MIN_SCREEN_WIDTH (1280.0f)
 #define MIN_SCREEN_HEIGHT (720.0f)
@@ -120,14 +121,13 @@ typedef struct GameState {
     Upgrade pickedUpgrade;
 } GameState;
 
-void cleanup(TextureAtlas atlas, Audio audio, Font font, SpriteMaskCache spriteMasks) {
+void cleanup(TextureAtlas atlas, Audio audio, Font font, SpriteMask spriteMasks[]) {
     FreeSpriteAnimation(atlas.playerAnimation);
     UnloadFont(font);
-	UnloadImageColors(spriteMasks.player.pixels);
-	UnloadImageColors(spriteMasks.asteroid1.pixels);
-	UnloadImageColors(spriteMasks.asteroid2.pixels);
-	UnloadImageColors(spriteMasks.asteroid3.pixels);
-	UnloadImageColors(spriteMasks.bullet.pixels);
+	for (int i = 0; i < SPRITE_COUNT; i++)
+	{
+		UnloadImageColors(spriteMasks[i].pixels);
+	}
 	UnloadMusicStream(audio.music);
 	UnloadSound(audio.hitFx);
 	UnloadSound(audio.laserFx);
@@ -281,7 +281,7 @@ bool pixelPerfectCollision(
     return false;
 }
 
-void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMaskCache* spriteMasks, Audio* audio, float dt)
+void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMask spriteMasks[], Audio* audio, float dt)
 {
 	static bool cursorHidden = true;
 	static bool stepMode = false;
@@ -554,13 +554,13 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMaskCache* spri
 						Sprite asteroidSprite;
 						if (whichAsteroid < 6) {
 							asteroidSprite = getSprite(SPRITE_ASTEROID1);
-							asteroid.pixels = spriteMasks->asteroid1.pixels;
+							asteroid.pixels = spriteMasks[SPRITE_ASTEROID1].pixels;
 						} else if (whichAsteroid < 9) {
 							asteroidSprite = getSprite(SPRITE_ASTEROID2);
-							asteroid.pixels = spriteMasks->asteroid2.pixels;
+							asteroid.pixels = spriteMasks[SPRITE_ASTEROID2].pixels;
 						} else {
 							asteroidSprite = getSprite(SPRITE_ASTEROID3);
-							asteroid.pixels = spriteMasks->asteroid3.pixels;
+							asteroid.pixels = spriteMasks[SPRITE_ASTEROID3].pixels;
 						}
 						asteroid.sprite = asteroidSprite;
 						asteroid.position.y -= asteroid.sprite.coords.height; // to make them come into screen smoothly
@@ -597,7 +597,7 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMaskCache* spri
 							if(CheckCollisionRecs(asteroid->collider, bulletRec))
 							{
 								Rectangle collisionRec = GetCollisionRec(asteroid->collider, bulletRec);
-								if (pixelPerfectCollision(spriteMasks->bullet.pixels, asteroid->pixels, 
+								if (pixelPerfectCollision(spriteMasks[SPRITE_BULLET].pixels, asteroid->pixels, 
 											bullet->sprite.coords.width, asteroid->sprite.coords.width,
 											bullet->sprite.coords.height, asteroid->sprite.coords.height,
 											bulletRec, asteroid->collider, collisionRec, bullet->rotation, asteroid->rotation))
@@ -637,7 +637,7 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMaskCache* spri
 							Rectangle collisionRec = GetCollisionRec(asteroid->collider, playerRec);
 							// DrawRectangleLinesEx(collisionRec, 2.0, RED);
 							Rectangle playerSrc = GetCurrentAnimationFrame(atlas->playerAnimation); 
-							if (pixelPerfectCollision(spriteMasks->player.pixels, asteroid->pixels, 
+							if (pixelPerfectCollision(spriteMasks[SPRITE_PLAYER].pixels, asteroid->pixels, 
 										playerSrc.width, asteroid->sprite.coords.width,
 										gameState->player.sprite.coords.height, asteroid->sprite.coords.height, 
 										playerRec, asteroid->collider, collisionRec, 0.0f, asteroid->rotation))
@@ -965,8 +965,8 @@ void DrawUI(GameState* gameState, TextureAtlas* atlas, Font font, int fontSize, 
 
 				draw_text_centered(font, "LEVEL UP!", (Vector2){dst.width/2.0f, dst.height/2.0f - 80.0f}, 40, fontSpacing, WHITE);
 				draw_text_centered(font, "CHOOSE UPGRADE", (Vector2){dst.width/2.0f, dst.height/2.0f - 35.0f}, 40, fontSpacing, WHITE);
-				const int width = getSprite(SPRITE_MULTISHOT_UPGRADE).coords.width;
-				const int height = getSprite(SPRITE_MULTISHOT_UPGRADE).coords.height;                
+				const int width = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width;
+				const int height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height;                
 				const int pos_x = dst.width/2.0f - width/2.0f;
 				const int pos_y = dst.height/2.0f - height/2.0f + 30.0f;
 				const int spacing_x = 80;
@@ -992,9 +992,9 @@ void DrawUI(GameState* gameState, TextureAtlas* atlas, Font font, int fontSize, 
 							break;
 						}
 				}
-				DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_MULTISHOT_UPGRADE).coords, (Vector2){pos_x, pos_y}, WHITE);
-				DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_DAMAGE_UPGRADE).coords, (Vector2){pos_x - spacing_x, pos_y}, WHITE);
-				DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_FIRERATE_UPGRADE).coords, (Vector2){pos_x + spacing_x, pos_y}, WHITE);
+				DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_UPGRADEMULTISHOT).coords, (Vector2){pos_x, pos_y}, WHITE);
+				DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_UPGRADEDAMAGE).coords, (Vector2){pos_x - spacing_x, pos_y}, WHITE);
+				DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_UPGRADEFIRERATE).coords, (Vector2){pos_x + spacing_x, pos_y}, WHITE);
 			}
 	}
 	DrawFPS(10, 40);
@@ -1019,7 +1019,8 @@ int main() {
     
     GameState gameState;
 	Audio audio; 
-	SpriteMaskCache spriteMasks;
+	// SpriteMaskCache spriteMasks;
+	SpriteMask spriteMasks[SPRITE_COUNT];
 
 	initializeGameState(&gameState);
 	// SetWindowMinSize(gameState.screenWidth, gameState.screenHeight);
@@ -1036,7 +1037,7 @@ int main() {
 	int fontSpacing = 1;
 	int fontSize = 15;
 
-    TextureAtlas atlas = initTextureAtlas(&spriteMasks);
+    TextureAtlas atlas = initTextureAtlas(spriteMasks);
 	initializeAudio(&audio);
 
 	// fprintf(stderr, "GLSL_VERSION: %d\n", GLSL_VERSION);
@@ -1051,7 +1052,7 @@ int main() {
     { 
 		float dt = GetFrameTime() * gameState.timeScale;
 		HandleResize(&previousWidth, &previousHeight);
-		UpdateGame(&gameState, &atlas, &spriteMasks, &audio, dt);
+		UpdateGame(&gameState, &atlas, spriteMasks, &audio, dt);
 		DrawLightmap(&gameState, &litScene, lightShader);
 		DrawScene(&gameState, &atlas, &scene, shader, font, fontSize, fontSpacing);
 

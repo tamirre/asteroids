@@ -26,18 +26,23 @@ end
 
 -- ------------------- setup paths -------------------
 local BASE_DIR  = app.fs.filePath("./")
+-- local BASE_DIR  = app.fs.filePath("~/asteroids/assets/test/")
 local ATLAS_DIR = app.fs.joinPath(BASE_DIR, "atlas")
 ensureDir(ATLAS_DIR)
+-- print(BASE_DIR)
+-- print(ATLAS_DIR)
 
 local ATLAS_IMAGE = app.fs.joinPath(ATLAS_DIR, "atlas.png")
 local TEMP_JSON   = app.fs.joinPath(ATLAS_DIR, "_temp.json")
-local H_FILE      = app.fs.joinPath(ATLAS_DIR, "assets.h")
+local H_FILE      = app.fs.joinPath(ATLAS_DIR, "../../assetsData.h")
 
 -- ------------------- collect .aseprite files -------------------
 local files = {}
 for _, file in ipairs(app.fs.listFiles(BASE_DIR)) do
+  -- print(file)
   if file:lower():match("%.aseprite$") then
-    table.insert(files, app.fs.joinPath(BASE_DIR, file))
+	  -- print(file)
+	  table.insert(files, app.fs.joinPath(BASE_DIR, file))
   end
 end
 if #files == 0 then return end
@@ -49,8 +54,10 @@ for _, path in ipairs(files) do
   local spr = Sprite{ fromFile = path }
   local name = baseName(path)
 
+  print(spr.filename)
+  print(#spr.frames)
   local frameCount = #spr.frames
-  local frameW     = spr.width / frameCount
+  local frameW     = spr.width * frameCount
   local frameH     = spr.height
 
   local pivotX, pivotY = 0, 0
@@ -59,7 +66,7 @@ for _, path in ipairs(files) do
     if layer.name == PIVOT_LAYER_NAME then
       local cel = layer.cels[1]
       if cel then
-        pivotX = cel.position.x - ceilDiv2(frameW)
+        pivotX = cel.position.x - ceilDiv2(frameW/frameCount)
         pivotY = cel.position.y - frameH
       end
       break
@@ -121,8 +128,18 @@ end
 local h = io.open(H_FILE, "w")
 
 h:write("// AUTO-GENERATED — DO NOT EDIT\n")
-h:write("#pragma once\n\n")
-h:write("#include \"raylib.h\"\n\n")
+h:write("#pragma once\n")
+h:write("#include \"raylib.h\"\n")
+-- h:write("#include \"assetsUtils.h\"\n")
+h:write("#define internal static\n\n")
+
+-- Sprite struct
+h:write("typedef struct Sprite {\n")
+h:write("    Texture2D texture;\n")
+h:write("    Rectangle coords;\n")
+h:write("    Vector2 pivotOffset;\n")
+h:write("    int numFrames;\n")
+h:write("} Sprite;\n\n")
 
 -- enum SpriteID
 h:write("typedef enum SpriteID {\n")
@@ -138,14 +155,6 @@ end
 h:write("    SPRITE_COUNT\n")
 h:write("} SpriteID;\n\n")
 
--- Sprite struct
-h:write("typedef struct Sprite {\n")
-h:write("    Texture2D texture;\n")
-h:write("    Rectangle coords;\n")
-h:write("    Vector2 pivotOffset;\n")
-h:write("    int numFrames;\n")
-h:write("} Sprite;\n\n")
-
 -- getSprite()
 h:write("static inline Sprite getSprite(SpriteID spriteID) {\n")
 h:write("    Sprite s = {0};\n")
@@ -156,7 +165,7 @@ for _, name in ipairs(spriteNames) do
   h:write(string.format(
     "        case %s: { s.coords = (Rectangle){%d, %d, %d, %d}; s.pivotOffset = (Vector2){%d, %d}; s.numFrames = %d; break; }\n",
     sanitizeName(name),
-    m.offsetX,
+    m.offsetX - (m.frameWidth/m.frameCount)*(m.frameCount-1),
     m.offsetY,
     m.frameWidth,
     m.frameHeight,
