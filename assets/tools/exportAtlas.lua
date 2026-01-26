@@ -35,6 +35,7 @@ ensureDir(ATLAS_DIR)
 local ATLAS_IMAGE = app.fs.joinPath(ATLAS_DIR, "atlas.png")
 local TEMP_JSON   = app.fs.joinPath(ATLAS_DIR, "_temp.json")
 local H_FILE      = app.fs.joinPath(ATLAS_DIR, "../../assetsData.h")
+local SHAPE_PADDING = 1
 
 -- ------------------- collect .aseprite files -------------------
 local files = {}
@@ -99,13 +100,14 @@ local cmd = string.format(
   '--sheet-type rows ' ..
   '--sheet-width %d ' ..
   '--sheet-height %d ' ..
-  -- '--shape-padding 1 ' ..
+  '--shape-padding %d ' ..
   '--format json-array',
   filesStr,
   ATLAS_IMAGE,
   TEMP_JSON,
   ATLAS_SIZE,
-  ATLAS_SIZE
+  ATLAS_SIZE,
+  SHAPE_PADDING
 )
 
 os.execute(cmd)
@@ -121,7 +123,7 @@ for filename, x, y in json:gmatch(
   local name = normalizeFrameName(filename)
   local m = spriteMeta[name]
   if m then
-    m.offsetX = tonumber(x)
+    m.offsetX = tonumber(x) 
     m.offsetY = tonumber(y)
   end
 end

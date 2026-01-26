@@ -4,6 +4,7 @@
 #include "assetsData.h"
 
 #define internal static
+#define SHAPE_PADDING 1
 
 typedef struct SpriteAnimation
 {
@@ -84,8 +85,9 @@ SpriteAnimation createSpriteAnimation(Texture2D atlas, SpriteID spriteID, int fr
     spriteAnimation.rectangles = mem;
     for(int i = 0; i < numFrames; i++)
     {
-        spriteAnimation.rectangles[i] = (Rectangle){x+i*width/numFrames,y,width/numFrames,height};
-		// printf("Rectangle %i: %f %f %f %f\n", i, spriteAnimation.rectangles[i].x, spriteAnimation.rectangles[i].y, spriteAnimation.rectangles[i].width, spriteAnimation.rectangles[i].height);
+
+        spriteAnimation.rectangles[i] = (Rectangle){x+i*((width/numFrames)+SHAPE_PADDING)-SHAPE_PADDING*numFrames,y,width/numFrames,height};
+		printf("Rectangle %i: %f %f %f %f\n", i, spriteAnimation.rectangles[i].x, spriteAnimation.rectangles[i].y, spriteAnimation.rectangles[i].width, spriteAnimation.rectangles[i].height);
 	}
 
     return spriteAnimation;
@@ -111,7 +113,7 @@ TextureAtlas initTextureAtlas(SpriteMask spriteMasks[])
     TextureAtlas atlas;
     atlas.textureAtlas = LoadTexture("assets/atlas/atlas.png");
 	// SetTextureFilter(atlas.textureAtlas, TEXTURE_FILTER_POINT);
-	SetTextureFilter(atlas.textureAtlas, TEXTURE_FILTER_BILINEAR);
+	// SetTextureFilter(atlas.textureAtlas, TEXTURE_FILTER_BILINEAR);
 	// SetTextureFilter(atlas.textureAtlas, TEXTURE_FILTER_ANISOTROPIC_8X);
 
 	Image atlasImage = LoadImageFromTexture(atlas.textureAtlas);
