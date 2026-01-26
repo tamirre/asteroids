@@ -28,17 +28,17 @@ typedef enum SpriteID {
 static inline Sprite getSprite(SpriteID spriteID) {
     Sprite s = {0};
     switch(spriteID) {
-        case SPRITE_ASTEROID1: { s.coords = (Rectangle){422, 0, 64, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
-        case SPRITE_ASTEROID2: { s.coords = (Rectangle){0, 0, 64, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
-        case SPRITE_ASTEROID3: { s.coords = (Rectangle){131, 0, 96, 96}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
-        case SPRITE_BULLET: { s.coords = (Rectangle){631, 0, 2, 7}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
-        case SPRITE_HEART: { s.coords = (Rectangle){486, 0, 17, 17}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
-        case SPRITE_PLAYER: { s.coords = (Rectangle){227, 0, 190, 64}; s.pivotOffset = (Vector2){-1, -24}; s.numFrames = 5; break; }
-        case SPRITE_STAR1: { s.coords = (Rectangle){417, 0, 5, 5}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
-        case SPRITE_STAR2: { s.coords = (Rectangle){64, 0, 3, 3}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
-        case SPRITE_UPGRADEDAMAGE: { s.coords = (Rectangle){567, 0, 64, 80}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
-        case SPRITE_UPGRADEFIRERATE: { s.coords = (Rectangle){67, 0, 64, 80}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
-        case SPRITE_UPGRADEMULTISHOT: { s.coords = (Rectangle){503, 0, 64, 80}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_ASTEROID1: { s.coords = (Rectangle){5, 0, 64, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_ASTEROID2: { s.coords = (Rectangle){69, 0, 64, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_ASTEROID3: { s.coords = (Rectangle){133, 0, 96, 96}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_BULLET: { s.coords = (Rectangle){0, 0, 2, 7}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_HEART: { s.coords = (Rectangle){229, 0, 17, 17}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_PLAYER: { s.coords = (Rectangle){443, 0, 190, 64}; s.pivotOffset = (Vector2){-1, -24}; s.numFrames = 5; break; }
+        case SPRITE_STAR1: { s.coords = (Rectangle){310, 0, 5, 5}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_STAR2: { s.coords = (Rectangle){2, 0, 3, 3}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_UPGRADEDAMAGE: { s.coords = (Rectangle){379, 0, 64, 80}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_UPGRADEFIRERATE: { s.coords = (Rectangle){246, 0, 64, 80}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
+        case SPRITE_UPGRADEMULTISHOT: { s.coords = (Rectangle){315, 0, 64, 80}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; break; }
         default: break;
     }
     return s;

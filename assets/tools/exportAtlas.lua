@@ -54,8 +54,8 @@ for _, path in ipairs(files) do
   local spr = Sprite{ fromFile = path }
   local name = baseName(path)
 
-  print(spr.filename)
-  print(#spr.frames)
+  -- print(spr.filename)
+  -- print(#spr.frames)
   local frameCount = #spr.frames
   local frameW     = spr.width * frameCount
   local frameH     = spr.height
@@ -82,6 +82,7 @@ for _, path in ipairs(files) do
     offsetX     = 0,
     offsetY     = 0,
   }
+  spr:close()
 end
 
 -- ------------------- pack atlas via CLI -------------------
@@ -98,6 +99,7 @@ local cmd = string.format(
   '--sheet-type rows ' ..
   '--sheet-width %d ' ..
   '--sheet-height %d ' ..
+  -- '--shape-padding 1 ' ..
   '--format json-array',
   filesStr,
   ATLAS_IMAGE,

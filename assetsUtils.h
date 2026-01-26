@@ -85,7 +85,7 @@ SpriteAnimation createSpriteAnimation(Texture2D atlas, SpriteID spriteID, int fr
     for(int i = 0; i < numFrames; i++)
     {
         spriteAnimation.rectangles[i] = (Rectangle){x+i*width/numFrames,y,width/numFrames,height};
-		printf("Rectangle %i: %f %f %f %f\n", i, spriteAnimation.rectangles[i].x, spriteAnimation.rectangles[i].y, spriteAnimation.rectangles[i].width, spriteAnimation.rectangles[i].height);
+		// printf("Rectangle %i: %f %f %f %f\n", i, spriteAnimation.rectangles[i].x, spriteAnimation.rectangles[i].y, spriteAnimation.rectangles[i].width, spriteAnimation.rectangles[i].height);
 	}
 
     return spriteAnimation;
@@ -129,12 +129,12 @@ TextureAtlas initTextureAtlas(SpriteMask spriteMasks[])
 	// }
 
     atlas.playerAnimation = createSpriteAnimation(atlas.textureAtlas, SPRITE_PLAYER, 7, getSprite(SPRITE_PLAYER).numFrames);
-	printf("Player Animation: %d fps\n", atlas.playerAnimation.framesPerSecond);
-	printf("Player Animation: %d number of frames\n", atlas.playerAnimation.rectanglesLength );
-    for(int i = 0; i < atlas.playerAnimation.rectanglesLength; i++)
-    {
-		printf("Rectangle %i: %f %f %f %f\n", i, atlas.playerAnimation.rectangles[i].x, atlas.playerAnimation.rectangles[i].y, atlas.playerAnimation.rectangles[i].width, atlas.playerAnimation.rectangles[i].height);
-	}
+	// printf("Player Animation: %d fps\n", atlas.playerAnimation.framesPerSecond);
+	// printf("Player Animation: %d number of frames\n", atlas.playerAnimation.rectanglesLength );
+	// for(int i = 0; i < atlas.playerAnimation.rectanglesLength; i++)
+	// {
+	// 	printf("Rectangle %i: %f %f %f %f\n", i, atlas.playerAnimation.rectangles[i].x, atlas.playerAnimation.rectangles[i].y, atlas.playerAnimation.rectangles[i].width, atlas.playerAnimation.rectangles[i].height);
+	// }
 
 	// SpriteMask spriteMasks2[SPRITE_COUNT];
 	for (int i = 0; i < SPRITE_COUNT; i++)
