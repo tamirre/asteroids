@@ -87,7 +87,7 @@ SpriteAnimation createSpriteAnimation(Texture2D atlas, SpriteID spriteID, int fr
     {
 
         spriteAnimation.rectangles[i] = (Rectangle){x+i*((width/numFrames)+SHAPE_PADDING)-SHAPE_PADDING*numFrames,y,width/numFrames,height};
-		printf("Rectangle %i: %f %f %f %f\n", i, spriteAnimation.rectangles[i].x, spriteAnimation.rectangles[i].y, spriteAnimation.rectangles[i].width, spriteAnimation.rectangles[i].height);
+		// printf("Rectangle %i: %f %f %f %f\n", i, spriteAnimation.rectangles[i].x, spriteAnimation.rectangles[i].y, spriteAnimation.rectangles[i].width, spriteAnimation.rectangles[i].height);
 	}
 
     return spriteAnimation;
@@ -119,12 +119,12 @@ TextureAtlas initTextureAtlas(SpriteMask spriteMasks[])
 	Image atlasImage = LoadImageFromTexture(atlas.textureAtlas);
     ImageFormat(&atlasImage, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
 
-	int animCount = 0;
-	for (int i = 0; i < SPRITE_COUNT; i++)
-	{
-		if (getSprite(i).numFrames > 1) animCount++;
-		// fprintf(stdout, "Sprite %d has %d frames\n", i, getSprite(i).numFrames);
-	}
+	// int animCount = 0;
+	// for (int i = 0; i < SPRITE_COUNT; i++)
+	// {
+	// 	if (getSprite(i).numFrames > 1) animCount++;
+	// 	// fprintf(stdout, "Sprite %d has %d frames\n", i, getSprite(i).numFrames);
+	// }
 
 	// for (int i = 0; i < animCount; i++) {
 	//

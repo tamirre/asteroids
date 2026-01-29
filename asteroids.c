@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <math.h>
 #include "assetsUtils.h"
+#if defined(PLATFORM_WEB)
+    #include <emscripten/emscripten.h>
+#endif
 
 #define MIN_SCREEN_WIDTH (1280.0f)
 #define MIN_SCREEN_HEIGHT (720.0f)
@@ -15,12 +18,16 @@
 #define MAX_BULLETS (1000)
 #define MAX_ASTEROIDS (100)
 #define MAX_STARS (50)
-#define TARGET_FPS (300)
+#define TARGET_FPS (30)
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
-#define GLSL_VERSION 330
+#if defined(PLATFORM_WEB)
+	#define GLSL_VERSION 300
+#else
+	#define GLSL_VERSION 330
+#endif
 
 #define ASSERT(x) if (!(x)) { printf("Assertion failed on line %d: %s\n", __LINE__, #x); exit(1); }
 
@@ -386,12 +393,8 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMask spriteMask
 						if (gameState->starCount < MAX_STARS)
 						{
 							int imgIndex = GetRandomValue(1, 2);  
-							Sprite starSprite;
-							if (imgIndex == 1)
-							{
-								starSprite = getSprite(SPRITE_STAR1);
-							} 
-							else if (imgIndex == 2)
+							Sprite starSprite = getSprite(SPRITE_STAR1);
+							if (imgIndex == 2)
 							{
 								starSprite = getSprite(SPRITE_STAR2);
 							}
@@ -1014,13 +1017,44 @@ void DrawComposite(RenderTexture2D* scene, RenderTexture2D* litScene, GameState*
     if (!gameState->disableShaders) EndShaderMode();
 }
 
+static GameState gameState;
+static Audio audio; 
+static SpriteMask spriteMasks[SPRITE_COUNT];
+static TextureAtlas atlas;
+static RenderTexture2D scene;
+static RenderTexture2D litScene;
+static Shader shader;
+static Shader lightShader;
+static Font font;
+static int fontSize;
+static int fontSpacing;
+static float previousWidth;
+static float previousHeight;
+
+void UpdateDrawFrame()
+{
+	float dt = GetFrameTime() * gameState.timeScale;
+	HandleResize(&previousWidth, &previousHeight);
+	UpdateGame(&gameState, &atlas, spriteMasks, &audio, dt);
+	DrawLightmap(&gameState, &litScene, lightShader);
+	DrawScene(&gameState, &atlas, &scene, shader, font, fontSize, fontSpacing);
+
+	BeginDrawing();
+	{
+		ClearBackground(BLACK);
+		DrawComposite(&scene, &litScene, &gameState, lightShader);
+		DrawUI(&gameState, &atlas, font, fontSize, fontSpacing);
+	}
+	EndDrawing();
+}
+
 int main() {
     SetTargetFPS(TARGET_FPS);
     
-    GameState gameState;
-	Audio audio; 
+    // GameState gameState;
+	// Audio audio; 
 	// SpriteMaskCache spriteMasks;
-	SpriteMask spriteMasks[SPRITE_COUNT];
+	// SpriteMask spriteMasks[SPRITE_COUNT];
 
 	initializeGameState(&gameState);
 	// SetWindowMinSize(gameState.screenWidth, gameState.screenHeight);
@@ -1033,38 +1067,34 @@ int main() {
 	SetWindowMinSize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
 	// Font font = LoadFont("fonts/setback.png");
 	// Font font = LoadFont("fonts/mecha.png");
-	Font font = LoadFont("fonts/jupiter_crash.png");
-	int fontSpacing = 1;
-	int fontSize = 15;
+	font = LoadFont("fonts/jupiter_crash.png");
+	fontSpacing = 1;
+	fontSize = 15;
 
-    TextureAtlas atlas = initTextureAtlas(spriteMasks);
+    atlas = initTextureAtlas(spriteMasks);
 	initializeAudio(&audio);
 
-	// fprintf(stderr, "GLSL_VERSION: %d\n", GLSL_VERSION);
-	RenderTexture2D scene = LoadRenderTexture(gameState.screenWidth, gameState.screenHeight);
-	RenderTexture2D litScene = LoadRenderTexture(gameState.screenWidth, gameState.screenHeight);
+	scene = LoadRenderTexture(gameState.screenWidth, gameState.screenHeight);
+	litScene = LoadRenderTexture(gameState.screenWidth, gameState.screenHeight);
 
-	Shader shader = LoadShader(0, TextFormat("shaders/test.glsl", GLSL_VERSION));
-	Shader lightShader = LoadShader(0, TextFormat("shaders/light.fs", GLSL_VERSION));
-	float previousWidth  = VIRTUAL_WIDTH;
-	float previousHeight = VIRTUAL_HEIGHT;
+#ifdef PLATFORM_WEB
+	shader = LoadShader("shaders/test_web.vs", TextFormat("shaders/test_web.glsl", GLSL_VERSION));
+	lightShader = LoadShader("shaders/light_web.vs", TextFormat("shaders/light_web.fs", GLSL_VERSION));
+#else
+	shader = LoadShader(0, TextFormat("shaders/test.glsl", GLSL_VERSION));
+	lightShader = LoadShader(0, TextFormat("shaders/light.fs", GLSL_VERSION));
+#endif
+
+	previousWidth  = VIRTUAL_WIDTH;
+	previousHeight = VIRTUAL_HEIGHT;
+#if defined(PLATFORM_WEB)
+	emscripten_set_main_loop(UpdateDrawFrame, TARGET_FPS, 1);
+#else
     while (!WindowShouldClose())
     { 
-		float dt = GetFrameTime() * gameState.timeScale;
-		HandleResize(&previousWidth, &previousHeight);
-		UpdateGame(&gameState, &atlas, spriteMasks, &audio, dt);
-		DrawLightmap(&gameState, &litScene, lightShader);
-		DrawScene(&gameState, &atlas, &scene, shader, font, fontSize, fontSpacing);
-
-		BeginDrawing();
-		{
-			ClearBackground(BLACK);
-			DrawComposite(&scene, &litScene, &gameState, lightShader);
-			DrawUI(&gameState, &atlas, font, fontSize, fontSpacing);
-		}
-		EndDrawing();
+		UpdateDrawFrame();
     }
-
+#endif
 	UnloadShader(shader);
 	UnloadShader(lightShader);
 	cleanup(atlas, audio, font, spriteMasks);
@@ -1072,3 +1102,4 @@ int main() {
     CloseWindow();
     return 0;
 }
+
