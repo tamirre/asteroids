@@ -1,9 +1,8 @@
-#version 300 es
+#version 100
 precision mediump float;
 precision mediump int;
 
-in vec2 fragTexCoord;
-out vec4 finalColor;
+varying vec2 fragTexCoord;
 
 uniform sampler2D texture0;
 uniform int lightCount;
@@ -13,12 +12,14 @@ uniform float aspect;
 
 void main()
 {
-    vec4 base = texture(texture0, fragTexCoord);
+    vec4 base = texture2D(texture0, fragTexCoord);
 
     float lighting = 0.0;
 
-    for (int i = 0; i < lightCount; i++)
+    for (int i = 0; i < 128; i++)
     {
+        if (i >= lightCount) break;
+
         vec2 p = fragTexCoord;
         p.x *= aspect;
 
@@ -27,9 +28,12 @@ void main()
 
         float dist = distance(p, lp);
         float intensity = 1.0 - smoothstep(0.0, lightRadius, dist);
+
         lighting += intensity * 1.7;
     }
 
     float finalIntensity = min(0.3 + lighting, 1.0);
-    finalColor = vec4(base.rgb * finalIntensity, base.a);
+
+    gl_FragColor = vec4(base.rgb * finalIntensity, base.a);
 }
+

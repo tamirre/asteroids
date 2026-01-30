@@ -16,13 +16,30 @@ while getopts ":p:" opt; do
 done
 
 export GAME_NAME=asteroids
+
 if [ "$PLATFORM" == "web" ]; then
-# WEB PLATFORM:
+# WEB PLATFORM GUIDE:
+# # clone emsdk into raylib/emsdk
+# git clone https://github.com/emscripten-core/emsdk.git
+# # Enter that directory
+# cd emsdk
+# # Download and install the latest SDK tools.
+# ./emsdk install latest
+# # Make the "latest" SDK "active" for the current user. (writes .emscripten file)
+# ./emsdk activate latest --permanent
+# # Activate PATH and other environment variables in the current terminal
+# source ./emsdk_env.sh
+# # Update make file of raylib with emsdk paths and PLATFORM=PLATFORM_WEB
+# # Then in raylib/src/ run:
+# make -e PLATFORM=PLATFORM_WEB -B
+# # Python web server:
+# python -m http.server 
+
 export RAYLIB_PATH=~/raylib/src/
 export EMSDK_QUIET=1
 mkdir -p web
-source ~/emsdk/emsdk_env.sh 
-emcc -o web/$GAME_NAME.html asteroids.c \
+source ~/raylib/emsdk/emsdk_env.sh 
+emcc -o web/index.html asteroids.c \
 	-Wall -std=c99 -D_DEFAULT_SOURCE \
 	-Wno-missing-braces -Wunused-result -Os \
 	-I. -I $RAYLIB_PATH \
@@ -31,9 +48,6 @@ emcc -o web/$GAME_NAME.html asteroids.c \
 	-s USE_GLFW=3 -s ASYNCIFY -s TOTAL_MEMORY=67108864 -s FORCE_FILESYSTEM=1 \
 	--shell-file ~/raylib/src/shell.html $RAYLIB_PATH/web/libraylib.web.a \
 	-DPLATFORM_WEB -s 'EXPORTED_FUNCTIONS=["_free","_malloc","_main"]' -s EXPORTED_RUNTIME_METHODS=ccall \
-	-s MIN_WEBGL_VERSION=2 \
-	-s MAX_WEBGL_VERSION=2 \
-	-s FULL_ES3=1 \
 	--preload-file assets \
 	--preload-file audio \
 	--preload-file fonts \

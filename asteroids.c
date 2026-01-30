@@ -18,7 +18,11 @@
 #define MAX_BULLETS (1000)
 #define MAX_ASTEROIDS (100)
 #define MAX_STARS (50)
-#define TARGET_FPS (30)
+#ifdef PLATFORM_WEB
+	#define TARGET_FPS (60)
+#else
+	#define TARGET_FPS (300)
+#endif
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -162,7 +166,7 @@ void initializeGameState(GameState* gameState) {
 		.screenWidth = (float)VIRTUAL_WIDTH,
 		.screenHeight = (float)VIRTUAL_HEIGHT,
 		.timeScale = 1.0f,
-		.disableShaders = false,
+		.disableShaders = true,
         .bulletCount = 0,
         .asteroidCount = 0,
         .asteroidSpawnRate = 0.2f,
@@ -309,10 +313,12 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMask spriteMask
 				if (IsKeyPressed(KEY_J)) stepMode = !stepMode;
 				if (IsKeyPressed(KEY_K)) stepOnce = true;
 				if (IsKeyPressed(KEY_O)) gameState->disableShaders = !gameState->disableShaders;
+#ifdef PLATFORM_WEB
 				if (IsKeyPressed(KEY_F)) 
 				{
 					ToggleFullscreen();
 				}
+#endif
 				if (IsKeyPressed(KEY_V)) {
 					if (IsWindowState(FLAG_VSYNC_HINT))
 					{
@@ -1078,8 +1084,8 @@ int main() {
 	litScene = LoadRenderTexture(gameState.screenWidth, gameState.screenHeight);
 
 #ifdef PLATFORM_WEB
-	shader = LoadShader("shaders/test_web.vs", TextFormat("shaders/test_web.glsl", GLSL_VERSION));
-	lightShader = LoadShader("shaders/light_web.vs", TextFormat("shaders/light_web.fs", GLSL_VERSION));
+	shader = LoadShader(0, TextFormat("shaders/test_web.glsl", GLSL_VERSION));
+	lightShader = LoadShader(0, TextFormat("shaders/light_web.fs", GLSL_VERSION));
 #else
 	shader = LoadShader(0, TextFormat("shaders/test.glsl", GLSL_VERSION));
 	lightShader = LoadShader(0, TextFormat("shaders/light.fs", GLSL_VERSION));

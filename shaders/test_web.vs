@@ -2,9 +2,10 @@
 precision mediump float;
 precision mediump int;
 
-layout(location = 0) in vec3 vertexPosition;
-layout(location = 1) in vec2 vertexTexCoord;
-// layout(location = 2) in vec4 vertexColor; // REMOVE for WebGL
+
+in vec3 vertexPosition;
+in vec2 vertexTexCoord;
+in vec4 vertexColor;   // MUST exist
 
 uniform mat4 mvp;
 
