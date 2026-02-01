@@ -974,8 +974,8 @@ void DrawUI(GameState* gameState, TextureAtlas* atlas, Font font, int fontSize, 
 
 				draw_text_centered(font, "LEVEL UP!", (Vector2){dst.width/2.0f, dst.height/2.0f - 80.0f}, 40, fontSpacing, WHITE);
 				draw_text_centered(font, "CHOOSE UPGRADE", (Vector2){dst.width/2.0f, dst.height/2.0f - 35.0f}, 40, fontSpacing, WHITE);
-				const int width = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width;
-				const int height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height;                
+				const int width = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width*3.0f;
+				const int height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height*3.0f;                
 				const int pos_x = dst.width/2.0f - width/2.0f;
 				const int pos_y = dst.height/2.0f - height/2.0f + 30.0f;
 				const int spacing_x = 80;
