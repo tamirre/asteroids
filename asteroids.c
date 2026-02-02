@@ -977,8 +977,14 @@ void DrawUI(GameState* gameState, TextureAtlas* atlas, Font font, int fontSize, 
 				const int width = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width*3.0f;
 				const int height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height*3.0f;                
 				const int pos_x = dst.width/2.0f - width/2.0f;
-				const int pos_y = dst.height/2.0f - height/2.0f + 30.0f;
-				const int spacing_x = 80;
+				const int pos_y = dst.height/2.0f - height/2.0f + 90.0f;
+				const int spacing_x = 240;
+				Rectangle upgradeRect = {
+					.width = width,
+					.height = height,
+					.x = pos_x,
+					.y = pos_y,
+				};
 				switch (gameState->pickedUpgrade)
 				{
 					case UPGRADE_MULTISHOT:
@@ -1001,9 +1007,11 @@ void DrawUI(GameState* gameState, TextureAtlas* atlas, Font font, int fontSize, 
 							break;
 						}
 				}
-				DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_UPGRADEMULTISHOT).coords, (Vector2){pos_x, pos_y}, WHITE);
-				DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_UPGRADEDAMAGE).coords, (Vector2){pos_x - spacing_x, pos_y}, WHITE);
-				DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_UPGRADEFIRERATE).coords, (Vector2){pos_x + spacing_x, pos_y}, WHITE);
+				DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEMULTISHOT).coords, upgradeRect, (Vector2){0, 0}, 0.0f, WHITE); 
+				upgradeRect.x -= spacing_x;
+				DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEDAMAGE).coords, upgradeRect, (Vector2){0, 0}, 0.0f, WHITE); 
+				upgradeRect.x += 2.0f * spacing_x;
+				DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEFIRERATE).coords, upgradeRect, (Vector2){0, 0}, 0.0f, WHITE); 
 			}
 	}
 	DrawFPS(10, 40);

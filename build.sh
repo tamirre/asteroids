@@ -52,6 +52,7 @@ emcc -o web/index.html asteroids.c \
 	--preload-file audio \
 	--preload-file fonts \
 	--preload-file shaders 
+zip -r ${GAME_NAME}_web.zip web/
 else 
 	# gcc -fsanitize=address -g $GAME_NAME.c -Wall -o asteroids -Ithird_party/include -lraylib -lm -ldl -lpthread -lGL
 	gcc asteroids.c -Wall -o $GAME_NAME -Ithird_party/include -lraylib -lm -ldl -lpthread -lGL
