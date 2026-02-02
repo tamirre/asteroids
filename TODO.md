@@ -1,7 +1,9 @@
 # TODO list: 
 
-- [ ] figure out how to build for web
 - [ ] make it fun
+- [ ] localisation with different languages
+- [ ] try out rayGUI 
+- [x] figure out how to build for web
 - [x] make pixel perfect collision work with rotating asteroids
 - [x] build a texture packer for sprites with aseprite
     - [x] add padding to sprites in aseprite -b command

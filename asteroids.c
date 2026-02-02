@@ -104,14 +104,22 @@ typedef struct Audio {
 	Music music;
 } Audio;
 
-typedef struct GameState {
-    // General
+typedef struct Options {
 	float screenWidth;
 	float screenHeight;
+	float previousWidth;
+	float previousHeight;
+	bool disableShaders;
+	Font font;
+	int fontSpacing;
+	int fontSize;
+} Options;
+
+typedef struct GameState {
+    // General
     int experience;
     State state;
 	float timeScale;
-	bool disableShaders;
     // Player
     Player player;
     // Projectiles
@@ -132,9 +140,9 @@ typedef struct GameState {
     Upgrade pickedUpgrade;
 } GameState;
 
-void cleanup(TextureAtlas atlas, Audio audio, Font font, SpriteMask spriteMasks[]) {
+void cleanup(TextureAtlas atlas, Options options, Audio audio, SpriteMask spriteMasks[]) {
     FreeSpriteAnimation(atlas.playerAnimation);
-    UnloadFont(font);
+    UnloadFont(options.font);
 	for (int i = 0; i < SPRITE_COUNT; i++)
 	{
 		UnloadImageColors(spriteMasks[i].pixels);
@@ -163,10 +171,7 @@ void initializeAudio(Audio* audio) {
 void initializeGameState(GameState* gameState) {
     *gameState = (GameState) {
         .state = STATE_MAIN_MENU,
-		.screenWidth = (float)VIRTUAL_WIDTH,
-		.screenHeight = (float)VIRTUAL_HEIGHT,
 		.timeScale = 1.0f,
-		.disableShaders = true,
         .bulletCount = 0,
         .asteroidCount = 0,
         .asteroidSpawnRate = 0.2f,
@@ -193,9 +198,21 @@ void initializeGameState(GameState* gameState) {
         .shootTime = 1.0f,
         .damageMulti = 1.0f,
     };
+
 }
 
-void draw_text_centered(Font font, const char* text, Vector2 pos, float fontSize, float fontSpacing, Color color)
+void initializeOptions(Options* options) {
+	*options = (Options) {
+		.screenWidth = (float)VIRTUAL_WIDTH,
+		.screenHeight = (float)VIRTUAL_HEIGHT,
+		.disableShaders = true,
+		.font = LoadFont("fonts/jupiter_crash.png"),
+		.fontSpacing = 1,
+		.fontSize = 15,
+	};
+}
+
+void draw_text_centered(Font font, const char* text, Vector2 pos, int fontSize, int fontSpacing, Color color)
 {
 	const Vector2 textSize = MeasureTextEx(font, text, fontSize, fontSpacing);
     pos.x -= textSize.x / 2.0f;
@@ -292,7 +309,7 @@ bool pixelPerfectCollision(
     return false;
 }
 
-void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMask spriteMasks[], Audio* audio, float dt)
+void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, SpriteMask spriteMasks[], Audio* audio, float dt)
 {
 	static bool cursorHidden = true;
 	static bool stepMode = false;
@@ -312,7 +329,7 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMask spriteMask
 				// Step debugging mode
 				if (IsKeyPressed(KEY_J)) stepMode = !stepMode;
 				if (IsKeyPressed(KEY_K)) stepOnce = true;
-				if (IsKeyPressed(KEY_O)) gameState->disableShaders = !gameState->disableShaders;
+				if (IsKeyPressed(KEY_O)) options->disableShaders = !options->disableShaders;
 #ifdef PLATFORM_WEB
 				if (IsKeyPressed(KEY_F)) 
 				{
@@ -332,8 +349,8 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMask spriteMask
 				stepOnce = false;
 
 				const Rectangle screenRect = {
-					.height = gameState->screenHeight,
-					.width = gameState->screenWidth,
+					.height = options->screenHeight,
+					.width = options->screenWidth,
 					.x = 0,
 					.y = 0
 				};
@@ -366,8 +383,8 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMask spriteMask
 						while(gameState->starCount < MAX_STARS)
 						{                            
 							int imgIndex = GetRandomValue(1, 2);   
-							float starXPosition = GetRandomValue(0, gameState->screenWidth); 
-							float starYPosition = GetRandomValue(0, gameState->screenHeight); 
+							float starXPosition = GetRandomValue(0, options->screenWidth); 
+							float starYPosition = GetRandomValue(0, options->screenHeight); 
 							Sprite sprite;
 							if (imgIndex == 1)
 							{
@@ -404,7 +421,7 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMask spriteMask
 							{
 								starSprite = getSprite(SPRITE_STAR2);
 							}
-							float starXPosition = GetRandomValue(0, gameState->screenWidth); 
+							float starXPosition = GetRandomValue(0, options->screenWidth); 
 							Star star = {
 								.position = (Vector2) {starXPosition, 0},
 								.velocity = 30.0f * GetRandomValue(1,2) * imgIndex,
@@ -436,27 +453,27 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMask spriteMask
 				}
 
 				if (IsKeyDown(KEY_W)) {
-					if(!CheckCollisionPointLine(gameState->player.playerPosition, (Vector2) {0, 0}, (Vector2) {gameState->screenWidth, 0}, gameState->player.sprite.coords.width/gameState->player.animationFrames / 2))
+					if(!CheckCollisionPointLine(gameState->player.playerPosition, (Vector2) {0, 0}, (Vector2) {options->screenWidth, 0}, gameState->player.sprite.coords.width/gameState->player.animationFrames / 2))
 					{
 						gameState->player.playerPosition.y -= gameState->player.playerVelocity * dt;
 					}   
 				}
 				if (IsKeyDown(KEY_S)) {
-					if(!CheckCollisionPointLine(gameState->player.playerPosition, (Vector2) {0, gameState->screenHeight}, (Vector2) {gameState->screenWidth, gameState->screenHeight}, gameState->player.sprite.coords.height / 2))
+					if(!CheckCollisionPointLine(gameState->player.playerPosition, (Vector2) {0, options->screenHeight}, (Vector2) {options->screenWidth, options->screenHeight}, gameState->player.sprite.coords.height / 2))
 					{
 						gameState->player.playerPosition.y += gameState->player.playerVelocity * dt;
 					}
 				}
 				if (IsKeyDown(KEY_A)) {
-					if(!CheckCollisionPointLine(gameState->player.playerPosition, (Vector2) {0, 0}, (Vector2) {0, gameState->screenHeight}, gameState->player.sprite.coords.width/gameState->player.animationFrames / 2))
+					if(!CheckCollisionPointLine(gameState->player.playerPosition, (Vector2) {0, 0}, (Vector2) {0, options->screenHeight}, gameState->player.sprite.coords.width/gameState->player.animationFrames / 2))
 					{
 						gameState->player.playerPosition.x -= gameState->player.playerVelocity * dt;
 					}
 				}
 				if (IsKeyDown(KEY_D)) {
 					if(!CheckCollisionPointLine(gameState->player.playerPosition, 
-								(Vector2) {gameState->screenWidth, 0},
-								(Vector2) {gameState->screenWidth, gameState->screenHeight}, 
+								(Vector2) {options->screenWidth, 0},
+								(Vector2) {options->screenWidth, options->screenHeight}, 
 								gameState->player.sprite.coords.width/gameState->player.animationFrames / 2))
 					{
 						gameState->player.playerPosition.x += gameState->player.playerVelocity * dt;
@@ -550,7 +567,7 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMask spriteMask
 						float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
 						// float size = 1.0f;
 						float minSpawnDistance = 50.0f * size;  
-						float asteroidXPosition = MAX(minSpawnDistance, GetRandomValue(0, gameState->screenWidth)); 
+						float asteroidXPosition = MAX(minSpawnDistance, GetRandomValue(0, options->screenWidth)); 
 						Asteroid asteroid = {
 							.position = (Vector2) {asteroidXPosition, 0},
 							.health = (int) (size+1.0) * 2.0,
@@ -631,8 +648,8 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMask spriteMask
 						};
 						// DrawRectangleLinesEx(playerRec, 1.0, BLUE);
 						Rectangle screenRectExtended = {
-							.width = gameState->screenWidth + asteroid->sprite.coords.width,
-							.height = gameState->screenHeight + asteroid->sprite.coords.height,
+							.width = options->screenWidth + asteroid->sprite.coords.width,
+							.height = options->screenHeight + asteroid->sprite.coords.height,
 							.x = 0.0,
 							.y = asteroid->position.y, // to make them scroll into screen smoothly
 						};
@@ -661,7 +678,7 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMask spriteMask
 							}
 						}
 						// Check if asteroid is off-screen
-						if (asteroid->position.y > gameState->screenHeight + asteroid->sprite.coords.height * asteroid->size)
+						if (asteroid->position.y > options->screenHeight + asteroid->sprite.coords.height * asteroid->size)
 						{
 							*asteroid = gameState->asteroids[--gameState->asteroidCount];
 						}
@@ -697,8 +714,9 @@ void UpdateGame(GameState* gameState, TextureAtlas* atlas, SpriteMask spriteMask
 			{
 				if (IsKeyPressed(KEY_ENTER)) {
 					initializeGameState(gameState);
+					initializeOptions(options);
 					gameState->state = STATE_RUNNING;
-					// gameState->player.playerPosition = (Vector2){gameState->screenWidth / 2.0f, gameState->screenHeight / 2.0f};
+					// gameState->player.playerPosition = (Vector2){options->screenWidth / 2.0f, options->screenHeight / 2.0f};
 				}
 				break;
 			}
@@ -749,14 +767,14 @@ void HandleResize(float* previousWidth, float* previousHeight)
 	}
 }
 
-void DrawScene(GameState* gameState, TextureAtlas* atlas, RenderTexture2D* scene, Shader shader, Font font, int fontSize, int fontSpacing)
+void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, RenderTexture2D* scene, Shader shader)
 {
 	int texSizeLoc = GetShaderLocation(shader, "textureSize");
 	BeginTextureMode(*scene);
 
 	const Rectangle screenRect = {
-		.height = gameState->screenHeight,
-		.width = gameState->screenWidth,
+		.height = options->screenHeight,
+		.width = options->screenWidth,
 		.x = 0,
 		.y = 0
 	};
@@ -789,7 +807,7 @@ void DrawScene(GameState* gameState, TextureAtlas* atlas, RenderTexture2D* scene
 					}
 				}
 
-				if(!gameState->disableShaders) BeginShaderMode(shader);
+				if(!options->disableShaders) BeginShaderMode(shader);
 				// Draw Bullets
 				{
 					for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
@@ -843,7 +861,7 @@ void DrawScene(GameState* gameState, TextureAtlas* atlas, RenderTexture2D* scene
 					}
 				}
 				// DrawRectangleLines(destination.x, destination.y, destination.width, destination.height, RED);
-				if(!gameState->disableShaders) EndShaderMode();
+				if(!options->disableShaders) EndShaderMode();
 				break;
 			}
 		case STATE_UPGRADE:
@@ -862,13 +880,13 @@ void DrawScene(GameState* gameState, TextureAtlas* atlas, RenderTexture2D* scene
 	EndTextureMode(); // scene
 }
 
-void DrawLightmap(GameState* gameState, RenderTexture2D* litScene, Shader lightShader)
+void DrawLightmap(GameState* gameState, Options* options, RenderTexture2D* litScene, Shader lightShader)
 {
 	int uLightPos = GetShaderLocation(lightShader, "lightPos");
 	int uLightRadius = GetShaderLocation(lightShader, "lightRadius");
 	int uAspect = GetShaderLocation(lightShader, "aspect");
 	float lightRadius = 0.1f;  // normalized radius
-	float aspect = (float)gameState->screenWidth / (float)gameState->screenHeight;
+	float aspect = (float)options->screenWidth / (float)options->screenHeight;
 	SetShaderValueTexture(lightShader, GetShaderLocation(lightShader, "lightTexture"), litScene->texture);
 	SetShaderValue(lightShader, uLightRadius, &lightRadius, SHADER_UNIFORM_FLOAT);
 	SetShaderValue(lightShader, uAspect, &aspect, SHADER_UNIFORM_FLOAT);
@@ -883,13 +901,13 @@ void DrawLightmap(GameState* gameState, RenderTexture2D* litScene, Shader lightS
 
 	for (int i = 0; i < gameState->bulletCount; i++) {
 		// convert pixel -> normalized UV (0–1)
-		lights[lc].x = gameState->bullets[i].position.x / (float)gameState->screenWidth;
-		lights[lc].y = 1.0f - gameState->bullets[i].position.y / (float)gameState->screenHeight;
+		lights[lc].x = gameState->bullets[i].position.x / (float)options->screenWidth;
+		lights[lc].y = 1.0f - gameState->bullets[i].position.y / (float)options->screenHeight;
 		lc++;
 	}
 
-	lights[lc].x = gameState->player.playerPosition.x / (float)gameState->screenWidth;
-	lights[lc].y = 1.0f - gameState->player.playerPosition.y / (float)gameState->screenHeight;
+	lights[lc].x = gameState->player.playerPosition.x / (float)options->screenWidth;
+	lights[lc].y = 1.0f - gameState->player.playerPosition.y / (float)options->screenHeight;
 	lc++;
 	// Upload array
 	SetShaderValue(lightShader, uLightCount, &lc, SHADER_UNIFORM_INT);
@@ -899,7 +917,7 @@ void DrawLightmap(GameState* gameState, RenderTexture2D* litScene, Shader lightS
 	EndTextureMode();
 }
 
-void DrawUI(GameState* gameState, TextureAtlas* atlas, Font font, int fontSize, int fontSpacing)
+void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 {
 	Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	switch (gameState->state) {
@@ -920,36 +938,36 @@ void DrawUI(GameState* gameState, TextureAtlas* atlas, Font font, int fontSize, 
 				DrawRectangle(recPosX, recPosY, gameState->experience / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
 				DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
 				char experienceText[100] = "XP";
-				Vector2 textSize = MeasureTextEx(font, experienceText, fontSize, fontSpacing);
-				DrawTextEx(font, experienceText, (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, fontSpacing, WHITE);
+				Vector2 textSize = MeasureTextEx(options->font, experienceText, options->fontSize, options->fontSpacing);
+				DrawTextEx(options->font, experienceText, (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, options->fontSpacing, WHITE);
 				break;
 			}
 		case STATE_MAIN_MENU:
 			{
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
-				draw_text_centered(font, "Asteroids", (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, fontSpacing, WHITE);
-				draw_text_centered(font, "<Press enter to play>", (Vector2){dst.width/2.0f, dst.height/2.0f + 30}, 20, fontSpacing, WHITE);
-				draw_text_centered(font, "<WASD to move, space to shoot, p to pause>", (Vector2){dst.width/2.0f, dst.height/2.0f + 50}, 20,fontSpacing, WHITE);
-				draw_text_centered(font, "v0.1", (Vector2){dst.width/2.0f, dst.height - 15}, 15, fontSpacing, WHITE);
+				draw_text_centered(options->font, "Asteroids", (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, options->fontSpacing, WHITE);
+				draw_text_centered(options->font, "<Press enter to play>", (Vector2){dst.width/2.0f, dst.height/2.0f + 30}, 20, options->fontSpacing, WHITE);
+				draw_text_centered(options->font, "<WASD to move, space to shoot, p to pause>", (Vector2){dst.width/2.0f, dst.height/2.0f + 50}, 20, options->fontSpacing, WHITE);
+				draw_text_centered(options->font, "v0.1", (Vector2){dst.width/2.0f, dst.height - 15}, 15, options->fontSpacing, WHITE);
 				break;
 			}
 		case STATE_GAME_OVER:
 			{
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
-				draw_text_centered(font, "GAME OVER", (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, fontSpacing, WHITE);
+				draw_text_centered(options->font, "GAME OVER", (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, options->fontSpacing, WHITE);
 				char scoreText[100] = {0};
 				sprintf(scoreText, "Final score: %d", gameState->experience);
-				draw_text_centered(font, scoreText, (Vector2){dst.width/2.0f, dst.height/2.0f + 30.0f}, 20.0f, fontSpacing, WHITE);
-				draw_text_centered(font, "<Press enter to try again>", (Vector2){dst.width/2.0f, dst.height/2.0f + 60.0f}, 20.0f, fontSpacing, WHITE);
+				draw_text_centered(options->font, scoreText, (Vector2){dst.width/2.0f, dst.height/2.0f + 30.0f}, 20.0f, options->fontSpacing, WHITE);
+				draw_text_centered(options->font, "<Press enter to try again>", (Vector2){dst.width/2.0f, dst.height/2.0f + 60.0f}, 20.0f, options->fontSpacing, WHITE);
 				break;
 			}
 		case STATE_PAUSED:
 			{
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
-				draw_text_centered(font, "Game is paused...", (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, fontSpacing, WHITE);
+				draw_text_centered(options->font, "Game is paused...", (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, options->fontSpacing, WHITE);
 				break;
 			}
 		case STATE_UPGRADE:
@@ -969,11 +987,11 @@ void DrawUI(GameState* gameState, TextureAtlas* atlas, Font font, int fontSize, 
 				DrawRectangle(recPosX, recPosY, gameState->experience / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
 				DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
 				char experienceText[100] = "XP";
-				Vector2 textSize = MeasureTextEx(font, experienceText, fontSize, fontSpacing);
-				DrawTextEx(font, experienceText, (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, fontSpacing, WHITE);
+				Vector2 textSize = MeasureTextEx(options->font, experienceText, options->fontSize, options->fontSpacing);
+				DrawTextEx(options->font, experienceText, (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, options->fontSpacing, WHITE);
 
-				draw_text_centered(font, "LEVEL UP!", (Vector2){dst.width/2.0f, dst.height/2.0f - 80.0f}, 40, fontSpacing, WHITE);
-				draw_text_centered(font, "CHOOSE UPGRADE", (Vector2){dst.width/2.0f, dst.height/2.0f - 35.0f}, 40, fontSpacing, WHITE);
+				draw_text_centered(options->font, "LEVEL UP!", (Vector2){dst.width/2.0f, dst.height/2.0f - 80.0f}, 40, options->fontSpacing, WHITE);
+				draw_text_centered(options->font, "CHOOSE UPGRADE", (Vector2){dst.width/2.0f, dst.height/2.0f - 35.0f}, 40, options->fontSpacing, WHITE);
 				const int width = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width*3.0f;
 				const int height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height*3.0f;                
 				const int pos_x = dst.width/2.0f - width/2.0f;
@@ -1017,7 +1035,7 @@ void DrawUI(GameState* gameState, TextureAtlas* atlas, Font font, int fontSize, 
 	DrawFPS(10, 40);
 }
 
-void DrawComposite(RenderTexture2D* scene, RenderTexture2D* litScene, GameState* gameState, Shader lightShader)
+void DrawComposite(RenderTexture2D* scene, Options* options, RenderTexture2D* litScene, GameState* gameState, Shader lightShader)
 {
     Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
     Rectangle src = {
@@ -1026,12 +1044,13 @@ void DrawComposite(RenderTexture2D* scene, RenderTexture2D* litScene, GameState*
         -(float)scene->texture.height
     };
 
-    if (!gameState->disableShaders) BeginShaderMode(lightShader);
+    if (!options->disableShaders) BeginShaderMode(lightShader);
     DrawTexturePro(scene->texture, src, dst, (Vector2){0, 0}, 0, WHITE);
-    if (!gameState->disableShaders) EndShaderMode();
+    if (!options->disableShaders) EndShaderMode();
 }
 
 static GameState gameState;
+static Options options;
 static Audio audio; 
 static SpriteMask spriteMasks[SPRITE_COUNT];
 static TextureAtlas atlas;
@@ -1039,25 +1058,20 @@ static RenderTexture2D scene;
 static RenderTexture2D litScene;
 static Shader shader;
 static Shader lightShader;
-static Font font;
-static int fontSize;
-static int fontSpacing;
-static float previousWidth;
-static float previousHeight;
 
 void UpdateDrawFrame()
 {
 	float dt = GetFrameTime() * gameState.timeScale;
-	HandleResize(&previousWidth, &previousHeight);
-	UpdateGame(&gameState, &atlas, spriteMasks, &audio, dt);
-	DrawLightmap(&gameState, &litScene, lightShader);
-	DrawScene(&gameState, &atlas, &scene, shader, font, fontSize, fontSpacing);
+	HandleResize(&options.previousWidth, &options.previousHeight);
+	UpdateGame(&gameState, &options, &atlas, spriteMasks, &audio, dt);
+	DrawLightmap(&gameState, &options, &litScene, lightShader);
+	DrawScene(&gameState, &options, &atlas, &scene, shader);
 
 	BeginDrawing();
 	{
 		ClearBackground(BLACK);
-		DrawComposite(&scene, &litScene, &gameState, lightShader);
-		DrawUI(&gameState, &atlas, font, fontSize, fontSpacing);
+		DrawComposite(&scene, &options, &litScene, &gameState, lightShader);
+		DrawUI(&gameState, &options, &atlas);
 	}
 	EndDrawing();
 }
@@ -1065,31 +1079,21 @@ void UpdateDrawFrame()
 int main() {
     SetTargetFPS(TARGET_FPS);
     
-    // GameState gameState;
-	// Audio audio; 
-	// SpriteMaskCache spriteMasks;
-	// SpriteMask spriteMasks[SPRITE_COUNT];
-
-	initializeGameState(&gameState);
-	// SetWindowMinSize(gameState.screenWidth, gameState.screenHeight);
 
 	ConfigFlags configFlags = FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT | FLAG_BORDERLESS_WINDOWED_MODE;
 	SetConfigFlags(configFlags);
-	gameState.player.playerPosition = (Vector2){gameState.screenWidth / 2.0f, gameState.screenHeight / 2.0f};
-	// InitWindow(gameState.screenWidth, gameState.screenHeight, WINDOW_TITLE);
+	gameState.player.playerPosition = (Vector2){options.screenWidth / 2.0f, options.screenHeight / 2.0f};
+
 	InitWindow(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_TITLE);
 	SetWindowMinSize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
-	// Font font = LoadFont("fonts/setback.png");
-	// Font font = LoadFont("fonts/mecha.png");
-	font = LoadFont("fonts/jupiter_crash.png");
-	fontSpacing = 1;
-	fontSize = 15;
+	initializeOptions(&options);
+	initializeGameState(&gameState);
 
     atlas = initTextureAtlas(spriteMasks);
 	initializeAudio(&audio);
 
-	scene = LoadRenderTexture(gameState.screenWidth, gameState.screenHeight);
-	litScene = LoadRenderTexture(gameState.screenWidth, gameState.screenHeight);
+	scene = LoadRenderTexture(options.screenWidth, options.screenHeight);
+	litScene = LoadRenderTexture(options.screenWidth, options.screenHeight);
 
 #ifdef PLATFORM_WEB
 	shader = LoadShader(0, TextFormat("shaders/test_web.glsl", GLSL_VERSION));
@@ -1099,8 +1103,8 @@ int main() {
 	lightShader = LoadShader(0, TextFormat("shaders/light.fs", GLSL_VERSION));
 #endif
 
-	previousWidth  = VIRTUAL_WIDTH;
-	previousHeight = VIRTUAL_HEIGHT;
+	options.previousWidth  = VIRTUAL_WIDTH;
+	options.previousHeight = VIRTUAL_HEIGHT;
 #if defined(PLATFORM_WEB)
 	emscripten_set_main_loop(UpdateDrawFrame, TARGET_FPS, 1);
 #else
@@ -1111,7 +1115,7 @@ int main() {
 #endif
 	UnloadShader(shader);
 	UnloadShader(lightShader);
-	cleanup(atlas, audio, font, spriteMasks);
+	cleanup(atlas, options, audio, spriteMasks);
 
     CloseWindow();
     return 0;
