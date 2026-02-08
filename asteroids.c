@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <math.h>
 #include "assetsUtils.h"
+#include "localization.h"
+
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
 #endif
@@ -202,13 +204,17 @@ void initializeGameState(GameState* gameState) {
 }
 
 void initializeOptions(Options* options) {
+
+	int fontSize = 16;
 	*options = (Options) {
 		.screenWidth = (float)VIRTUAL_WIDTH,
 		.screenHeight = (float)VIRTUAL_HEIGHT,
 		.disableShaders = true,
-		.font = LoadFont("fonts/jupiter_crash.png"),
+		// .font = LoadFont("fonts/jupiter_crash.png"),
+		// .font = LoadFontEx("fonts/NotoSans-Regular.ttf", fontSize, ranges, 16),
+		.font = LoadGermanFont("fonts/NotoSans-Regular.ttf", fontSize),
 		.fontSpacing = 1,
-		.fontSize = 15,
+		.fontSize = fontSize,
 	};
 }
 
@@ -948,7 +954,8 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 				ClearBackground(backgroundColor);
 				draw_text_centered(options->font, "Asteroids", (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, options->fontSpacing, WHITE);
 				draw_text_centered(options->font, "<Press enter to play>", (Vector2){dst.width/2.0f, dst.height/2.0f + 30}, 20, options->fontSpacing, WHITE);
-				draw_text_centered(options->font, "<WASD to move, space to shoot, p to pause>", (Vector2){dst.width/2.0f, dst.height/2.0f + 50}, 20, options->fontSpacing, WHITE);
+				// draw_text_centered(options->font, "<WASD to move, space to shoot, p to pause>", (Vector2){dst.width/2.0f, dst.height/2.0f + 50}, 20, options->fontSpacing, WHITE);
+				draw_text_centered(options->font, T(TXT_INSTRUCTIONS), (Vector2){dst.width/2.0f, dst.height/2.0f + 50}, 20, options->fontSpacing, WHITE);
 				draw_text_centered(options->font, "v0.1", (Vector2){dst.width/2.0f, dst.height - 15}, 15, options->fontSpacing, WHITE);
 				break;
 			}
@@ -1079,6 +1086,8 @@ void UpdateDrawFrame()
 int main() {
     SetTargetFPS(TARGET_FPS);
     
+	// LocSetLanguage(LANG_EN);
+	LocSetLanguage(LANG_DE);
 
 	ConfigFlags configFlags = FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT | FLAG_BORDERLESS_WINDOWED_MODE;
 	SetConfigFlags(configFlags);
