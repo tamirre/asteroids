@@ -1,0 +1,158 @@
+#pragma once
+#include "raylib.h"
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+
+// -----------------------------------------------------------------------------
+// This file expects a generated "text_auto.h" with:
+//
+//   typedef enum { TXT_..., TXT_COUNT } TextID;
+//   typedef enum { LANG_EN, LANG_DE, LANG_ZH, LANG_COUNT } Language;
+//   static const char *gText[LANG_COUNT][TXT_COUNT];
+//
+// -----------------------------------------------------------------------------
+#include "txt.h"
+
+// ======================= STATE ===============================================
+
+static Language s_locLang = LANG_EN;
+
+// ======================= LANGUAGE ============================================
+
+static inline void LocSetLanguage(Language lang)
+{
+    if (lang >= 0 && lang < LANG_COUNT)
+        s_locLang = lang;
+}
+
+static inline Language LocGetLanguage(void)
+{
+    return s_locLang;
+}
+
+// ======================= LOOKUP ==============================================
+
+static inline const char *T(TextID id)
+{
+    if (id < 0 || id >= TXT_COUNT)
+        return "INVALID_TEXT_ID";
+
+    return gText[s_locLang][id];
+}
+
+// ======================= FORMATTING (%d %f %s) ===============================
+
+static inline const char *TF(TextID id, ...)
+{
+    static char buffer[2048];
+
+    va_list args;
+    va_start(args, id);
+    vsnprintf(buffer, sizeof(buffer), T(id), args);
+    va_end(args);
+
+    return buffer;
+}
+
+// ======================= UTF-8 WORD WRAP =====================================
+
+static inline const char *TWrap(Font font,
+                                const char *text,
+                                float maxWidth,
+                                float fontSize,
+                                float spacing)
+{
+    static char out[4096];
+    out[0] = 0;
+
+    float lineW = 0.0f;
+
+    int cpSize = 0;
+    char utf8[5] = {0};
+
+    for (int i = 0; text[i]; i += cpSize)
+    {
+        // int cp = GetCodepoint(&text[i], &cpSize);
+
+        memcpy(utf8, &text[i], cpSize);
+        utf8[cpSize] = 0;
+
+        float w = MeasureTextEx(font, utf8, fontSize, spacing).x;
+
+        if (lineW + w > maxWidth && lineW > 0)
+        {
+            strcat(out, "\n");
+            lineW = 0;
+        }
+
+        strcat(out, utf8);
+        lineW += w;
+    }
+
+    return out;
+}
+
+// ======================= FORMAT + WRAP =======================================
+
+static inline const char *TFWrap(Font font,
+                                 float maxWidth,
+                                 float fontSize,
+                                 float spacing,
+                                 TextID id, ...)
+{
+    static char fmtBuf[2048];
+
+    va_list args;
+    va_start(args, id);
+    vsnprintf(fmtBuf, sizeof(fmtBuf), T(id), args);
+    va_end(args);
+
+    return TWrap(font, fmtBuf, maxWidth, fontSize, spacing);
+}
+
+// ======================= GERMAN FONT LOADER ==================================
+// Correct glyph loading for äöüß
+// -----------------------------------------------------------------------------
+
+static inline Font LoadGermanFont(const char *path, int size)
+{
+    // Load Latin-1 (0..255) so umlauts exist
+    int glyphs[256];
+    for (int i = 0; i < 256; i++)
+        glyphs[i] = i;
+
+    Font f = LoadFontEx(path, size, glyphs, 256);
+
+    if (f.texture.id == 0)
+        TraceLog(LOG_ERROR, "LoadGermanFont FAILED: %s", path);
+
+    SetTextureFilter(f.texture, TEXTURE_FILTER_BILINEAR);
+
+    return f;
+}
+
+// ======================= GENERIC DRAW HELPERS ================================
+
+static inline void DrawTextT(Font font, TextID id,
+                             Vector2 pos, float size,
+                             float spacing, Color col)
+{
+    DrawTextEx(font, T(id), pos, size, spacing, col);
+}
+
+static inline void DrawTextTF(Font font, TextID id,
+                              Vector2 pos, float size,
+                              float spacing, Color col, ...)
+{
+    va_list args;
+    va_start(args, col);
+
+    char buf[1024];
+    vsnprintf(buf, sizeof(buf), T(id), args);
+
+    va_end(args);
+
+    DrawTextEx(font, buf, pos, size, spacing, col);
+}
+

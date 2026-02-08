@@ -1,0 +1,6 @@
+ID,EN,DE,ZH
+TXT_EMPTY,,,
+TXT_PLAY,Play,Spielen,
+TXT_INSTRUCTIONS,"WASD to move, space to shoot, p to pause","WASD zum bewegen, leertaste zum schiessen, p zum pausieren \n ausserdem: ä, ö und ü ",
+TXT_SCORE,Score: %d,Punktzahl: %d,
+TXT_GAME_OVER,Game Over,Game Over,
