@@ -1,5 +1,6 @@
 #pragma once
 #include "raylib.h"
+#include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -113,10 +114,44 @@ static inline const char *TFWrap(Font font,
     return TWrap(font, fmtBuf, maxWidth, fontSize, spacing);
 }
 
+static Font LoadChineseFont(const char *path, int size)
+{
+    // // allocate dynamically
+    // int *glyphs = malloc(sizeof(int) * 22000);
+    // int count = 0;
+    //
+    // // ASCII
+    // for (int cp = 32; cp <= 126; cp++)
+    //     glyphs[count++] = cp;
+    //
+    // // CJK
+    // for (int cp = 0x4E00; cp <= 0x9FFF; cp++)
+    //     glyphs[count++] = cp;
+    //
+    // Font f = LoadFontEx(path, size, glyphs, count);
+    //
+    // SetTextureFilter(f.texture, TEXTURE_FILTER_POINT);
+    //
+    // free(glyphs);   // safe after LoadFontEx
+    // return f;
+	int glyphs[] = {
+        0x4F60, // 你
+        0x597D, // 好
+        0x4E16, // 世
+        0x754C, // 界
+        32,33,44,46 // space ! , .
+    };
+
+    Font f = LoadFontEx(path, size, glyphs,
+                        sizeof(glyphs)/sizeof(int));
+
+    SetTextureFilter(f.texture, TEXTURE_FILTER_POINT);
+    return f;
+}
+
 // ======================= GERMAN FONT LOADER ==================================
 // Correct glyph loading for äöüß
 // -----------------------------------------------------------------------------
-
 static Font LoadGermanFont(const char *path, int size)
 {
     int glyphs[512];
@@ -145,6 +180,7 @@ static Font LoadGermanFont(const char *path, int size)
         TraceLog(LOG_ERROR, "LoadGermanFont FAILED: %s", path);
 
     // SetTextureFilter(f.texture, TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(f.texture, TEXTURE_FILTER_POINT);   
 
     return f;
 }

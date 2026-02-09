@@ -213,7 +213,10 @@ void initializeOptions(Options* options) {
 		.disableShaders = true,
 		// .font = LoadFont("fonts/jupiter_crash.png"),
 		// .font = LoadFontEx("fonts/NotoSans-Regular.ttf", fontSize, ranges, 16),
-		.font = LoadGermanFont("fonts/NotoSans-Regular.ttf", fontSize),
+		// .font = LoadGermanFont("fonts/NotoSans-Regular.ttf", fontSize),
+		.font = LoadGermanFont("fonts/LanaPixel Regular.ttf", fontSize),
+		// .font = LoadChineseFont("fonts/LanaPixel Regular.ttf", fontSize),
+		// .font = LoadFontEx("fonts/NotoSansSC-Regular.ttf", fontSize, NULL, 0),
 		.fontSpacing = 1.0f,
 		.fontSize = fontSize,
 	};
@@ -946,8 +949,8 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 				DrawRectangle(recPosX, recPosY, gameState->experience / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
 				DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
 				// char experienceText[100] = "XP";
-				Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), options->fontSize, GetDefaultSpacing(options->fontSize));
-				DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, options->fontSpacing, WHITE);
+				Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), 20.0f, GetDefaultSpacing(20.0f));
+				DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
 				break;
 			}
 		case STATE_MAIN_MENU:
@@ -956,7 +959,6 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 				ClearBackground(backgroundColor);
 				draw_text_centered(options->font, T(TXT_GAME_TITLE), (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, GetDefaultSpacing(40), WHITE);
 				draw_text_centered(options->font, T(TXT_PRESS_TO_PLAY), (Vector2){dst.width/2.0f, dst.height/2.0f + 30}, 20, GetDefaultSpacing(20), WHITE);
-				// draw_text_centered(options->font, "<WASD to move, space to shoot, p to pause>", (Vector2){dst.width/2.0f, dst.height/2.0f + 50}, 20, options->fontSpacing, WHITE);
 				draw_text_centered(options->font, T(TXT_INSTRUCTIONS), (Vector2){dst.width/2.0f, dst.height/2.0f + 50}, 20, GetDefaultSpacing(20), WHITE);
 				draw_text_centered(options->font, "v0.1", (Vector2){dst.width/2.0f, dst.height - 15}, 15, GetDefaultSpacing(15),  WHITE);
 				break;
@@ -974,8 +976,25 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 			}
 		case STATE_PAUSED:
 			{
-				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
-				ClearBackground(backgroundColor);
+				// Color backgroundColor = ColorFromHSV(259, 1, 0.07);
+				// ClearBackground(backgroundColor);
+				// Draw player health
+				for (int i = 1; i <= gameState->player.playerHealth; i++)
+				{
+					const int texture_x = i * 16;
+					const int texture_y = getSprite(SPRITE_HEART).coords.height;
+					DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_HEART).coords, (Vector2){texture_x, texture_y}, WHITE);
+				}
+				// Draw Score
+				float recPosX = dst.width * 0.9;
+				float recPosY = dst.height * 0.05;
+				float recHeight = 30.0f;
+				float recWidth = 100.0f;
+				DrawRectangle(recPosX, recPosY, gameState->experience / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
+				DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
+				// char experienceText[100] = "XP";
+				Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), 20.0f, GetDefaultSpacing(20.0f));
+				DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
 				draw_text_centered(options->font, T(TXT_GAME_PAUSED), (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, options->fontSpacing, WHITE);
 				break;
 			}
@@ -996,7 +1015,7 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 				DrawRectangle(recPosX, recPosY, gameState->experience / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
 				DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
 				// char experienceText[100] = "XP";
-				Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), options->fontSize, options->fontSpacing);
+				Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), 20.0f, GetDefaultSpacing(20.0f));
 				DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
 
 				draw_text_centered(options->font, T(TXT_LEVEL_UP), (Vector2){dst.width/2.0f, dst.height/2.0f - 80.0f}, 40, options->fontSpacing, WHITE);
@@ -1090,6 +1109,7 @@ int main() {
     
 	// LocSetLanguage(LANG_EN);
 	LocSetLanguage(LANG_DE);
+	// LocSetLanguage(LANG_ZH);
 
 	ConfigFlags configFlags = FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT | FLAG_BORDERLESS_WINDOWED_MODE;
 	SetConfigFlags(configFlags);
