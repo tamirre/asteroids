@@ -16,6 +16,7 @@ while getopts ":p:" opt; do
 done
 
 export GAME_NAME=asteroids
+python genLoc.py
 
 if [ "$PLATFORM" == "web" ]; then
 # WEB PLATFORM GUIDE:

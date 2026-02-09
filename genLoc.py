@@ -15,15 +15,15 @@ out.append("// Generated from: " + CSV_FILE + "\n")
 # ----- enum of IDs -----
 out.append("typedef enum {")
 for r in rows:
-    out.append(f"    {r['ID']},")
-out.append("    TXT_COUNT")
+    out.append(f"\t{'TXT_' + r['ID']},")
+out.append("\tTXT_COUNT")
 out.append("} TextID;\n")
 
 # ----- language enum -----
 out.append("typedef enum {")
 for L in LANGS:
-    out.append(f"    LANG_{L.upper()},")
-out.append("    LANG_COUNT")
+    out.append(f"\tLANG_{L.upper()},")
+out.append("\tLANG_COUNT")
 out.append("} Language;\n")
 
 # ----- table -----
@@ -36,8 +36,7 @@ for lang in LANGS:
             .replace('"', '\\"') \
             .replace("\r", "") \
             .replace("\n", "\\n")
-
-        out.append(f'    "{s}",')
+        out.append(f'\t"{s}",')
     out.append("  },")        # ← this now goes into the file
 
 out.append("};\n")

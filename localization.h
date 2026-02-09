@@ -5,7 +5,7 @@
 #include <string.h>
 
 // -----------------------------------------------------------------------------
-// This file expects a generated "text_auto.h" with:
+// This file expects a generated "txt.h" with:
 //
 //   typedef enum { TXT_..., TXT_COUNT } TextID;
 //   typedef enum { LANG_EN, LANG_DE, LANG_ZH, LANG_COUNT } Language;
@@ -14,11 +14,7 @@
 // -----------------------------------------------------------------------------
 #include "txt.h"
 
-// ======================= STATE ===============================================
-
 static Language s_locLang = LANG_EN;
-
-// ======================= LANGUAGE ============================================
 
 static inline void LocSetLanguage(Language lang)
 {
@@ -31,7 +27,14 @@ static inline Language LocGetLanguage(void)
     return s_locLang;
 }
 
-// ======================= LOOKUP ==============================================
+static inline float GetDefaultSpacing(float size)
+{
+    switch(s_locLang)
+    {
+        case LANG_ZH: return size * 0.05f;
+        default:      return size * 0.025f;
+    }
+}
 
 static inline const char *T(TextID id)
 {
@@ -73,8 +76,7 @@ static inline const char *TWrap(Font font,
 
     for (int i = 0; text[i]; i += cpSize)
     {
-        // int cp = GetCodepoint(&text[i], &cpSize);
-
+        GetCodepoint(&text[i], &cpSize);
         memcpy(utf8, &text[i], cpSize);
         utf8[cpSize] = 0;
 
@@ -115,19 +117,34 @@ static inline const char *TFWrap(Font font,
 // Correct glyph loading for äöüß
 // -----------------------------------------------------------------------------
 
-static inline Font LoadGermanFont(const char *path, int size)
+static Font LoadGermanFont(const char *path, int size)
 {
-    // Load Latin-1 (0..255) so umlauts exist
-    int glyphs[256];
-    for (int i = 0; i < 256; i++)
-        glyphs[i] = i;
+    int glyphs[512];
+    int count = 0;
 
-    Font f = LoadFontEx(path, size, glyphs, 256);
+    // --- 1) FULL ASCII BLOCK (guarantees .,!?: etc) ---
+    for (int cp = 32; cp <= 126; cp++)
+        glyphs[count++] = cp;
+
+    // --- 2) Latin-1 supplement for umlauts ---
+    for (int cp = 160; cp <= 255; cp++)
+        glyphs[count++] = cp;
+
+    // --- 3) German typography extras ---
+    int extras[] = {
+        0x201E,0x201C,0x201D, // „ “ ”
+        0x2013,0x2014         // – —
+    };
+
+    for (int i=0;i<5;i++)
+        glyphs[count++] = extras[i];
+
+    Font f = LoadFontEx(path, size, glyphs, count);
 
     if (f.texture.id == 0)
         TraceLog(LOG_ERROR, "LoadGermanFont FAILED: %s", path);
 
-    SetTextureFilter(f.texture, TEXTURE_FILTER_BILINEAR);
+    // SetTextureFilter(f.texture, TEXTURE_FILTER_BILINEAR);
 
     return f;
 }

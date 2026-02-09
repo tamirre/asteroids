@@ -1,6 +1,7 @@
 // To build on linux: 
 // gcc asteroids.c -Wall -o asteroids -Ithird_party/include -lraylib -lm -ldl -lpthread -lGL
 #include "assetsData.h"
+#include "txt.h"
 #define RAYMATH_IMPLEMENTATION
 #include "raylib.h"
 #include <stdio.h>
@@ -113,7 +114,7 @@ typedef struct Options {
 	float previousHeight;
 	bool disableShaders;
 	Font font;
-	int fontSpacing;
+	float fontSpacing;
 	int fontSize;
 } Options;
 
@@ -205,7 +206,7 @@ void initializeGameState(GameState* gameState) {
 
 void initializeOptions(Options* options) {
 
-	int fontSize = 16;
+	int fontSize = 64;
 	*options = (Options) {
 		.screenWidth = (float)VIRTUAL_WIDTH,
 		.screenHeight = (float)VIRTUAL_HEIGHT,
@@ -213,10 +214,11 @@ void initializeOptions(Options* options) {
 		// .font = LoadFont("fonts/jupiter_crash.png"),
 		// .font = LoadFontEx("fonts/NotoSans-Regular.ttf", fontSize, ranges, 16),
 		.font = LoadGermanFont("fonts/NotoSans-Regular.ttf", fontSize),
-		.fontSpacing = 1,
+		.fontSpacing = 1.0f,
 		.fontSize = fontSize,
 	};
 }
+
 
 void draw_text_centered(Font font, const char* text, Vector2 pos, int fontSize, int fontSpacing, Color color)
 {
@@ -336,7 +338,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 				if (IsKeyPressed(KEY_J)) stepMode = !stepMode;
 				if (IsKeyPressed(KEY_K)) stepOnce = true;
 				if (IsKeyPressed(KEY_O)) options->disableShaders = !options->disableShaders;
-#ifdef PLATFORM_WEB
+#ifndef PLATFORM_WEB
 				if (IsKeyPressed(KEY_F)) 
 				{
 					ToggleFullscreen();
@@ -813,7 +815,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					}
 				}
 
-				if(!options->disableShaders) BeginShaderMode(shader);
+				// if(!options->disableShaders) BeginShaderMode(shader);
 				// Draw Bullets
 				{
 					for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
@@ -867,7 +869,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					}
 				}
 				// DrawRectangleLines(destination.x, destination.y, destination.width, destination.height, RED);
-				if(!options->disableShaders) EndShaderMode();
+				// if(!options->disableShaders) EndShaderMode();
 				break;
 			}
 		case STATE_UPGRADE:
@@ -943,38 +945,38 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 				float recWidth = 100.0f;
 				DrawRectangle(recPosX, recPosY, gameState->experience / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
 				DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
-				char experienceText[100] = "XP";
-				Vector2 textSize = MeasureTextEx(options->font, experienceText, options->fontSize, options->fontSpacing);
-				DrawTextEx(options->font, experienceText, (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, options->fontSpacing, WHITE);
+				// char experienceText[100] = "XP";
+				Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), options->fontSize, GetDefaultSpacing(options->fontSize));
+				DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, options->fontSpacing, WHITE);
 				break;
 			}
 		case STATE_MAIN_MENU:
 			{
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
-				draw_text_centered(options->font, "Asteroids", (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, options->fontSpacing, WHITE);
-				draw_text_centered(options->font, "<Press enter to play>", (Vector2){dst.width/2.0f, dst.height/2.0f + 30}, 20, options->fontSpacing, WHITE);
+				draw_text_centered(options->font, T(TXT_GAME_TITLE), (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, GetDefaultSpacing(40), WHITE);
+				draw_text_centered(options->font, T(TXT_PRESS_TO_PLAY), (Vector2){dst.width/2.0f, dst.height/2.0f + 30}, 20, GetDefaultSpacing(20), WHITE);
 				// draw_text_centered(options->font, "<WASD to move, space to shoot, p to pause>", (Vector2){dst.width/2.0f, dst.height/2.0f + 50}, 20, options->fontSpacing, WHITE);
-				draw_text_centered(options->font, T(TXT_INSTRUCTIONS), (Vector2){dst.width/2.0f, dst.height/2.0f + 50}, 20, options->fontSpacing, WHITE);
-				draw_text_centered(options->font, "v0.1", (Vector2){dst.width/2.0f, dst.height - 15}, 15, options->fontSpacing, WHITE);
+				draw_text_centered(options->font, T(TXT_INSTRUCTIONS), (Vector2){dst.width/2.0f, dst.height/2.0f + 50}, 20, GetDefaultSpacing(20), WHITE);
+				draw_text_centered(options->font, "v0.1", (Vector2){dst.width/2.0f, dst.height - 15}, 15, GetDefaultSpacing(15),  WHITE);
 				break;
 			}
 		case STATE_GAME_OVER:
 			{
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
-				draw_text_centered(options->font, "GAME OVER", (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, options->fontSpacing, WHITE);
+				draw_text_centered(options->font, T(TXT_GAME_OVER), (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, options->fontSpacing, WHITE);
 				char scoreText[100] = {0};
 				sprintf(scoreText, "Final score: %d", gameState->experience);
 				draw_text_centered(options->font, scoreText, (Vector2){dst.width/2.0f, dst.height/2.0f + 30.0f}, 20.0f, options->fontSpacing, WHITE);
-				draw_text_centered(options->font, "<Press enter to try again>", (Vector2){dst.width/2.0f, dst.height/2.0f + 60.0f}, 20.0f, options->fontSpacing, WHITE);
+				draw_text_centered(options->font, T(TXT_TRY_AGAIN), (Vector2){dst.width/2.0f, dst.height/2.0f + 60.0f}, 20.0f, options->fontSpacing, WHITE);
 				break;
 			}
 		case STATE_PAUSED:
 			{
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
-				draw_text_centered(options->font, "Game is paused...", (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, options->fontSpacing, WHITE);
+				draw_text_centered(options->font, T(TXT_GAME_PAUSED), (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, options->fontSpacing, WHITE);
 				break;
 			}
 		case STATE_UPGRADE:
@@ -993,12 +995,12 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 				float recWidth = 100.0f;
 				DrawRectangle(recPosX, recPosY, gameState->experience / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
 				DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
-				char experienceText[100] = "XP";
-				Vector2 textSize = MeasureTextEx(options->font, experienceText, options->fontSize, options->fontSpacing);
-				DrawTextEx(options->font, experienceText, (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, options->fontSpacing, WHITE);
+				// char experienceText[100] = "XP";
+				Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), options->fontSize, options->fontSpacing);
+				DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
 
-				draw_text_centered(options->font, "LEVEL UP!", (Vector2){dst.width/2.0f, dst.height/2.0f - 80.0f}, 40, options->fontSpacing, WHITE);
-				draw_text_centered(options->font, "CHOOSE UPGRADE", (Vector2){dst.width/2.0f, dst.height/2.0f - 35.0f}, 40, options->fontSpacing, WHITE);
+				draw_text_centered(options->font, T(TXT_LEVEL_UP), (Vector2){dst.width/2.0f, dst.height/2.0f - 80.0f}, 40, options->fontSpacing, WHITE);
+				draw_text_centered(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){dst.width/2.0f, dst.height/2.0f - 35.0f}, 40, options->fontSpacing, WHITE);
 				const int width = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width*3.0f;
 				const int height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height*3.0f;                
 				const int pos_x = dst.width/2.0f - width/2.0f;
