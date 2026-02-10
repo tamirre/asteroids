@@ -19,3 +19,4 @@ raylib/
 asteroids
 web/
 *.zip
+third_party/raygui/

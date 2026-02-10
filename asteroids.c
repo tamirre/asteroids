@@ -9,6 +9,9 @@
 #include "assetsUtils.h"
 #include "localization.h"
 
+#define RAYGUI_IMPLEMENTATION
+#include "third_party/raygui/src/raygui.h"
+
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
 #endif
@@ -999,6 +1002,11 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 				Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), 20.0f, GetDefaultSpacing(20.0f));
 				DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
 				draw_text_centered(options->font, T(TXT_GAME_PAUSED), (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, options->fontSpacing, WHITE);
+				int result = GuiMessageBox((Rectangle){ 85, 70, 250, 100 }, "#191#Message Box", "Hi! This is a message!", "Nice;Cool");
+				if (result >= 0)
+				{
+					// do something
+				}
 				break;
 			}
 		case STATE_UPGRADE:
