@@ -115,7 +115,7 @@ typedef struct Options {
 	bool disableShaders;
 	Font font;
 	float fontSpacing;
-	int fontSize;
+	int maxFontSize;
 } Options;
 
 typedef struct GameState {
@@ -206,7 +206,7 @@ void initializeGameState(GameState* gameState) {
 
 void initializeOptions(Options* options) {
 
-	int fontSize = 64;
+	int maxFontSize = 64;
 	*options = (Options) {
 		.screenWidth = (float)VIRTUAL_WIDTH,
 		.screenHeight = (float)VIRTUAL_HEIGHT,
@@ -214,11 +214,14 @@ void initializeOptions(Options* options) {
 		// .font = LoadFont("fonts/jupiter_crash.png"),
 		// .font = LoadFontEx("fonts/NotoSans-Regular.ttf", fontSize, ranges, 16),
 		// .font = LoadGermanFont("fonts/NotoSans-Regular.ttf", fontSize),
-		.font = LoadGermanFont("fonts/LanaPixel Regular.ttf", fontSize),
+		// .font = LoadGermanFont("fonts/LanaPixel Regular.ttf", fontSize),
+		// .font = LoadGermanFont("fonts/UnifontExMono.ttf", fontSize),
 		// .font = LoadChineseFont("fonts/LanaPixel Regular.ttf", fontSize),
 		// .font = LoadFontEx("fonts/NotoSansSC-Regular.ttf", fontSize, NULL, 0),
+		// .font = LoadChineseFont("fonts/UnifontExMono.ttf", fontSize), 
+		.font = LoadLanguageFont("fonts/UnifontExMono.ttf", maxFontSize, LANG_DE), 
 		.fontSpacing = 1.0f,
-		.fontSize = fontSize,
+		.maxFontSize = maxFontSize,
 	};
 }
 
@@ -696,7 +699,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 					}
 				}
 
-				if (IsKeyPressed(KEY_P)) {
+				if (IsKeyPressed(KEY_ESCAPE)) {
 					gameState->state = STATE_PAUSED;
 				}
 				break;
@@ -734,7 +737,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 		case STATE_PAUSED:
 			{
 				PauseMusicStream(audio->music);
-				if (IsKeyPressed(KEY_P)) {
+				if (IsKeyPressed(KEY_ESCAPE)) {
 					gameState->state = STATE_RUNNING;
 					ResumeMusicStream(audio->music);
 				}
@@ -1106,7 +1109,7 @@ void UpdateDrawFrame()
 
 int main() {
     SetTargetFPS(TARGET_FPS);
-    
+
 	// LocSetLanguage(LANG_EN);
 	LocSetLanguage(LANG_DE);
 	// LocSetLanguage(LANG_ZH);
@@ -1117,6 +1120,8 @@ int main() {
 
 	InitWindow(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_TITLE);
 	SetWindowMinSize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+	// Disable Exit on ESC
+    SetExitKey(KEY_NULL);
 	initializeOptions(&options);
 	initializeGameState(&gameState);
 

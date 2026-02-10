@@ -57,7 +57,7 @@ static const char *gText[LANG_COUNT][TXT_COUNT] = {
   {
 	"",
 	"玩",
-	"WASD键移动，空格键射击，P键暂停",
+	"WASD键移动, 空格键射击, P键暂停",
 	"",
 	"",
 	"",

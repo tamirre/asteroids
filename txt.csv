@@ -1,7 +1,7 @@
 ID,EN,DE,ZH
 EMPTY,,,
 PLAY,Play,Spielen,玩
-INSTRUCTIONS,"WASD to move, space to shoot, p to pause","WASD zum bewegen, leertaste zum schiessen, p zum pausieren",WASD键移动，空格键射击，P键暂停
+INSTRUCTIONS,"WASD to move, space to shoot, p to pause","WASD zum bewegen, leertaste zum schiessen, p zum pausieren","WASD键移动, 空格键射击, P键暂停"
 SCORE,Score: %d,Punktzahl: %d,
 GAME_OVER,Game Over,Game Over,
 EXPERIENCE,XP,XP,
