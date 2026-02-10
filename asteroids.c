@@ -219,7 +219,7 @@ void initializeOptions(Options* options) {
 		// .font = LoadChineseFont("fonts/LanaPixel Regular.ttf", fontSize),
 		// .font = LoadFontEx("fonts/NotoSansSC-Regular.ttf", fontSize, NULL, 0),
 		// .font = LoadChineseFont("fonts/UnifontExMono.ttf", fontSize), 
-		.font = LoadLanguageFont("fonts/UnifontExMono.ttf", maxFontSize, LANG_DE), 
+		.font = LoadLanguageFont("fonts/UnifontExMono.ttf", maxFontSize, LANG_ZH), 
 		.fontSpacing = 1.0f,
 		.maxFontSize = maxFontSize,
 	};
@@ -1111,8 +1111,8 @@ int main() {
     SetTargetFPS(TARGET_FPS);
 
 	// LocSetLanguage(LANG_EN);
-	LocSetLanguage(LANG_DE);
-	// LocSetLanguage(LANG_ZH);
+	// LocSetLanguage(LANG_DE);
+	LocSetLanguage(LANG_ZH);
 
 	ConfigFlags configFlags = FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT | FLAG_BORDERLESS_WINDOWED_MODE;
 	SetConfigFlags(configFlags);
