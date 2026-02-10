@@ -7,7 +7,7 @@ GAME_OVER,Game Over,Game Over,游戏结束
 EXPERIENCE,XP,XP,XP
 LEVEL_UP,LEVEL UP!,LEVEL UP!,升级！
 CHOOSE_UPGRADE,CHOOSE UPGRADE,WÄHLE EIN UPGRADE,选择升级 
-GAME_PAUSED,Game is paused…,Spiel ist pausiert...,游戏暂停...
+GAME_PAUSED,Game is paused...,Spiel ist pausiert...,游戏暂停...
 TRY_AGAIN,Press enter to try again,Drück enter um es erneut zu versuchen,按回车键重试 
 PRESS_TO_PLAY,Press enter to play,Drück enter um zu spielen,按回车键即可播放 
 GAME_TITLE,Asteroids,Asteroids,小行星 

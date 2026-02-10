@@ -11,6 +11,8 @@
 
 #define RAYGUI_IMPLEMENTATION
 #include "third_party/raygui/src/raygui.h"
+#include "third_party/raygui/styles/dark/style_dark.h"
+
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
@@ -120,6 +122,8 @@ typedef struct Options {
 	Font font;
 	float fontSpacing;
 	int maxFontSize;
+	int language;
+	int lastLanguage;
 } Options;
 
 typedef struct GameState {
@@ -226,18 +230,23 @@ void initializeOptions(Options* options) {
 		.screenWidth = (float)VIRTUAL_WIDTH,
 		.screenHeight = (float)VIRTUAL_HEIGHT,
 		.disableShaders = true,
-		// .font = LoadFont("fonts/jupiter_crash.png"),
-		// .font = LoadFontEx("fonts/NotoSans-Regular.ttf", fontSize, ranges, 16),
-		// .font = LoadGermanFont("fonts/NotoSans-Regular.ttf", fontSize),
-		// .font = LoadGermanFont("fonts/LanaPixel Regular.ttf", fontSize),
-		// .font = LoadGermanFont("fonts/UnifontExMono.ttf", fontSize),
-		// .font = LoadChineseFont("fonts/LanaPixel Regular.ttf", fontSize),
-		// .font = LoadFontEx("fonts/NotoSansSC-Regular.ttf", fontSize, NULL, 0),
-		// .font = LoadChineseFont("fonts/UnifontExMono.ttf", fontSize), 
-		.font = LoadLanguageFont("fonts/UnifontExMono.ttf", maxFontSize, LANG_ZH), 
+		.font = LoadLanguageFont("fonts/UnifontExMono.ttf", maxFontSize, LANG_EN), 
 		.fontSpacing = 1.0f,
 		.maxFontSize = maxFontSize,
+		.language = LANG_EN,
+		.lastLanguage = LANG_EN,
 	};
+	GuiSetStyle(DEFAULT, TEXT_SIZE, 24);
+	GuiSetStyle(DEFAULT, TEXT_SPACING, 2);
+	GuiSetStyle(DEFAULT, BORDER_WIDTH, 2);
+
+	GuiLoadStyleDark();
+	// GuiSetStyle(DEFAULT, BACKGROUND_COLOR, 0x181818FF);
+	// GuiSetStyle(DEFAULT, BASE_COLOR_NORMAL, 0x303030FF);
+	// GuiSetStyle(DEFAULT, TEXT_COLOR_NORMAL, 0xE0E0E0FF);
+	// GuiSetStyle(DEFAULT, BORDER_COLOR_NORMAL, 0x505050FF);
+
+	GuiSetFont(options->font);
 }
 
 
@@ -1015,42 +1024,40 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 				DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
 				draw_text_centered(options->font, T(TXT_GAME_PAUSED), (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, options->fontSpacing, WHITE);
 				// Draw a window box
-				GuiWindowBox((Rectangle){ 50, 40, 540, 380 }, "Settings");
+				float boxWidth = 500.0f;
+				float boxHeight = 500.0f;
+				GuiWindowBox((Rectangle){ options->screenWidth/4-boxWidth/2, options->screenHeight/2-boxHeight/2, boxWidth, boxHeight }, "Settings");
 				// Language label
-				GuiLabel((Rectangle){ 70, 100, 120, 30 }, "Language:");
+				float labelWidth = 160.0f;
+				float labelHeight = 100.0f;
+				GuiLabel((Rectangle){ options->screenWidth/4-labelWidth/2-boxWidth/4, options->screenHeight/2-labelHeight/2-boxHeight/4, labelWidth, labelHeight}, "Language:");
 				// Build semicolon-separated strings
 				// Note: the label string must list all items separated by ';'
-				const char *langItems = "German;English;Chinese";
-				int language = 0;
+				const char *langItems = "English;German;Chinese";
 				// Draw dropdown box
-				if (GuiDropdownBox((Rectangle){ 200, 100, 200, 30 }, langItems, &language, editMode))
+				float dropdownWidth = 240.0f;
+				float dropdownHeight = 60.0f;
+				if (GuiDropdownBox((Rectangle){ options->screenWidth/4-dropdownWidth/2+boxWidth/4, 
+												options->screenHeight/2-dropdownHeight/2-boxHeight/4,
+												labelWidth, labelHeight}, langItems, 
+												&options->language, editMode))
 				{
 					// Toggled edit mode when clicked
 					editMode = !editMode;
 				}
-				switch (language)
+				if (options->language != options->lastLanguage)
 				{
-					case 0:
-						{
-							LocSetLanguage(LANG_DE);
-							options->font = LoadLanguageFont("fonts/UnifontExMono.ttf", options->maxFontSize, LANG_DE);
-							// editMode = !editMode;
-							break;
-						}
-					case 1:
-						{
-							LocSetLanguage(LANG_EN);
-							options->font = LoadLanguageFont("fonts/UnifontExMono.ttf", options->maxFontSize, LANG_EN);
-							// editMode = !editMode;
-							break;
-						}
-					case 2:
-						{
-							LocSetLanguage(LANG_ZH);
-							options->font = LoadLanguageFont("fonts/UnifontExMono.ttf", options->maxFontSize, LANG_ZH);
-							// editMode = !editMode;
-							break;
-						}
+					switch (options->language)
+					{
+						case 0: LocSetLanguage(LANG_EN); break;
+						case 1: LocSetLanguage(LANG_DE); break;
+						case 2: LocSetLanguage(LANG_ZH); break;
+					}
+
+					UnloadFont(options->font);
+					options->font = LoadLanguageFont("fonts/UnifontExMono.ttf", options->maxFontSize, options->language);
+					GuiSetFont(options->font);
+					options->lastLanguage = options->language;
 				}
 				break;
 			}
@@ -1153,9 +1160,9 @@ void UpdateDrawFrame()
 int main() {
     SetTargetFPS(TARGET_FPS);
 
-	// LocSetLanguage(LANG_EN);
+	LocSetLanguage(LANG_EN);
 	// LocSetLanguage(LANG_DE);
-	LocSetLanguage(LANG_ZH);
+	// LocSetLanguage(LANG_ZH);
 
 	ConfigFlags configFlags = FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT | FLAG_BORDERLESS_WINDOWED_MODE;
 	SetConfigFlags(configFlags);

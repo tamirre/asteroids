@@ -35,7 +35,7 @@ static const char *gText[LANG_COUNT][TXT_COUNT] = {
 	"XP",
 	"LEVEL UP!",
 	"CHOOSE UPGRADE",
-	"Game is paused…",
+	"Game is paused...",
 	"Press enter to try again",
 	"Press enter to play",
 	"Asteroids",
