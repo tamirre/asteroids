@@ -988,6 +988,26 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 				draw_text_centered(options->font, T(TXT_PRESS_TO_PLAY), (Vector2){dst.width/2.0f, dst.height/2.0f + 30}, 20, GetDefaultSpacing(20), WHITE);
 				draw_text_centered(options->font, T(TXT_INSTRUCTIONS), (Vector2){dst.width/2.0f, dst.height/2.0f + 50}, 20, GetDefaultSpacing(20), WHITE);
 				draw_text_centered(options->font, "v0.1", (Vector2){dst.width/2.0f, dst.height - 15}, 15, GetDefaultSpacing(15),  WHITE);
+
+				char testBuffer[2048] = {0};
+				TWrap(testBuffer, 2048, options->font, "This is a test of the text wrapping function.", 50.0, 20.0, GetDefaultSpacing(20));
+				draw_text_centered(options->font, testBuffer, (Vector2){dst.width/2.0f, dst.height - 100}, 15, GetDefaultSpacing(15),  WHITE);
+
+				TWrap(testBuffer, 2048, options->font, "This is a test of the text wrapping function. This should also be aligned to the center", 50.0, 15.0, GetDefaultSpacing(15));
+				DrawTextWrapped(options->font, testBuffer,
+								(Vector2){50,60},
+								50.0f,
+								15, GetDefaultSpacing(15),
+								ALIGN_CENTER,
+								WHITE);
+
+				TWrap(testBuffer, 2048, options->font, "This is a test of the text wrapping function. This should also be aligned to the right", 50.0, 20.0, GetDefaultSpacing(20));
+				DrawTextWrapped(options->font, testBuffer,
+								(Vector2){150,60},
+								50.0f,
+								20, GetDefaultSpacing(20),
+								ALIGN_RIGHT,
+								WHITE);
 				break;
 			}
 		case STATE_GAME_OVER:

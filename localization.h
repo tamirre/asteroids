@@ -15,6 +15,12 @@
 // -----------------------------------------------------------------------------
 #include "txt.h"
 
+typedef enum {
+    ALIGN_LEFT,
+    ALIGN_RIGHT,
+    ALIGN_CENTER
+} TextAlign;
+
 static Language s_locLang = LANG_EN;
 
 static inline void LocSetLanguage(Language lang)
@@ -37,7 +43,7 @@ static inline float GetDefaultSpacing(float size)
     }
 }
 
-static inline const char *T(TextID id)
+static inline const char* T(TextID id)
 {
     if (id < 0 || id >= TXT_COUNT)
         return "INVALID_TEXT_ID";
@@ -47,7 +53,7 @@ static inline const char *T(TextID id)
 
 // ======================= FORMATTING (%d %f %s) ===============================
 
-static inline const char *TF(TextID id, ...)
+static inline const char* TF(TextID id, ...)
 {
     static char buffer[2048];
 
@@ -61,16 +67,66 @@ static inline const char *TF(TextID id, ...)
 
 // ======================= UTF-8 WORD WRAP =====================================
 
-static inline const char *TWrap(Font font,
-                                const char *text,
-                                float maxWidth,
-                                float fontSize,
-                                float spacing)
+static void flushWord(char *out, int capacity,
+                      int *outLen,
+                      char *word, int *wordLen,
+                      float *lineW,
+                      float maxWidth,
+                      Font font,
+                      float fontSize,
+                      float spacing)
 {
-    static char out[4096];
+    if (*wordLen == 0)
+        return;
+
+    float w = MeasureTextEx(font, word, fontSize, spacing).x;
+
+    // Need line break?
+    if (*lineW + w > maxWidth && *lineW > 0)
+    {
+        if (*outLen + 1 < capacity)
+        {
+            out[*outLen] = '\n';
+            (*outLen)++;
+            out[*outLen] = 0;
+        }
+        *lineW = 0;
+    }
+
+    // Append word to output
+    if (*outLen + *wordLen < capacity)
+    {
+        memcpy(out + *outLen, word, *wordLen);
+        *outLen += *wordLen;
+        out[*outLen] = 0;
+    }
+
+    *lineW += w;
+
+    // reset word buffer
+    *wordLen = 0;
+    word[0] = 0;
+}
+
+// ------------------------------------------------------------
+
+int TWrap(char *out, int capacity,
+          Font font,
+          const char *text,
+          float maxWidth,
+          float fontSize,
+          float spacing)
+{
+    if (!out || capacity <= 0)
+        return 0;
+
     out[0] = 0;
+    int outLen = 0;
 
     float lineW = 0.0f;
+
+    char word[256];
+    int wordLen = 0;
 
     int cpSize = 0;
     char utf8[5] = {0};
@@ -78,27 +134,74 @@ static inline const char *TWrap(Font font,
     for (int i = 0; text[i]; i += cpSize)
     {
         GetCodepoint(&text[i], &cpSize);
+
         memcpy(utf8, &text[i], cpSize);
         utf8[cpSize] = 0;
 
-        float w = MeasureTextEx(font, utf8, fontSize, spacing).x;
+        int isSpace   = (cpSize == 1 && utf8[0] == ' ');
+        int isNewline = (cpSize == 1 && utf8[0] == '\n');
 
-        if (lineW + w > maxWidth && lineW > 0)
+        if (isSpace || isNewline)
         {
-            strcat(out, "\n");
-            lineW = 0;
+            flushWord(out, capacity, &outLen,
+                      word, &wordLen,
+                      &lineW, maxWidth,
+                      font, fontSize, spacing);
+
+            // copy the space itself
+            if (!isNewline)
+            {
+                if (outLen + 1 < capacity)
+                {
+                    out[outLen++] = ' ';
+                    out[outLen] = 0;
+
+                    lineW += MeasureTextEx(font, " ", fontSize, spacing).x;                }
+            }
+
+            if (isNewline)
+            {
+                if (outLen + 1 < capacity)
+                {
+                    out[outLen++] = '\n';
+                    out[outLen] = 0;
+                }
+                lineW = 0;
+            }
+
+            continue;
         }
 
-        strcat(out, utf8);
-        lineW += w;
+        // accumulate into current word
+        if (wordLen + cpSize < (int)sizeof(word))
+        {
+            memcpy(word + wordLen, utf8, cpSize);
+            wordLen += cpSize;
+            word[wordLen] = 0;
+        }
+        else
+        {
+            // extremely long word → flush defensively
+            flushWord(out, capacity, &outLen,
+                      word, &wordLen,
+                      &lineW, maxWidth,
+                      font, fontSize, spacing);
+        }
     }
 
-    return out;
+    // flush last word
+    flushWord(out, capacity, &outLen,
+              word, &wordLen,
+              &lineW, maxWidth,
+              font, fontSize, spacing);
+
+    return outLen;
 }
 
 // ======================= FORMAT + WRAP =======================================
 
-static inline const char *TFWrap(Font font,
+static inline const char* TFWrap(char *out, int capacity,
+								 Font font,
                                  float maxWidth,
                                  float fontSize,
                                  float spacing,
@@ -111,9 +214,9 @@ static inline const char *TFWrap(Font font,
     vsnprintf(fmtBuf, sizeof(fmtBuf), T(id), args);
     va_end(args);
 
-    return TWrap(font, fmtBuf, maxWidth, fontSize, spacing);
+	TWrap(out, capacity, font, fmtBuf, maxWidth, fontSize, spacing);
+    return out;
 }
-
 
 static inline void CollectCodepointsFromText(const char *text,
 											 int *out,
@@ -178,4 +281,58 @@ static inline Font LoadLanguageFont(const char *path,
     return f;
 }
 
+void DrawTextWrapped(Font font,
+                     const char *wrapped,
+                     Vector2 pos,
+                     float maxWidth,
+                     float fontSize,
+                     float spacing,
+                     TextAlign align,
+                     Color color)
+{
+    const char *lineStart = wrapped;
+    const char *p = wrapped;
+    float y = pos.y;
+
+    while (*p)
+    {
+        if (*p == '\n')
+        {
+            int len = p - lineStart;
+            if (len >= 512) len = 511;
+            char line[512];
+            memcpy(line, lineStart, len);
+            line[len] = 0;
+
+            float w = MeasureTextEx(font, line, fontSize, spacing).x;
+            float x = pos.x;
+            if (align == ALIGN_RIGHT) x = pos.x + (maxWidth - w);
+            else if (align == ALIGN_CENTER) x = pos.x + (maxWidth - w)/2.0f;
+
+            DrawTextEx(font, line, (Vector2){x, y}, fontSize, spacing, color);
+
+            y += fontSize;  // next line
+            lineStart = p + 1; // start after newline
+        }
+        p++;
+    }
+
+	// Draw last line
+	if (lineStart != p)
+	{
+		int len = p - lineStart;
+		if (len >= 512) len = 511;
+		char line[512];
+		memcpy(line, lineStart, len);
+		line[len] = 0;
+
+		float w = MeasureTextEx(font, line, fontSize, spacing).x;
+		float extra = MeasureTextEx(font, " ", fontSize, spacing).x;
+		float x = pos.x;
+		if (align == ALIGN_RIGHT) x = pos.x + maxWidth - w - extra;
+		else if (align == ALIGN_CENTER) x = pos.x + (maxWidth - w) / 2.0f;
+
+		DrawTextEx(font, line, (Vector2){x, y}, fontSize, spacing, color);
+	}
+}
 
