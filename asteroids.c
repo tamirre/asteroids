@@ -41,6 +41,7 @@
 
 #define ASSERT(x) if (!(x)) { printf("Assertion failed on line %d: %s\n", __LINE__, #x); exit(1); }
 
+
 typedef enum State
 {
     STATE_MAIN_MENU,
@@ -145,6 +146,17 @@ typedef struct GameState {
     int initStars;
     Upgrade pickedUpgrade;
 } GameState;
+
+static GameState gameState;
+static Options options;
+static Audio audio; 
+static SpriteMask spriteMasks[SPRITE_COUNT];
+static TextureAtlas atlas;
+static RenderTexture2D scene;
+static RenderTexture2D litScene;
+static Shader shader;
+static Shader lightShader;
+static bool editMode = false;
 
 void cleanup(TextureAtlas atlas, Options options, Audio audio, SpriteMask spriteMasks[]) {
     FreeSpriteAnimation(atlas.playerAnimation);
@@ -1002,10 +1014,43 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 				Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), 20.0f, GetDefaultSpacing(20.0f));
 				DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
 				draw_text_centered(options->font, T(TXT_GAME_PAUSED), (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, options->fontSpacing, WHITE);
-				int result = GuiMessageBox((Rectangle){ 85, 70, 250, 100 }, "#191#Message Box", "Hi! This is a message!", "Nice;Cool");
-				if (result >= 0)
+				// Draw a window box
+				GuiWindowBox((Rectangle){ 50, 40, 540, 380 }, "Settings");
+				// Language label
+				GuiLabel((Rectangle){ 70, 100, 120, 30 }, "Language:");
+				// Build semicolon-separated strings
+				// Note: the label string must list all items separated by ';'
+				const char *langItems = "German;English;Chinese";
+				int language = 0;
+				// Draw dropdown box
+				if (GuiDropdownBox((Rectangle){ 200, 100, 200, 30 }, langItems, &language, editMode))
 				{
-					// do something
+					// Toggled edit mode when clicked
+					editMode = !editMode;
+				}
+				switch (language)
+				{
+					case 0:
+						{
+							LocSetLanguage(LANG_DE);
+							options->font = LoadLanguageFont("fonts/UnifontExMono.ttf", options->maxFontSize, LANG_DE);
+							// editMode = !editMode;
+							break;
+						}
+					case 1:
+						{
+							LocSetLanguage(LANG_EN);
+							options->font = LoadLanguageFont("fonts/UnifontExMono.ttf", options->maxFontSize, LANG_EN);
+							// editMode = !editMode;
+							break;
+						}
+					case 2:
+						{
+							LocSetLanguage(LANG_ZH);
+							options->font = LoadLanguageFont("fonts/UnifontExMono.ttf", options->maxFontSize, LANG_ZH);
+							// editMode = !editMode;
+							break;
+						}
 				}
 				break;
 			}
@@ -1087,16 +1132,6 @@ void DrawComposite(RenderTexture2D* scene, Options* options, RenderTexture2D* li
     DrawTexturePro(scene->texture, src, dst, (Vector2){0, 0}, 0, WHITE);
     if (!options->disableShaders) EndShaderMode();
 }
-
-static GameState gameState;
-static Options options;
-static Audio audio; 
-static SpriteMask spriteMasks[SPRITE_COUNT];
-static TextureAtlas atlas;
-static RenderTexture2D scene;
-static RenderTexture2D litScene;
-static Shader shader;
-static Shader lightShader;
 
 void UpdateDrawFrame()
 {
