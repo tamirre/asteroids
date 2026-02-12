@@ -15,6 +15,9 @@ typedef enum {
 	TXT_TRY_AGAIN,
 	TXT_PRESS_TO_PLAY,
 	TXT_GAME_TITLE,
+	TXT_UPGRADE_DAMAGE,
+	TXT_UPGRADE_FIRERATE,
+	TXT_UPGRADE_MULTISHOT,
 	TXT_COUNT
 } TextID;
 
@@ -39,6 +42,9 @@ static const char *gText[LANG_COUNT][TXT_COUNT] = {
 	"Press enter to try again",
 	"Press enter to play",
 	"Asteroids",
+	"Increased Damage",
+	"Increased Firerate",
+	"+1 Projectile",
   },
   {
 	"",
@@ -53,6 +59,9 @@ static const char *gText[LANG_COUNT][TXT_COUNT] = {
 	"Drück enter um es erneut zu versuchen",
 	"Drück enter um zu spielen",
 	"Asteroids",
+	"Erhöhter Schaden",
+	"Erhöhte Feuerrate",
+	"+1 Projektil",
   },
   {
 	"",
@@ -67,5 +76,8 @@ static const char *gText[LANG_COUNT][TXT_COUNT] = {
 	"按回车键重试 ",
 	"按回车键即可播放 ",
 	"小行星 ",
+	"伤害增加",
+	"射速增加",
+	"+1 射弹",
   },
 };

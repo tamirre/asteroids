@@ -282,7 +282,9 @@ static inline Font LoadLanguageFont(const char *path,
 }
 
 void DrawTextWrapped(Font font,
-                     const char *wrapped,
+					 const char *text,
+                     char *wrapped,
+					 int capacity,
                      Vector2 pos,
                      float maxWidth,
                      float fontSize,
@@ -290,6 +292,7 @@ void DrawTextWrapped(Font font,
                      TextAlign align,
                      Color color)
 {
+	TWrap(wrapped, capacity, font, text, maxWidth, fontSize, spacing);
     const char *lineStart = wrapped;
     const char *p = wrapped;
     float y = pos.y;

@@ -1,9 +1,11 @@
 #!/bin/bash
-
+SECONDS=0
 PLATFORM=""
-while getopts ":p:" opt; do
+REGENERATE_ATLAS=0
+while getopts ":p:a" opt; do
     case "$opt" in
         p) PLATFORM="$OPTARG" ;;
+        a) REGENERATE_ATLAS=1 ;;
         :)
             echo "Option -$OPTARG requires a value"
             exit 1
@@ -18,6 +20,10 @@ done
 export GAME_NAME=asteroids
 python genLoc.py
 
+if [ "$REGENERATE_ATLAS" == "1" ]; then
+	aseprite -b -script ./assets/tools/exportAtlas.lua	
+	echo "Regenerated atlas"
+fi
 if [ "$PLATFORM" == "web" ]; then
 # WEB PLATFORM GUIDE:
 # # clone emsdk into raylib/emsdk
@@ -58,3 +64,7 @@ else
 	# gcc -fsanitize=address -g $GAME_NAME.c -Wall -o asteroids -Ithird_party/include -lraylib -lm -ldl -lpthread -lGL
 	gcc asteroids.c -Wall -o $GAME_NAME -Ithird_party/include -lraylib -lm -ldl -lpthread -lGL
 fi
+
+seconds=$SECONDS
+ELAPSED="Total time: $(($seconds / 3600))hrs $((($seconds / 60) % 60))min $(($seconds % 60))sec"
+echo $ELAPSED

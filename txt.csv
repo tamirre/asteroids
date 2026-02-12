@@ -11,3 +11,6 @@ GAME_PAUSED,Game is paused...,Spiel ist pausiert...,游戏暂停...
 TRY_AGAIN,Press enter to try again,Drück enter um es erneut zu versuchen,按回车键重试 
 PRESS_TO_PLAY,Press enter to play,Drück enter um zu spielen,按回车键即可播放 
 GAME_TITLE,Asteroids,Asteroids,小行星 
+UPGRADE_DAMAGE,Increased Damage,Erhöhter Schaden,伤害增加
+UPGRADE_FIRERATE,Increased Firerate,Erhöhte Feuerrate,射速增加
+UPGRADE_MULTISHOT,+1 Projectile,+1 Projektil,+1 射弹

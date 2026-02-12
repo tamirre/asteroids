@@ -1,18 +1,17 @@
 // To build on linux: 
 // gcc asteroids.c -Wall -o asteroids -Ithird_party/include -lraylib -lm -ldl -lpthread -lGL
-#include "assetsData.h"
-#include "txt.h"
-#define RAYMATH_IMPLEMENTATION
-#include "raylib.h"
 #include <stdio.h>
 #include <math.h>
+
+#include "assetsData.h"
+#include "txt.h"
 #include "assetsUtils.h"
 #include "localization.h"
-
+#define RAYMATH_IMPLEMENTATION
+#include "raylib.h"
 #define RAYGUI_IMPLEMENTATION
 #include "third_party/include/raygui.h"
 #include "third_party/include/style_dark.h"
-
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
@@ -130,6 +129,7 @@ typedef struct GameState {
     // General
     int experience;
     State state;
+	State lastState;
 	float timeScale;
     // Player
     Player player;
@@ -196,12 +196,13 @@ void initializeAudio(Audio* audio) {
 void initializeGameState(GameState* gameState) {
     *gameState = (GameState) {
         .state = STATE_MAIN_MENU,
+		.lastState = STATE_MAIN_MENU,
 		.timeScale = 1.0f,
         .bulletCount = 0,
         .asteroidCount = 0,
         .asteroidSpawnRate = 0.2f,
         .spawnTime = 0.0,
-        .experience = 999,
+        .experience = 1000,
         .starCount = 0,
         .starTime = 0,
         .starSpawnRate = 0.25f,
@@ -728,11 +729,16 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 
 				if (IsKeyPressed(KEY_ESCAPE)) {
 					gameState->state = STATE_PAUSED;
+					gameState->lastState = STATE_RUNNING;
 				}
 				break;
 			}
 		case STATE_UPGRADE:
 			{
+				if (IsKeyPressed(KEY_ESCAPE)) {
+					gameState->state = STATE_PAUSED;
+					gameState->lastState = STATE_UPGRADE;
+				}
 				UpdateMusicStream(audio->music);
 				if (IsKeyPressed(KEY_LEFT)) {
 					gameState->pickedUpgrade = (Upgrade)((gameState->pickedUpgrade + 1) % UPGRADE_COUNT);
@@ -765,8 +771,10 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 			{
 				PauseMusicStream(audio->music);
 				if (IsKeyPressed(KEY_ESCAPE)) {
-					gameState->state = STATE_RUNNING;
-					ResumeMusicStream(audio->music);
+					if (gameState->lastState == STATE_RUNNING) {
+						ResumeMusicStream(audio->music);
+					}
+					gameState->state = gameState->lastState;
 				}
 				break;
 			}
@@ -958,29 +966,160 @@ void DrawLightmap(GameState* gameState, Options* options, RenderTexture2D* litSc
 	EndTextureMode();
 }
 
+void DrawHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas)
+{
+	// Draw player health
+	for (int i = 1; i <= gameState->player.playerHealth; i++)
+	{
+		const int texture_x = i * 16;
+		const int texture_y = getSprite(SPRITE_HEART).coords.height;
+		DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_HEART).coords, (Vector2){texture_x, texture_y}, WHITE);
+	}
+}
+
+void DrawScore(GameState* gameState, Options* options, TextureAtlas* atlas)
+{
+	Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+	// Draw Score
+	float recPosX = dst.width * 0.9;
+	float recPosY = dst.height * 0.05;
+	float recHeight = 30.0f;
+	float recWidth = 100.0f;
+	DrawRectangle(recPosX, recPosY, gameState->experience / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
+	DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
+	// char experienceText[100] = "XP";
+	Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), 20.0f, GetDefaultSpacing(20.0f));
+	DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
+}
+
+void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
+{
+	Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+	draw_text_centered(options->font, T(TXT_LEVEL_UP), (Vector2){dst.width/2.0f, dst.height/2.0f - 80.0f}, 40, options->fontSpacing, WHITE);
+	draw_text_centered(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){dst.width/2.0f, dst.height/2.0f - 35.0f}, 40, options->fontSpacing, WHITE);
+	const float scaling = 3.0f;
+	const int width = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width*scaling;
+	const int height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height*scaling;
+	const int pos_x = dst.width/2.0f - width/2.0f;
+	const int pos_y = dst.height/2.0f - height/2.0f + 90.0f;
+	const int spacing_x = 240;
+	Rectangle upgradeRect = {
+		.width = width,
+		.height = height,
+		.x = pos_x,
+		.y = pos_y,
+	};
+	switch (gameState->pickedUpgrade)
+	{
+		case UPGRADE_MULTISHOT:
+			{
+				DrawRectangle(pos_x-5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
+				break;
+			}
+		case UPGRADE_DAMAGE:
+			{ 
+				DrawRectangle(pos_x - spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
+				break;
+			}
+		case UPGRADE_FIRERATE:
+			{
+				DrawRectangle(pos_x + spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
+				break;
+			}
+		case UPGRADE_COUNT:
+			{
+				break;
+			}
+	}
+	char upgradeBuffer[2048] = {0};
+	const int fontSize = 16.0f;
+	DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEMULTISHOT).coords, upgradeRect, (Vector2){0, 0}, 0.0f, WHITE); 
+	DrawTextWrapped(options->font, T(TXT_UPGRADE_MULTISHOT), 
+					upgradeBuffer, 2048,
+					(Vector2){upgradeRect.x + 8.0f*scaling, pos_y + 45.0f*scaling},
+					32.0f*scaling,
+					fontSize, GetDefaultSpacing(fontSize),
+					ALIGN_LEFT,
+					WHITE);
+	upgradeRect.x -= spacing_x;
+	DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEDAMAGE).coords, upgradeRect, (Vector2){0, 0}, 0.0f, WHITE); 
+	DrawTextWrapped(options->font, T(TXT_UPGRADE_DAMAGE), 
+					upgradeBuffer, 2048,
+					(Vector2){upgradeRect.x + 8.0f*scaling, pos_y  + 45.0f*scaling},
+					32.0f*scaling,
+					fontSize, GetDefaultSpacing(fontSize),
+					ALIGN_LEFT,
+					WHITE);
+	upgradeRect.x += 2.0f * spacing_x;
+	DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEFIRERATE).coords, upgradeRect, (Vector2){0, 0}, 0.0f, WHITE); 
+	DrawTextWrapped(options->font, T(TXT_UPGRADE_FIRERATE), 
+					upgradeBuffer, 2048,
+					(Vector2){upgradeRect.x + 8.0f*scaling, pos_y + 45.0f*scaling},
+					32.0f*scaling,
+					fontSize, GetDefaultSpacing(fontSize),
+					ALIGN_LEFT,
+					WHITE);
+}
+
+void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
+{
+	Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+	draw_text_centered(options->font, T(TXT_GAME_PAUSED), (Vector2){dst.width/2.0f, dst.height/5.0f}, 40, options->fontSpacing, WHITE);
+	// Draw a window box
+	const float boxWidth = 300.0f;
+	const float boxHeight = 200.0f;
+	GuiWindowBox((Rectangle){ options->screenWidth/4-boxWidth/2, options->screenHeight/2-boxHeight/2, boxWidth, boxHeight }, "Settings");
+	// Language label
+	const float labelWidth = 160.0f;
+	const float labelHeight = 100.0f;
+	GuiLabel((Rectangle){ options->screenWidth/4-labelWidth/2-boxWidth/6, 
+			options->screenHeight/2-labelHeight/2-boxHeight/4, 
+			labelWidth, labelHeight}, "Language:");
+	const float buttonWidth = 100;
+	const float buttonHeight = 50;
+	if (GuiButton((Rectangle){ options->screenWidth/4-buttonWidth/2, 
+				options->screenHeight/2-buttonHeight/4+boxHeight/4, 
+				buttonWidth, buttonHeight }, "Quit")) 
+	{
+		shouldExit = true;
+	}
+	// Draw dropdown box
+	const float dropdownWidth = 160.0f;
+	const float dropdownHeight = 20.0f;
+	// Note: the label string must list all items separated by ';'
+	const char *langItems = "English;German;Chinese";
+	if (GuiDropdownBox((Rectangle){ options->screenWidth/4-dropdownWidth/2+boxWidth/6, 
+				options->screenHeight/2-dropdownHeight/2-boxHeight/4,
+				dropdownWidth, dropdownHeight}, langItems,
+				&options->language, editMode))
+	{
+		// Toggled edit mode when clicked
+		editMode = !editMode;
+	}
+	if (options->language != options->lastLanguage)
+	{
+		switch (options->language)
+		{
+			case 0: LocSetLanguage(LANG_EN); break;
+			case 1: LocSetLanguage(LANG_DE); break;
+			case 2: LocSetLanguage(LANG_ZH); break;
+		}
+
+		UnloadFont(options->font);
+		options->font = LoadLanguageFont("fonts/UnifontExMono.ttf", options->maxFontSize, options->language);
+		GuiSetFont(options->font);
+		options->lastLanguage = options->language;
+	}
+}
+
 void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 {
 	Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	switch (gameState->state) {
 		case STATE_RUNNING:
 			{
-				// Draw player health
-				for (int i = 1; i <= gameState->player.playerHealth; i++)
-				{
-					const int texture_x = i * 16;
-					const int texture_y = getSprite(SPRITE_HEART).coords.height;
-					DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_HEART).coords, (Vector2){texture_x, texture_y}, WHITE);
-				}
-				// Draw Score
-				float recPosX = dst.width * 0.9;
-				float recPosY = dst.height * 0.05;
-				float recHeight = 30.0f;
-				float recWidth = 100.0f;
-				DrawRectangle(recPosX, recPosY, gameState->experience / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
-				DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
-				// char experienceText[100] = "XP";
-				Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), 20.0f, GetDefaultSpacing(20.0f));
-				DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
+				DrawHealthBar(gameState, options, atlas);
+				DrawScore(gameState, options, atlas);
 				break;
 			}
 		case STATE_MAIN_MENU:
@@ -992,25 +1131,23 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 				draw_text_centered(options->font, T(TXT_INSTRUCTIONS), (Vector2){dst.width/2.0f, dst.height/2.0f + 50}, 20, GetDefaultSpacing(20), WHITE);
 				draw_text_centered(options->font, "v0.1", (Vector2){dst.width/2.0f, dst.height - 15}, 15, GetDefaultSpacing(15),  WHITE);
 
-				char testBuffer[2048] = {0};
-				TWrap(testBuffer, 2048, options->font, "This is a test of the text wrapping function.", 50.0, 20.0, GetDefaultSpacing(20));
-				draw_text_centered(options->font, testBuffer, (Vector2){dst.width/2.0f, dst.height - 100}, 15, GetDefaultSpacing(15),  WHITE);
-
-				TWrap(testBuffer, 2048, options->font, "This is a test of the text wrapping function. This should also be aligned to the center", 50.0, 15.0, GetDefaultSpacing(15));
-				DrawTextWrapped(options->font, testBuffer,
-								(Vector2){50,60},
-								50.0f,
-								15, GetDefaultSpacing(15),
-								ALIGN_CENTER,
-								WHITE);
-
-				TWrap(testBuffer, 2048, options->font, "This is a test of the text wrapping function. This should also be aligned to the right", 50.0, 20.0, GetDefaultSpacing(20));
-				DrawTextWrapped(options->font, testBuffer,
-								(Vector2){150,60},
-								50.0f,
-								20, GetDefaultSpacing(20),
-								ALIGN_RIGHT,
-								WHITE);
+				// char testBuffer[2048] = {0};
+				// TWrap(testBuffer, 2048, options->font, "This is a test of the text wrapping function.", 50.0, 20.0, GetDefaultSpacing(20));
+				// draw_text_centered(options->font, testBuffer, (Vector2){dst.width/2.0f, dst.height - 100}, 15, GetDefaultSpacing(15),  WHITE);
+				//
+				// DrawTextWrapped(options->font, "This is a test of the text wrapping function. This should also be aligned to the center", testBuffer, 2048,
+				// 				(Vector2){50,60},
+				// 				50.0f,
+				// 				15, GetDefaultSpacing(15),
+				// 				ALIGN_CENTER,
+				// 				WHITE);
+				//
+				// DrawTextWrapped(options->font, "This is a test of the text wrapping function. This should also be aligned to the right", testBuffer, 2048,
+				// 				(Vector2){150,60},
+				// 				50.0f,
+				// 				20, GetDefaultSpacing(20),
+				// 				ALIGN_RIGHT,
+				// 				WHITE);
 				break;
 			}
 		case STATE_GAME_OVER:
@@ -1024,135 +1161,26 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 				draw_text_centered(options->font, T(TXT_TRY_AGAIN), (Vector2){dst.width/2.0f, dst.height/2.0f + 60.0f}, 20.0f, options->fontSpacing, WHITE);
 				break;
 			}
-		case STATE_PAUSED:
-			{
-				// Color backgroundColor = ColorFromHSV(259, 1, 0.07);
-				// ClearBackground(backgroundColor);
-				// Draw player health
-				for (int i = 1; i <= gameState->player.playerHealth; i++)
-				{
-					const int texture_x = i * 16;
-					const int texture_y = getSprite(SPRITE_HEART).coords.height;
-					DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_HEART).coords, (Vector2){texture_x, texture_y}, WHITE);
-				}
-				// Draw Score
-				const float recPosX = dst.width * 0.9;
-				const float recPosY = dst.height * 0.05;
-				const float recWidth = 100.0f;
-				const float recHeight = 30.0f;
-				DrawRectangle(recPosX, recPosY, gameState->experience / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
-				DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
-				// char experienceText[100] = "XP";
-				Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), 20.0f, GetDefaultSpacing(20.0f));
-				DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
-				draw_text_centered(options->font, T(TXT_GAME_PAUSED), (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, options->fontSpacing, WHITE);
-				// Draw a window box
-				const float boxWidth = 300.0f;
-				const float boxHeight = 200.0f;
-				GuiWindowBox((Rectangle){ options->screenWidth/4-boxWidth/2, options->screenHeight/2-boxHeight/2, boxWidth, boxHeight }, "Settings");
-				// Language label
-				const float labelWidth = 160.0f;
-				const float labelHeight = 100.0f;
-				GuiLabel((Rectangle){ options->screenWidth/4-labelWidth/2-boxWidth/6, 
-						              options->screenHeight/2-labelHeight/2-boxHeight/4, 
-									  labelWidth, labelHeight}, "Language:");
-				const float buttonWidth = 100;
-				const float buttonHeight = 50;
-				if (GuiButton((Rectangle){ options->screenWidth/4-buttonWidth/2, 
-							options->screenHeight/2-buttonHeight/4+boxHeight/4, 
-							buttonWidth, buttonHeight }, "Quit")) 
-				{
-					shouldExit = true;
-				}
-				// Draw dropdown box
-				const float dropdownWidth = 160.0f;
-				const float dropdownHeight = 20.0f;
-				// Note: the label string must list all items separated by ';'
-				const char *langItems = "English;German;Chinese";
-				if (GuiDropdownBox((Rectangle){ options->screenWidth/4-dropdownWidth/2+boxWidth/6, 
-												options->screenHeight/2-dropdownHeight/2-boxHeight/4,
-												dropdownWidth, dropdownHeight}, langItems,
-												&options->language, editMode))
-				{
-					// Toggled edit mode when clicked
-					editMode = !editMode;
-				}
-				if (options->language != options->lastLanguage)
-				{
-					switch (options->language)
-					{
-						case 0: LocSetLanguage(LANG_EN); break;
-						case 1: LocSetLanguage(LANG_DE); break;
-						case 2: LocSetLanguage(LANG_ZH); break;
-					}
-
-					UnloadFont(options->font);
-					options->font = LoadLanguageFont("fonts/UnifontExMono.ttf", options->maxFontSize, options->language);
-					GuiSetFont(options->font);
-					options->lastLanguage = options->language;
-				}
-				break;
-			}
 		case STATE_UPGRADE:
 			{
-				// Draw player health
-				for (int i = 1; i <= gameState->player.playerHealth; i++)
+				DrawHealthBar(gameState, options, atlas);
+				DrawScore(gameState, options, atlas);
+				DrawUpgrades(gameState, options, atlas);
+				break;
+			}
+		case STATE_PAUSED:
+			{
+				DrawHealthBar(gameState, options, atlas);
+				DrawScore(gameState, options, atlas);
+				if (gameState->lastState == STATE_RUNNING) 
 				{
-					const int texture_x = i * 16;
-					const int texture_y = getSprite(SPRITE_HEART).coords.height;
-					DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_HEART).coords, (Vector2){texture_x, texture_y}, WHITE);
 				}
-				// Draw Score
-				float recPosX = dst.width * 0.9;
-				float recPosY = dst.height * 0.05;
-				float recHeight = 30.0f;
-				float recWidth = 100.0f;
-				DrawRectangle(recPosX, recPosY, gameState->experience / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
-				DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
-				// char experienceText[100] = "XP";
-				Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), 20.0f, GetDefaultSpacing(20.0f));
-				DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
-
-				draw_text_centered(options->font, T(TXT_LEVEL_UP), (Vector2){dst.width/2.0f, dst.height/2.0f - 80.0f}, 40, options->fontSpacing, WHITE);
-				draw_text_centered(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){dst.width/2.0f, dst.height/2.0f - 35.0f}, 40, options->fontSpacing, WHITE);
-				const int width = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width*3.0f;
-				const int height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height*3.0f;                
-				const int pos_x = dst.width/2.0f - width/2.0f;
-				const int pos_y = dst.height/2.0f - height/2.0f + 90.0f;
-				const int spacing_x = 240;
-				Rectangle upgradeRect = {
-					.width = width,
-					.height = height,
-					.x = pos_x,
-					.y = pos_y,
-				};
-				switch (gameState->pickedUpgrade)
+				else if (gameState->lastState == STATE_UPGRADE) 
 				{
-					case UPGRADE_MULTISHOT:
-						{
-							DrawRectangle(pos_x-5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
-							break;
-						}
-					case UPGRADE_DAMAGE:
-						{ 
-							DrawRectangle(pos_x - spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
-							break;
-						}
-					case UPGRADE_FIRERATE:
-						{
-							DrawRectangle(pos_x + spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
-							break;
-						}
-					case UPGRADE_COUNT:
-						{
-							break;
-						}
+					DrawUpgrades(gameState, options, atlas);
 				}
-				DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEMULTISHOT).coords, upgradeRect, (Vector2){0, 0}, 0.0f, WHITE); 
-				upgradeRect.x -= spacing_x;
-				DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEDAMAGE).coords, upgradeRect, (Vector2){0, 0}, 0.0f, WHITE); 
-				upgradeRect.x += 2.0f * spacing_x;
-				DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEFIRERATE).coords, upgradeRect, (Vector2){0, 0}, 0.0f, WHITE); 
+				DrawPauseMenu(gameState, options, atlas);
+				break;
 			}
 	}
 	DrawFPS(10, 40);

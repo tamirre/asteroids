@@ -25,8 +25,8 @@ local function normalizeFrameName(filename)
 end
 
 -- ------------------- setup paths -------------------
-local BASE_DIR  = app.fs.filePath("./")
--- local BASE_DIR  = app.fs.filePath("~/asteroids/assets/test/")
+local BASE_DIR  = app.fs.filePath("./assets/")
+-- local BASE_DIR  = app.fs.filePath("~/asteroids/assets/")
 local ATLAS_DIR = app.fs.joinPath(BASE_DIR, "atlas")
 ensureDir(ATLAS_DIR)
 -- print(BASE_DIR)
