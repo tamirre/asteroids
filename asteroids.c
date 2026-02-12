@@ -10,8 +10,8 @@
 #include "localization.h"
 
 #define RAYGUI_IMPLEMENTATION
-#include "third_party/raygui/src/raygui.h"
-#include "third_party/raygui/styles/dark/style_dark.h"
+#include "third_party/include/raygui.h"
+#include "third_party/include/style_dark.h"
 
 
 #if defined(PLATFORM_WEB)
@@ -161,8 +161,11 @@ static RenderTexture2D litScene;
 static Shader shader;
 static Shader lightShader;
 static bool editMode = false;
+static bool shouldExit = false;
 
 void cleanup(TextureAtlas atlas, Options options, Audio audio, SpriteMask spriteMasks[]) {
+	UnloadShader(shader);
+	UnloadShader(lightShader);
     FreeSpriteAnimation(atlas.playerAnimation);
     UnloadFont(options.font);
 	for (int i = 0; i < SPRITE_COUNT; i++)
@@ -1079,6 +1082,14 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 					GuiSetFont(options->font);
 					options->lastLanguage = options->language;
 				}
+				float buttonWidth = 100;
+				float buttonHeight = 50;
+				if (GuiButton((Rectangle){ options->screenWidth/4-buttonWidth/2-boxWidth/16, 
+							               options->screenHeight/2-buttonHeight/4+boxHeight/4, 
+										   buttonWidth, buttonHeight }, "Quit")) 
+				{
+					shouldExit = true;
+				}
 				break;
 			}
 		case STATE_UPGRADE:
@@ -1214,13 +1225,13 @@ int main() {
 #if defined(PLATFORM_WEB)
 	emscripten_set_main_loop(UpdateDrawFrame, TARGET_FPS, 1);
 #else
-    while (!WindowShouldClose())
+    while (!WindowShouldClose() && !shouldExit)
     { 
 		UpdateDrawFrame();
     }
 #endif
-	UnloadShader(shader);
-	UnloadShader(lightShader);
+	// UnloadShader(shader);
+	// UnloadShader(lightShader);
 	cleanup(atlas, options, audio, spriteMasks);
 
     CloseWindow();
