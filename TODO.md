@@ -1,8 +1,9 @@
 # TODO list: 
 
 - [ ] make it fun
-- [ ] localisation with different languages
-- [ ] try out rayGUI 
+- [ ] hot code reloading
+- [x] localisation with different languages
+- [x] try out rayGUI 
 - [x] figure out how to build for web
 - [x] make pixel perfect collision work with rotating asteroids
 - [x] build a texture packer for sprites with aseprite
