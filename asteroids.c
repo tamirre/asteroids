@@ -1036,10 +1036,10 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 					DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_HEART).coords, (Vector2){texture_x, texture_y}, WHITE);
 				}
 				// Draw Score
-				float recPosX = dst.width * 0.9;
-				float recPosY = dst.height * 0.05;
-				float recWidth = 100.0f;
-				float recHeight = 30.0f;
+				const float recPosX = dst.width * 0.9;
+				const float recPosY = dst.height * 0.05;
+				const float recWidth = 100.0f;
+				const float recHeight = 30.0f;
 				DrawRectangle(recPosX, recPosY, gameState->experience / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
 				DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
 				// char experienceText[100] = "XP";
@@ -1047,17 +1047,17 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 				DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
 				draw_text_centered(options->font, T(TXT_GAME_PAUSED), (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, options->fontSpacing, WHITE);
 				// Draw a window box
-				float boxWidth = 300.0f;
-				float boxHeight = 200.0f;
+				const float boxWidth = 300.0f;
+				const float boxHeight = 200.0f;
 				GuiWindowBox((Rectangle){ options->screenWidth/4-boxWidth/2, options->screenHeight/2-boxHeight/2, boxWidth, boxHeight }, "Settings");
 				// Language label
-				float labelWidth = 160.0f;
-				float labelHeight = 100.0f;
+				const float labelWidth = 160.0f;
+				const float labelHeight = 100.0f;
 				GuiLabel((Rectangle){ options->screenWidth/4-labelWidth/2-boxWidth/6, 
 						              options->screenHeight/2-labelHeight/2-boxHeight/4, 
 									  labelWidth, labelHeight}, "Language:");
-				float buttonWidth = 100;
-				float buttonHeight = 50;
+				const float buttonWidth = 100;
+				const float buttonHeight = 50;
 				if (GuiButton((Rectangle){ options->screenWidth/4-buttonWidth/2, 
 							options->screenHeight/2-buttonHeight/4+boxHeight/4, 
 							buttonWidth, buttonHeight }, "Quit")) 
@@ -1065,8 +1065,8 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 					shouldExit = true;
 				}
 				// Draw dropdown box
-				float dropdownWidth = 160.0f;
-				float dropdownHeight = 20.0f;
+				const float dropdownWidth = 160.0f;
+				const float dropdownHeight = 20.0f;
 				// Note: the label string must list all items separated by ';'
 				const char *langItems = "English;German;Chinese";
 				if (GuiDropdownBox((Rectangle){ options->screenWidth/4-dropdownWidth/2+boxWidth/6, 
