@@ -291,6 +291,7 @@ void DrawTextWrapped(Font font,
                      float fontSize,
                      TextAlign align,
 					 float rotation,
+					 Vector2 pivot,
                      Color color)
 {
 	float spacing = GetDefaultSpacing(fontSize);
@@ -315,7 +316,7 @@ void DrawTextWrapped(Font font,
             else if (align == ALIGN_CENTER) x = pos.x + (maxWidth - w)/2.0f;
 
             // DrawTextEx(font, line, (Vector2){x, y}, fontSize, spacing, color);
-			DrawTextPro(font, line, (Vector2){x, y}, (Vector2){0.0,0.0}, rotation, fontSize, spacing, color); 
+			DrawTextPro(font, line, (Vector2){x, y}, pivot, rotation, fontSize, spacing, color); 
             y += fontSize;  // next line
             lineStart = p + 1; // start after newline
         }
@@ -338,7 +339,7 @@ void DrawTextWrapped(Font font,
 		else if (align == ALIGN_CENTER) x = pos.x + (maxWidth - w) / 2.0f;
 
 		// DrawTextEx(font, line, (Vector2){x, y}, fontSize, spacing, color);
-		DrawTextPro(font, line, (Vector2){x, y}, (Vector2){0.0,0.0}, rotation, fontSize, spacing, color); 
+		DrawTextPro(font, line, (Vector2){x, y}, pivot, rotation, fontSize, spacing, color); 
 	}
 }
 

@@ -28,7 +28,7 @@
 #ifdef PLATFORM_WEB
 	#define TARGET_FPS (60)
 #else
-	#define TARGET_FPS (30)
+	#define TARGET_FPS (300)
 #endif
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
@@ -677,7 +677,8 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 								{
 									// Replace with bullet with last bullet
 									*bullet = gameState->bullets[--gameState->bulletCount];
-									if (--asteroid->health < 1)
+									asteroid->health -= bullet->damage;
+									if (asteroid->health < 1)
 									{
 										gameState->experience += MAX((int)(asteroid->size * 100),1);
 										*asteroid = gameState->asteroids[--gameState->asteroidCount];
@@ -1019,19 +1020,16 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 		case UPGRADE_MULTISHOT:
 			{
 				DrawRectangle(pos_x-5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.4));
-				DrawRectangle(pos_x-10, pos_y-10, width+20, height+20, ColorAlpha(GREEN, 0.2));
 				break;
 			}
 		case UPGRADE_DAMAGE:
 			{ 
 				DrawRectangle(pos_x - spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.4));
-				DrawRectangle(pos_x - spacing_x - 10, pos_y-10, width+20, height+20, ColorAlpha(GREEN, 0.2));
 				break;
 			}
 		case UPGRADE_FIRERATE:
 			{
 				DrawRectangle(pos_x + spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.4));
-				DrawRectangle(pos_x + spacing_x - 10, pos_y-10, width+20, height+20, ColorAlpha(GREEN, 0.2));
 				break;
 			}
 		case UPGRADE_COUNT:
@@ -1045,6 +1043,8 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 	const float timeScal = 0.1f;
 	float rotation;
 	Vector2 pivot;
+	Vector2 textPos;
+	Vector2 cardCenter;
 	pivot.x = upgradeRect.width/2.0f;
 	pivot.y = upgradeRect.height/2.0f;
 
@@ -1053,17 +1053,22 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 	} else {
 		rotation = 0.0f;
 	}
+	textPos = (Vector2){ upgradeRect.x + 8.0f * scaling, upgradeRect.y + 45.0f * scaling };
+	cardCenter = (Vector2){ upgradeRect.x + upgradeRect.width * 0.5f, upgradeRect.y + upgradeRect.height * 0.5f };
 	DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEMULTISHOT).coords, 
 			       upgradeRect, pivot, rotation, WHITE); 
 	DrawTextWrapped(options->font, T(TXT_UPGRADE_MULTISHOT), 
 					upgradeBuffer, 2048,
-					(Vector2){upgradeRect.x-width/2.0f + 8.0f*scaling, pos_y + 45.0f*scaling},
+					textPos,
 					32.0f*scaling,
 					fontSize, 
 					ALIGN_LEFT,
 					rotation,
+					(Vector2){cardCenter.x-textPos.x, cardCenter.y-textPos.y},
 					WHITE);
 	upgradeRect.x -= spacing_x;
+	textPos = (Vector2){ upgradeRect.x + 8.0f * scaling, upgradeRect.y + 45.0f * scaling };
+	cardCenter = (Vector2){ upgradeRect.x + upgradeRect.width * 0.5f, upgradeRect.y + upgradeRect.height * 0.5f };
 	if (gameState->pickedUpgrade == UPGRADE_DAMAGE) {
 		rotation = rotScal * cos(gameState->time/timeScal);
 	} else {
@@ -1073,13 +1078,16 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 			       upgradeRect, pivot, rotation, WHITE); 
 	DrawTextWrapped(options->font, T(TXT_UPGRADE_DAMAGE), 
 					upgradeBuffer, 2048,
-					(Vector2){upgradeRect.x-width/2.0f + 8.0f*scaling, pos_y  + 45.0f*scaling},
+					(Vector2){upgradeRect.x + 8.0f*scaling, upgradeRect.y + 45.0f*scaling},
 					32.0f*scaling,
 					fontSize,
 					ALIGN_LEFT,
 					rotation,
+					pivot,
 					WHITE);
 	upgradeRect.x += 2.0f * spacing_x;
+	textPos = (Vector2){ upgradeRect.x + 8.0f * scaling, upgradeRect.y + 45.0f * scaling };
+	cardCenter = (Vector2){ upgradeRect.x + upgradeRect.width * 0.5f, upgradeRect.y + upgradeRect.height * 0.5f };
 	if (gameState->pickedUpgrade == UPGRADE_FIRERATE) {
 		rotation = rotScal * cos(gameState->time/timeScal);
 	} else {
@@ -1089,11 +1097,12 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 			       upgradeRect, pivot, rotation, WHITE); 
 	DrawTextWrapped(options->font, T(TXT_UPGRADE_FIRERATE), 
 					upgradeBuffer, 2048,
-					(Vector2){upgradeRect.x-width/2.0f + 8.0f*scaling, pos_y + 45.0f*scaling},
+					(Vector2){upgradeRect.x + 8.0f*scaling, upgradeRect.y + 45.0f*scaling},
 					32.0f*scaling,
 					fontSize, 
 					ALIGN_LEFT,
 					rotation,
+					pivot,
 					WHITE);
 }
 
