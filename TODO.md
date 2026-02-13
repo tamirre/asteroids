@@ -2,6 +2,7 @@
 
 - [ ] make it fun
 - [ ] hot code reloading
+- [ ] add particle effects
 - [x] localisation with different languages
 - [x] try out rayGUI 
 - [x] figure out how to build for web
