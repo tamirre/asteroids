@@ -14,3 +14,10 @@ GAME_TITLE,Asteroids,Asteroids,小行星
 UPGRADE_DAMAGE,Increased Damage,Erhöhter Schaden,伤害增加
 UPGRADE_FIRERATE,Increased Firerate,Erhöhte Feuerrate,射速增加
 UPGRADE_MULTISHOT,+1 Projectile,+1 Projektil,+1 射弹
+LANGUAGE,Language:,Sprache:,语言：
+GERMAN,German,Deutsch,德语 
+ENGLISH,English,Englisch,英语 
+CHINESE,Chinese,Chinesisch,中文 
+QUIT,Quit,Beenden,辞职 
+CONTINUE,Continue,Fortfahren,继续 
+SETTINGS,Settings,Einstellungen,设置

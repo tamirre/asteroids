@@ -1032,7 +1032,7 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 			}
 	}
 	char upgradeBuffer[2048] = {0};
-	const int fontSize = 16.0f;
+	const int fontSize = 18.0f;
 	DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEMULTISHOT).coords, upgradeRect, (Vector2){0, 0}, 0.0f, WHITE); 
 	DrawTextWrapped(options->font, T(TXT_UPGRADE_MULTISHOT), 
 					upgradeBuffer, 2048,
@@ -1067,29 +1067,36 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 	draw_text_centered(options->font, T(TXT_GAME_PAUSED), (Vector2){dst.width/2.0f, dst.height/5.0f}, 40, options->fontSpacing, WHITE);
 	// Draw a window box
 	const float boxWidth = 300.0f;
-	const float boxHeight = 200.0f;
-	GuiWindowBox((Rectangle){ options->screenWidth/4-boxWidth/2, options->screenHeight/2-boxHeight/2, boxWidth, boxHeight }, "Settings");
+	const float boxHeight = 250.0f;
+	GuiWindowBox((Rectangle){ options->screenWidth/4-boxWidth/2, options->screenHeight/2-boxHeight/2, boxWidth, boxHeight }, T(TXT_SETTINGS));
 	// Language label
 	const float labelWidth = 160.0f;
 	const float labelHeight = 100.0f;
 	GuiLabel((Rectangle){ options->screenWidth/4-labelWidth/2-boxWidth/6, 
-			options->screenHeight/2-labelHeight/2-boxHeight/4, 
-			labelWidth, labelHeight}, "Language:");
+			options->screenHeight/2-labelHeight/2-boxHeight/6, 
+			labelWidth, labelHeight}, T(TXT_LANGUAGE));
 	const float buttonWidth = 100;
 	const float buttonHeight = 50;
-	if (GuiButton((Rectangle){ options->screenWidth/4-buttonWidth/2, 
-				options->screenHeight/2-buttonHeight/4+boxHeight/4, 
-				buttonWidth, buttonHeight }, "Quit")) 
+	if (GuiButton((Rectangle){ options->screenWidth/5+boxWidth/2-buttonWidth/2, 
+				options->screenHeight/2-buttonHeight/4+boxHeight/6, 
+				buttonWidth, buttonHeight }, T(TXT_QUIT))) 
 	{
 		shouldExit = true;
+	}
+	if (GuiButton((Rectangle){ options->screenWidth/5-buttonWidth/2, 
+				options->screenHeight/2-buttonHeight/4+boxHeight/6, 
+				buttonWidth, buttonHeight }, T(TXT_CONTINUE))) 
+	{
+		gameState->state = gameState->lastState;
 	}
 	// Draw dropdown box
 	const float dropdownWidth = 160.0f;
 	const float dropdownHeight = 20.0f;
 	// Note: the label string must list all items separated by ';'
-	const char *langItems = "English;German;Chinese";
+	char langItems[256];
+	snprintf(langItems, sizeof(langItems), "%s;%s;%s", T(TXT_ENGLISH), T(TXT_GERMAN), T(TXT_CHINESE));
 	if (GuiDropdownBox((Rectangle){ options->screenWidth/4-dropdownWidth/2+boxWidth/6, 
-				options->screenHeight/2-dropdownHeight/2-boxHeight/4,
+				options->screenHeight/2-dropdownHeight/2-boxHeight/6,
 				dropdownWidth, dropdownHeight}, langItems,
 				&options->language, editMode))
 	{
