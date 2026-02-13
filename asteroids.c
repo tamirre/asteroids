@@ -150,6 +150,8 @@ typedef struct GameState {
     float starSpawnRate;
     int initStars;
     Upgrade pickedUpgrade;
+	float dt;
+	float time;
 } GameState;
 
 static GameState gameState;
@@ -208,6 +210,8 @@ void initializeGameState(GameState* gameState) {
         .starSpawnRate = 0.25f,
         .initStars = 0,
         .pickedUpgrade = UPGRADE_MULTISHOT,
+		.dt = 0.0f,
+		.time = 0.0f,
     };
 
     gameState->player = (Player) {
@@ -222,7 +226,7 @@ void initializeGameState(GameState* gameState) {
         .invulDuration = 3.0f,
         .fireRate = 1.0f,
         .shootTime = 1.0f,
-        .damageMulti = 1.0f,
+        .damageMulti = 100.0f,
     };
 
 }
@@ -1007,24 +1011,27 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 	Rectangle upgradeRect = {
 		.width = width,
 		.height = height,
-		.x = pos_x,
-		.y = pos_y,
+		.x = pos_x+width/2.0f,
+		.y = pos_y+height/2.0f,
 	};
 	switch (gameState->pickedUpgrade)
 	{
 		case UPGRADE_MULTISHOT:
 			{
-				DrawRectangle(pos_x-5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
+				DrawRectangle(pos_x-5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.4));
+				DrawRectangle(pos_x-10, pos_y-10, width+20, height+20, ColorAlpha(GREEN, 0.2));
 				break;
 			}
 		case UPGRADE_DAMAGE:
 			{ 
-				DrawRectangle(pos_x - spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
+				DrawRectangle(pos_x - spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.4));
+				DrawRectangle(pos_x - spacing_x - 10, pos_y-10, width+20, height+20, ColorAlpha(GREEN, 0.2));
 				break;
 			}
 		case UPGRADE_FIRERATE:
 			{
-				DrawRectangle(pos_x + spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.5));
+				DrawRectangle(pos_x + spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.4));
+				DrawRectangle(pos_x + spacing_x - 10, pos_y-10, width+20, height+20, ColorAlpha(GREEN, 0.2));
 				break;
 			}
 		case UPGRADE_COUNT:
@@ -1034,31 +1041,59 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 	}
 	char upgradeBuffer[2048] = {0};
 	const int fontSize = 18.0f;
-	DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEMULTISHOT).coords, upgradeRect, (Vector2){0, 0}, 0.0f, WHITE); 
+	const float rotScal = 2.0f;
+	const float timeScal = 0.1f;
+	float rotation;
+	Vector2 pivot;
+	pivot.x = upgradeRect.width/2.0f;
+	pivot.y = upgradeRect.height/2.0f;
+
+	if (gameState->pickedUpgrade == UPGRADE_MULTISHOT) {
+		rotation = rotScal * cos(gameState->time/timeScal);
+	} else {
+		rotation = 0.0f;
+	}
+	DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEMULTISHOT).coords, 
+			       upgradeRect, pivot, rotation, WHITE); 
 	DrawTextWrapped(options->font, T(TXT_UPGRADE_MULTISHOT), 
 					upgradeBuffer, 2048,
-					(Vector2){upgradeRect.x + 8.0f*scaling, pos_y + 45.0f*scaling},
+					(Vector2){upgradeRect.x-width/2.0f + 8.0f*scaling, pos_y + 45.0f*scaling},
 					32.0f*scaling,
 					fontSize, 
 					ALIGN_LEFT,
+					rotation,
 					WHITE);
 	upgradeRect.x -= spacing_x;
-	DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEDAMAGE).coords, upgradeRect, (Vector2){0, 0}, 0.0f, WHITE); 
+	if (gameState->pickedUpgrade == UPGRADE_DAMAGE) {
+		rotation = rotScal * cos(gameState->time/timeScal);
+	} else {
+		rotation = 0.0f;
+	}
+	DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEDAMAGE).coords, 
+			       upgradeRect, pivot, rotation, WHITE); 
 	DrawTextWrapped(options->font, T(TXT_UPGRADE_DAMAGE), 
 					upgradeBuffer, 2048,
-					(Vector2){upgradeRect.x + 8.0f*scaling, pos_y  + 45.0f*scaling},
+					(Vector2){upgradeRect.x-width/2.0f + 8.0f*scaling, pos_y  + 45.0f*scaling},
 					32.0f*scaling,
 					fontSize,
 					ALIGN_LEFT,
+					rotation,
 					WHITE);
 	upgradeRect.x += 2.0f * spacing_x;
-	DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEFIRERATE).coords, upgradeRect, (Vector2){0, 0}, 0.0f, WHITE); 
+	if (gameState->pickedUpgrade == UPGRADE_FIRERATE) {
+		rotation = rotScal * cos(gameState->time/timeScal);
+	} else {
+		rotation = 0.0f;
+	}
+	DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEFIRERATE).coords, 
+			       upgradeRect, pivot, rotation, WHITE); 
 	DrawTextWrapped(options->font, T(TXT_UPGRADE_FIRERATE), 
 					upgradeBuffer, 2048,
-					(Vector2){upgradeRect.x + 8.0f*scaling, pos_y + 45.0f*scaling},
+					(Vector2){upgradeRect.x-width/2.0f + 8.0f*scaling, pos_y + 45.0f*scaling},
 					32.0f*scaling,
 					fontSize, 
 					ALIGN_LEFT,
+					rotation,
 					WHITE);
 }
 
@@ -1214,9 +1249,10 @@ void DrawComposite(RenderTexture2D* scene, Options* options, RenderTexture2D* li
 
 void UpdateDrawFrame()
 {
-	float dt = GetFrameTime() * gameState.timeScale;
+	gameState.dt = GetFrameTime() * gameState.timeScale;
+	gameState.time += gameState.dt;
 	HandleResize(&options.previousWidth, &options.previousHeight);
-	UpdateGame(&gameState, &options, &atlas, spriteMasks, &audio, dt);
+	UpdateGame(&gameState, &options, &atlas, spriteMasks, &audio, gameState.dt);
 	DrawLightmap(&gameState, &options, &litScene, lightShader);
 	DrawScene(&gameState, &options, &atlas, &scene, shader);
 
