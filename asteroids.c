@@ -28,7 +28,7 @@
 #ifdef PLATFORM_WEB
 	#define TARGET_FPS (60)
 #else
-	#define TARGET_FPS (300)
+	#define TARGET_FPS (30)
 #endif
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
@@ -123,6 +123,7 @@ typedef struct Options {
 	int maxFontSize;
 	int language;
 	int lastLanguage;
+	bool languageEditMode;
 } Options;
 
 typedef struct GameState {
@@ -160,7 +161,6 @@ static RenderTexture2D scene;
 static RenderTexture2D litScene;
 static Shader shader;
 static Shader lightShader;
-static bool editMode = false;
 static bool shouldExit = false;
 
 void cleanup(TextureAtlas atlas, Options options, Audio audio, SpriteMask spriteMasks[]) {
@@ -254,8 +254,9 @@ void initializeOptions(Options* options) {
 }
 
 
-void draw_text_centered(Font font, const char* text, Vector2 pos, int fontSize, int fontSpacing, Color color)
+void draw_text_centered(Font font, const char* text, Vector2 pos, int fontSize, Color color)
 {
+	float fontSpacing = GetDefaultSpacing(fontSize);
 	const Vector2 textSize = MeasureTextEx(font, text, fontSize, fontSpacing);
     pos.x -= textSize.x / 2.0f;
     pos.y -= textSize.y / 2.0f;
@@ -995,8 +996,8 @@ void DrawScore(GameState* gameState, Options* options, TextureAtlas* atlas)
 void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 {
 	Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
-	draw_text_centered(options->font, T(TXT_LEVEL_UP), (Vector2){dst.width/2.0f, dst.height/2.0f - 80.0f}, 40, options->fontSpacing, WHITE);
-	draw_text_centered(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){dst.width/2.0f, dst.height/2.0f - 35.0f}, 40, options->fontSpacing, WHITE);
+	draw_text_centered(options->font, T(TXT_LEVEL_UP), (Vector2){dst.width/2.0f, dst.height/2.0f - 80.0f}, 40, WHITE);
+	draw_text_centered(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){dst.width/2.0f, dst.height/2.0f - 35.0f}, 40, WHITE);
 	const float scaling = 3.0f;
 	const int width = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width*scaling;
 	const int height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height*scaling;
@@ -1038,7 +1039,7 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 					upgradeBuffer, 2048,
 					(Vector2){upgradeRect.x + 8.0f*scaling, pos_y + 45.0f*scaling},
 					32.0f*scaling,
-					fontSize, GetDefaultSpacing(fontSize),
+					fontSize, 
 					ALIGN_LEFT,
 					WHITE);
 	upgradeRect.x -= spacing_x;
@@ -1047,7 +1048,7 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 					upgradeBuffer, 2048,
 					(Vector2){upgradeRect.x + 8.0f*scaling, pos_y  + 45.0f*scaling},
 					32.0f*scaling,
-					fontSize, GetDefaultSpacing(fontSize),
+					fontSize,
 					ALIGN_LEFT,
 					WHITE);
 	upgradeRect.x += 2.0f * spacing_x;
@@ -1056,7 +1057,7 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 					upgradeBuffer, 2048,
 					(Vector2){upgradeRect.x + 8.0f*scaling, pos_y + 45.0f*scaling},
 					32.0f*scaling,
-					fontSize, GetDefaultSpacing(fontSize),
+					fontSize, 
 					ALIGN_LEFT,
 					WHITE);
 }
@@ -1064,28 +1065,32 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 {
 	Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
-	draw_text_centered(options->font, T(TXT_GAME_PAUSED), (Vector2){dst.width/2.0f, dst.height/5.0f}, 40, options->fontSpacing, WHITE);
+	draw_text_centered(options->font, T(TXT_GAME_PAUSED), (Vector2){dst.width/2.0f, dst.height/5.0f}, 40, WHITE);
 	// Draw a window box
 	const float boxWidth = 300.0f;
 	const float boxHeight = 250.0f;
-	GuiWindowBox((Rectangle){ options->screenWidth/4-boxWidth/2, options->screenHeight/2-boxHeight/2, boxWidth, boxHeight }, T(TXT_SETTINGS));
+	const float boxPosX = options->screenWidth/2;
+	const float boxPosY = options->screenHeight/2;
+	GuiWindowBox((Rectangle){boxPosX-boxWidth/2,
+			                 boxPosY-boxHeight/2, 
+							 boxWidth, boxHeight }, T(TXT_SETTINGS));
 	// Language label
 	const float labelWidth = 160.0f;
 	const float labelHeight = 100.0f;
-	GuiLabel((Rectangle){ options->screenWidth/4-labelWidth/2-boxWidth/6, 
-			options->screenHeight/2-labelHeight/2-boxHeight/6, 
-			labelWidth, labelHeight}, T(TXT_LANGUAGE));
+	GuiLabel((Rectangle){ boxPosX-labelWidth/2-boxWidth/6, 
+						  boxPosY-labelHeight/2-boxHeight/6, 
+						  labelWidth, labelHeight}, T(TXT_LANGUAGE));
 	const float buttonWidth = 100;
 	const float buttonHeight = 50;
-	if (GuiButton((Rectangle){ options->screenWidth/5+boxWidth/2-buttonWidth/2, 
-				options->screenHeight/2-buttonHeight/4+boxHeight/6, 
-				buttonWidth, buttonHeight }, T(TXT_QUIT))) 
+	if (GuiButton((Rectangle){ boxPosX+boxWidth/4-buttonWidth/2, 
+							   boxPosY-buttonHeight/4+boxHeight/6, 
+							   buttonWidth, buttonHeight }, T(TXT_QUIT))) 
 	{
 		shouldExit = true;
 	}
-	if (GuiButton((Rectangle){ options->screenWidth/5-buttonWidth/2, 
-				options->screenHeight/2-buttonHeight/4+boxHeight/6, 
-				buttonWidth, buttonHeight }, T(TXT_CONTINUE))) 
+	if (GuiButton((Rectangle){ boxPosX-boxWidth/4-buttonWidth/2, 
+							   boxPosY-buttonHeight/4+boxHeight/6, 
+							   buttonWidth, buttonHeight }, T(TXT_CONTINUE))) 
 	{
 		gameState->state = gameState->lastState;
 	}
@@ -1095,13 +1100,13 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 	// Note: the label string must list all items separated by ';'
 	char langItems[256];
 	snprintf(langItems, sizeof(langItems), "%s;%s;%s", T(TXT_ENGLISH), T(TXT_GERMAN), T(TXT_CHINESE));
-	if (GuiDropdownBox((Rectangle){ options->screenWidth/4-dropdownWidth/2+boxWidth/6, 
-				options->screenHeight/2-dropdownHeight/2-boxHeight/6,
-				dropdownWidth, dropdownHeight}, langItems,
-				&options->language, editMode))
+	if (GuiDropdownBox((Rectangle){ boxPosX-dropdownWidth/2+boxWidth/6, 
+									boxPosY-dropdownHeight/2-boxHeight/6,
+									dropdownWidth, dropdownHeight}, 
+									langItems, &options->language, options->languageEditMode))
 	{
 		// Toggled edit mode when clicked
-		editMode = !editMode;
+		options->languageEditMode = !options->languageEditMode;
 	}
 	if (options->language != options->lastLanguage)
 	{
@@ -1133,26 +1138,26 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 			{
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
-				draw_text_centered(options->font, T(TXT_GAME_TITLE), (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, GetDefaultSpacing(40), WHITE);
-				draw_text_centered(options->font, T(TXT_PRESS_TO_PLAY), (Vector2){dst.width/2.0f, dst.height/2.0f + 30}, 20, GetDefaultSpacing(20), WHITE);
-				draw_text_centered(options->font, T(TXT_INSTRUCTIONS), (Vector2){dst.width/2.0f, dst.height/2.0f + 50}, 20, GetDefaultSpacing(20), WHITE);
-				draw_text_centered(options->font, "v0.1", (Vector2){dst.width/2.0f, dst.height - 15}, 15, GetDefaultSpacing(15),  WHITE);
+				draw_text_centered(options->font, T(TXT_GAME_TITLE), (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, WHITE);
+				draw_text_centered(options->font, T(TXT_PRESS_TO_PLAY), (Vector2){dst.width/2.0f, dst.height/2.0f + 30}, 20, WHITE);
+				draw_text_centered(options->font, T(TXT_INSTRUCTIONS), (Vector2){dst.width/2.0f, dst.height/2.0f + 50}, 20, WHITE);
+				draw_text_centered(options->font, "v0.1", (Vector2){dst.width/2.0f, dst.height - 15}, 15, WHITE);
 
 				// char testBuffer[2048] = {0};
-				// TWrap(testBuffer, 2048, options->font, "This is a test of the text wrapping function.", 50.0, 20.0, GetDefaultSpacing(20));
-				// draw_text_centered(options->font, testBuffer, (Vector2){dst.width/2.0f, dst.height - 100}, 15, GetDefaultSpacing(15),  WHITE);
+				// TWrap(testBuffer, 2048, options->font, "This is a test of the text wrapping function.", 50.0, 20.0);
+				// draw_text_centered(options->font, testBuffer, (Vector2){dst.width/2.0f, dst.height - 100}, 15, WHITE);
 				//
 				// DrawTextWrapped(options->font, "This is a test of the text wrapping function. This should also be aligned to the center", testBuffer, 2048,
 				// 				(Vector2){50,60},
 				// 				50.0f,
-				// 				15, GetDefaultSpacing(15),
+				// 				15, 
 				// 				ALIGN_CENTER,
 				// 				WHITE);
 				//
 				// DrawTextWrapped(options->font, "This is a test of the text wrapping function. This should also be aligned to the right", testBuffer, 2048,
 				// 				(Vector2){150,60},
 				// 				50.0f,
-				// 				20, GetDefaultSpacing(20),
+				// 				20,
 				// 				ALIGN_RIGHT,
 				// 				WHITE);
 				break;
@@ -1161,11 +1166,11 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 			{
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
-				draw_text_centered(options->font, T(TXT_GAME_OVER), (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, options->fontSpacing, WHITE);
+				draw_text_centered(options->font, T(TXT_GAME_OVER), (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, WHITE);
 				char scoreText[100] = {0};
 				sprintf(scoreText, "Final score: %d", gameState->experience);
-				draw_text_centered(options->font, scoreText, (Vector2){dst.width/2.0f, dst.height/2.0f + 30.0f}, 20.0f, options->fontSpacing, WHITE);
-				draw_text_centered(options->font, T(TXT_TRY_AGAIN), (Vector2){dst.width/2.0f, dst.height/2.0f + 60.0f}, 20.0f, options->fontSpacing, WHITE);
+				draw_text_centered(options->font, scoreText, (Vector2){dst.width/2.0f, dst.height/2.0f + 30.0f}, 20.0f, WHITE);
+				draw_text_centered(options->font, T(TXT_TRY_AGAIN), (Vector2){dst.width/2.0f, dst.height/2.0f + 60.0f}, 20.0f, WHITE);
 				break;
 			}
 		case STATE_UPGRADE:

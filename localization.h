@@ -9,7 +9,7 @@
 // This file expects a generated "txt.h" with:
 //
 //   typedef enum { TXT_..., TXT_COUNT } TextID;
-//   typedef enum { LANG_EN, LANG_DE, LANG_ZH, LANG_COUNT } Language;
+//   typedef enum { LANG_EN, LANG_DE, LANG_ZH, ...,  LANG_COUNT } Language;
 //   static const char *gText[LANG_COUNT][TXT_COUNT];
 //
 // -----------------------------------------------------------------------------
@@ -288,10 +288,10 @@ void DrawTextWrapped(Font font,
                      Vector2 pos,
                      float maxWidth,
                      float fontSize,
-                     float spacing,
                      TextAlign align,
                      Color color)
 {
+	float spacing = GetDefaultSpacing(fontSize);
 	TWrap(wrapped, capacity, font, text, maxWidth, fontSize, spacing);
     const char *lineStart = wrapped;
     const char *p = wrapped;
@@ -330,9 +330,9 @@ void DrawTextWrapped(Font font,
 		line[len] = 0;
 
 		float w = MeasureTextEx(font, line, fontSize, spacing).x;
-		float extra = MeasureTextEx(font, " ", fontSize, spacing).x;
+		float space = MeasureTextEx(font, " ", fontSize, spacing).x;
 		float x = pos.x;
-		if (align == ALIGN_RIGHT) x = pos.x + maxWidth - w - extra;
+		if (align == ALIGN_RIGHT) x = pos.x + maxWidth - w - space;
 		else if (align == ALIGN_CENTER) x = pos.x + (maxWidth - w) / 2.0f;
 
 		DrawTextEx(font, line, (Vector2){x, y}, fontSize, spacing, color);
