@@ -2,6 +2,7 @@
 // gcc asteroids.c -Wall -o asteroids -Ithird_party/include -lraylib -lm -ldl -lpthread -lGL
 #include <stdio.h>
 #include <math.h>
+#include "raymath.h"
 
 #include "assetsData.h"
 #include "txt.h"
@@ -54,8 +55,8 @@ typedef enum State
 
 typedef enum Upgrade
 {
-    UPGRADE_MULTISHOT,
     UPGRADE_DAMAGE,
+	UPGRADE_MULTISHOT,
     UPGRADE_FIRERATE,
     UPGRADE_COUNT,
 } Upgrade;
@@ -152,6 +153,7 @@ typedef struct GameState {
     Upgrade pickedUpgrade;
 	float dt;
 	float time;
+	float upgradeSelectAnim[UPGRADE_COUNT];
 } GameState;
 
 static GameState gameState;
@@ -214,6 +216,11 @@ void initializeGameState(GameState* gameState) {
 		.time = 0.0f,
     };
 
+	for (int i = 0; i < UPGRADE_COUNT; i++)
+	{
+		gameState->upgradeSelectAnim[i] = 0.0f;
+	}
+
     gameState->player = (Player) {
         .playerVelocity = 200,
         .playerPosition = (Vector2){VIRTUAL_WIDTH / 2.0f, VIRTUAL_HEIGHT / 2.0f},
@@ -226,9 +233,8 @@ void initializeGameState(GameState* gameState) {
         .invulDuration = 3.0f,
         .fireRate = 1.0f,
         .shootTime = 1.0f,
-        .damageMulti = 100.0f,
+        .damageMulti = 1.5f,
     };
-
 }
 
 void initializeOptions(Options* options) {
@@ -747,10 +753,11 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 				}
 				UpdateMusicStream(audio->music);
 				if (IsKeyPressed(KEY_LEFT)) {
-					gameState->pickedUpgrade = (Upgrade)((gameState->pickedUpgrade + 1) % UPGRADE_COUNT);
-				} else if (IsKeyPressed(KEY_RIGHT)) {
 					gameState->pickedUpgrade = (Upgrade)((gameState->pickedUpgrade - 1 + UPGRADE_COUNT) % UPGRADE_COUNT);
+				} else if (IsKeyPressed(KEY_RIGHT)) {
+					gameState->pickedUpgrade = (Upgrade)((gameState->pickedUpgrade + 1) % UPGRADE_COUNT);
 				}
+
 				if (IsKeyPressed(KEY_ENTER)) {                    
 					if (gameState->pickedUpgrade == UPGRADE_MULTISHOT) {
 						gameState->player.playerMultishot = true;
@@ -998,112 +1005,97 @@ void DrawScore(GameState* gameState, Options* options, TextureAtlas* atlas)
 	DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
 }
 
+float EaseOutBack(float t)
+{
+    // t must be 0 → 1
+    const float c1 = 1.70158f;
+    const float c3 = c1 + 1.0f;
+
+    float x = t - 1.0f;
+    return 1.0f + c3 * x * x * x + c1 * x * x;
+}
+
 void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 {
 	Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	draw_text_centered(options->font, T(TXT_LEVEL_UP), (Vector2){dst.width/2.0f, dst.height/2.0f - 80.0f}, 40, WHITE);
 	draw_text_centered(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){dst.width/2.0f, dst.height/2.0f - 35.0f}, 40, WHITE);
-	const float scaling = 3.0f;
-	const int width = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width*scaling;
-	const int height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height*scaling;
-	const int pos_x = dst.width/2.0f - width/2.0f;
-	const int pos_y = dst.height/2.0f - height/2.0f + 90.0f;
+	float scaling = 3.0f;
+	const int width  = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width;
+	const int height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height;
+	const int pos_x  = dst.width/2 - width/2;
+	const int pos_y  = dst.height/2 - height/2 + 130;
 	const int spacing_x = 240;
-	Rectangle upgradeRect = {
-		.width = width,
-		.height = height,
-		.x = pos_x+width/2.0f,
-		.y = pos_y+height/2.0f,
+
+	const int upgradeToSprite[UPGRADE_COUNT] = {
+		[UPGRADE_MULTISHOT] = SPRITE_UPGRADEMULTISHOT,
+		[UPGRADE_DAMAGE]    = SPRITE_UPGRADEDAMAGE,
+		[UPGRADE_FIRERATE]  = SPRITE_UPGRADEFIRERATE,
 	};
-	switch (gameState->pickedUpgrade)
-	{
-		case UPGRADE_MULTISHOT:
-			{
-				DrawRectangle(pos_x-5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.4));
-				break;
-			}
-		case UPGRADE_DAMAGE:
-			{ 
-				DrawRectangle(pos_x - spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.4));
-				break;
-			}
-		case UPGRADE_FIRERATE:
-			{
-				DrawRectangle(pos_x + spacing_x - 5, pos_y-5, width+10, height+10, ColorAlpha(GREEN, 0.4));
-				break;
-			}
-		case UPGRADE_COUNT:
-			{
-				break;
-			}
-	}
+	const int upgradeToText[UPGRADE_COUNT] = {
+		[UPGRADE_MULTISHOT] = TXT_UPGRADE_MULTISHOT,
+		[UPGRADE_DAMAGE]    = TXT_UPGRADE_DAMAGE,
+		[UPGRADE_FIRERATE]  = TXT_UPGRADE_FIRERATE,
+	};
 	char upgradeBuffer[2048] = {0};
 	const int fontSize = 18.0f;
-	const float rotScal = 2.0f;
+	const float rotScal  = 3.0f;
 	const float timeScal = 0.1f;
-	float rotation;
-	Vector2 pivot;
-	Vector2 textPos;
-	Vector2 cardCenter;
-	pivot.x = upgradeRect.width/2.0f;
-	pivot.y = upgradeRect.height/2.0f;
+	float animSpeed = 3.0f;
 
-	if (gameState->pickedUpgrade == UPGRADE_MULTISHOT) {
-		rotation = rotScal * cos(gameState->time/timeScal);
-	} else {
-		rotation = 0.0f;
+	for (int i = 0; i < UPGRADE_COUNT; i++) {
+		Rectangle upgradeRect = {0};
+		upgradeRect.width  = width;
+		upgradeRect.height = height;
+		upgradeRect.x = pos_x + (i - 1) * spacing_x + width / 2.0f; // i-1 to center the middle upgrade
+		upgradeRect.y = pos_y + height / 2.0f;
+		float* anim = &gameState->upgradeSelectAnim[i];
+
+		// Animate scaling and rotation
+		float rotation = 0.0f;
+		if (gameState->pickedUpgrade == i) {
+			rotation = rotScal * cosf(gameState->time / timeScal);
+			scaling = 3.0f + 0.10f * sinf(gameState->time * 2.2f);
+			// scaling = 3.0f;
+			*anim += gameState->dt * animSpeed;
+		} else {
+			scaling = 3.0f;
+			*anim -= gameState->dt * animSpeed;
+		}
+		*anim = Clamp(*anim, 0.0f, 1.0f);
+
+		// Compute vertical offset using easing
+		float yOff = -40.0f * EaseOutBack(*anim);
+		upgradeRect.y += yOff;
+
+		// Apply scaling
+		upgradeRect.width  *= scaling;
+		upgradeRect.height *= scaling;
+
+		// Pivot for rotation
+		Vector2 pivot = { upgradeRect.width / 2.0f, upgradeRect.height / 2.0f };
+
+		// Text offsets
+		Vector2 textOffset = { 8.0f * scaling, 45.0f * scaling };
+		Vector2 textPos    = { upgradeRect.x + textOffset.x, upgradeRect.y + textOffset.y };
+		Vector2 cardCenter = { upgradeRect.x + upgradeRect.width*0.5f, upgradeRect.y + upgradeRect.height*0.5f };
+
+		// Draw the upgrade sprite
+		DrawTexturePro(atlas->textureAtlas, getSprite(upgradeToSprite[i]).coords, 
+				       upgradeRect, pivot, rotation, WHITE);
+
+		// Draw the upgrade text
+		DrawTextWrapped(options->font, T(upgradeToText[i]), 
+				        upgradeBuffer, 2048,
+						(Vector2){textPos.x - textOffset.x, textPos.y - textOffset.y},
+						32.0f*scaling, 
+						fontSize, 
+						ALIGN_LEFT,
+						rotation,
+						(Vector2){cardCenter.x - textPos.x, cardCenter.y - textPos.y},
+						WHITE);
+
 	}
-	textPos = (Vector2){ upgradeRect.x + 8.0f * scaling, upgradeRect.y + 45.0f * scaling };
-	cardCenter = (Vector2){ upgradeRect.x + upgradeRect.width * 0.5f, upgradeRect.y + upgradeRect.height * 0.5f };
-	DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEMULTISHOT).coords, 
-			       upgradeRect, pivot, rotation, WHITE); 
-	DrawTextWrapped(options->font, T(TXT_UPGRADE_MULTISHOT), 
-					upgradeBuffer, 2048,
-					textPos,
-					32.0f*scaling,
-					fontSize, 
-					ALIGN_LEFT,
-					rotation,
-					(Vector2){cardCenter.x-textPos.x, cardCenter.y-textPos.y},
-					WHITE);
-	upgradeRect.x -= spacing_x;
-	textPos = (Vector2){ upgradeRect.x + 8.0f * scaling, upgradeRect.y + 45.0f * scaling };
-	cardCenter = (Vector2){ upgradeRect.x + upgradeRect.width * 0.5f, upgradeRect.y + upgradeRect.height * 0.5f };
-	if (gameState->pickedUpgrade == UPGRADE_DAMAGE) {
-		rotation = rotScal * cos(gameState->time/timeScal);
-	} else {
-		rotation = 0.0f;
-	}
-	DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEDAMAGE).coords, 
-			       upgradeRect, pivot, rotation, WHITE); 
-	DrawTextWrapped(options->font, T(TXT_UPGRADE_DAMAGE), 
-					upgradeBuffer, 2048,
-					(Vector2){upgradeRect.x + 8.0f*scaling, upgradeRect.y + 45.0f*scaling},
-					32.0f*scaling,
-					fontSize,
-					ALIGN_LEFT,
-					rotation,
-					pivot,
-					WHITE);
-	upgradeRect.x += 2.0f * spacing_x;
-	textPos = (Vector2){ upgradeRect.x + 8.0f * scaling, upgradeRect.y + 45.0f * scaling };
-	cardCenter = (Vector2){ upgradeRect.x + upgradeRect.width * 0.5f, upgradeRect.y + upgradeRect.height * 0.5f };
-	if (gameState->pickedUpgrade == UPGRADE_FIRERATE) {
-		rotation = rotScal * cos(gameState->time/timeScal);
-	} else {
-		rotation = 0.0f;
-	}
-	DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_UPGRADEFIRERATE).coords, 
-			       upgradeRect, pivot, rotation, WHITE); 
-	DrawTextWrapped(options->font, T(TXT_UPGRADE_FIRERATE), 
-					upgradeBuffer, 2048,
-					(Vector2){upgradeRect.x + 8.0f*scaling, upgradeRect.y + 45.0f*scaling},
-					32.0f*scaling,
-					fontSize, 
-					ALIGN_LEFT,
-					rotation,
-					pivot,
-					WHITE);
 }
 
 void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)

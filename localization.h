@@ -283,63 +283,67 @@ static inline Font LoadLanguageFont(const char *path,
 }
 
 void DrawTextWrapped(Font font,
-					 const char *text,
+                     const char *text,
                      char *wrapped,
-					 int capacity,
+                     int capacity,
                      Vector2 pos,
                      float maxWidth,
                      float fontSize,
                      TextAlign align,
-					 float rotation,
-					 Vector2 pivot,
+                     float rotation,
+                     Vector2 pivot,
                      Color color)
 {
-	float spacing = GetDefaultSpacing(fontSize);
-	TWrap(wrapped, capacity, font, text, maxWidth, fontSize, spacing);
+    float spacing = GetDefaultSpacing(fontSize);
+    TWrap(wrapped, capacity, font, text, maxWidth, fontSize, spacing);
+
+    float lineHeight = fontSize;   // keep this consistent
+    float yOffset = 0.0f;
+
     const char *lineStart = wrapped;
     const char *p = wrapped;
-    float y = pos.y;
 
-    while (*p)
+    while (1)
     {
-        if (*p == '\n')
+        if (*p == '\n' || *p == '\0')
         {
             int len = p - lineStart;
             if (len >= 512) len = 511;
+
             char line[512];
             memcpy(line, lineStart, len);
             line[len] = 0;
 
             float w = MeasureTextEx(font, line, fontSize, spacing).x;
+
             float x = pos.x;
             if (align == ALIGN_RIGHT) x = pos.x + (maxWidth - w);
-            else if (align == ALIGN_CENTER) x = pos.x + (maxWidth - w)/2.0f;
+            else if (align == ALIGN_CENTER) x = pos.x + (maxWidth - w) / 2.0f;
 
-            // DrawTextEx(font, line, (Vector2){x, y}, fontSize, spacing, color);
-			DrawTextPro(font, line, (Vector2){x, y}, pivot, rotation, fontSize, spacing, color); 
-            y += fontSize;  // next line
-            lineStart = p + 1; // start after newline
+            float y = pos.y;
+
+            // derive pivot for this line without mutating original pivot
+            Vector2 linePivot = {
+                pivot.x,
+                pivot.y - yOffset
+            };
+
+            DrawTextPro(font, line,
+                        (Vector2){ x, y },
+                        linePivot,
+                        rotation,
+                        fontSize,
+                        spacing,
+                        color);
+
+            if (*p == '\0')
+                break;
+
+            yOffset += lineHeight;
+            lineStart = p + 1;
         }
+
         p++;
     }
-
-	// Draw last line
-	if (lineStart != p)
-	{
-		int len = p - lineStart;
-		if (len >= 512) len = 511;
-		char line[512];
-		memcpy(line, lineStart, len);
-		line[len] = 0;
-
-		float w = MeasureTextEx(font, line, fontSize, spacing).x;
-		float space = MeasureTextEx(font, " ", fontSize, spacing).x;
-		float x = pos.x;
-		if (align == ALIGN_RIGHT) x = pos.x + maxWidth - w - space;
-		else if (align == ALIGN_CENTER) x = pos.x + (maxWidth - w) / 2.0f;
-
-		// DrawTextEx(font, line, (Vector2){x, y}, fontSize, spacing, color);
-		DrawTextPro(font, line, (Vector2){x, y}, pivot, rotation, fontSize, spacing, color); 
-	}
 }
 
