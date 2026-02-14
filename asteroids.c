@@ -61,6 +61,11 @@ typedef enum Upgrade
     UPGRADE_COUNT,
 } Upgrade;
 
+typedef struct UpgradeCard {
+	Rectangle rect;
+	float animationTime;
+} UpgradeCard;
+
 typedef struct Star {
     Vector2 position;
     float size;
@@ -110,6 +115,10 @@ typedef struct Player {
 typedef struct Audio {
     Sound hitFx;
     Sound laserFx;
+	Sound cardFx;
+	Sound langEn;
+	Sound langDe;
+	Sound langZh;
 	Music music;
 } Audio;
 
@@ -125,6 +134,7 @@ typedef struct Options {
 	int language;
 	int lastLanguage;
 	bool languageEditMode;
+	bool languageChanged;
 } Options;
 
 typedef struct GameState {
@@ -153,7 +163,8 @@ typedef struct GameState {
     Upgrade pickedUpgrade;
 	float dt;
 	float time;
-	float upgradeSelectAnim[UPGRADE_COUNT];
+	// float upgradeSelectAnim[UPGRADE_COUNT];
+	UpgradeCard upgradeCards[UPGRADE_COUNT];
 } GameState;
 
 static GameState gameState;
@@ -179,6 +190,10 @@ void cleanup(TextureAtlas atlas, Options options, Audio audio, SpriteMask sprite
 	UnloadMusicStream(audio.music);
 	UnloadSound(audio.hitFx);
 	UnloadSound(audio.laserFx);
+	UnloadSound(audio.cardFx);
+	UnloadSound(audio.langEn);
+	UnloadSound(audio.langDe);
+	UnloadSound(audio.langZh);
 	CloseAudioDevice();
 }
 
@@ -191,10 +206,22 @@ void initializeAudio(Audio* audio) {
 	ASSERT(IsSoundValid(audio->hitFx));
 	audio->laserFx = LoadSound("audio/laser.wav");
 	ASSERT(IsSoundValid(audio->laserFx));
+	audio->cardFx = LoadSound("audio/cardSelect.mp3");
+	ASSERT(IsSoundValid(audio->laserFx));
+	audio->langEn = LoadSound("audio/america.mp3");
+	ASSERT(IsSoundValid(audio->langEn));
+	audio->langDe = LoadSound("audio/erika.mp3");
+	ASSERT(IsSoundValid(audio->langDe));
+	audio->langZh = LoadSound("audio/bingchilling.mp3");
+	ASSERT(IsSoundValid(audio->langZh));
 	PlayMusicStream(audio->music);
 	SetMusicVolume(audio->music, 0.05);
 	SetSoundVolume(audio->hitFx, 0.25);
 	SetSoundVolume(audio->laserFx, 0.25);
+	SetSoundVolume(audio->cardFx, 0.25);
+	SetSoundVolume(audio->langEn, 0.25);
+	SetSoundVolume(audio->langDe, 0.25);
+	SetSoundVolume(audio->langZh, 0.25);
 }
 
 void initializeGameState(GameState* gameState) {
@@ -218,7 +245,8 @@ void initializeGameState(GameState* gameState) {
 
 	for (int i = 0; i < UPGRADE_COUNT; i++)
 	{
-		gameState->upgradeSelectAnim[i] = 0.0f;
+		gameState->upgradeCards[i].animationTime = 0.0f;
+		gameState->upgradeCards[i].rect = (Rectangle){0};
 	}
 
     gameState->player = (Player) {
@@ -249,6 +277,7 @@ void initializeOptions(Options* options) {
 		.maxFontSize = maxFontSize,
 		.language = LANG_EN,
 		.lastLanguage = LANG_EN,
+		.languageChanged = false,
 	};
 	GuiSetStyle(DEFAULT, TEXT_SIZE, 24);
 	GuiSetStyle(DEFAULT, TEXT_SPACING, 2);
@@ -379,6 +408,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 			}
 		case STATE_RUNNING:
 			{
+				if (!IsMusicStreamPlaying(audio->music)) ResumeMusicStream(audio->music);
 				// Step debugging mode
 				if (IsKeyPressed(KEY_J)) stepMode = !stepMode;
 				if (IsKeyPressed(KEY_K)) stepOnce = true;
@@ -752,13 +782,35 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 					gameState->lastState = STATE_UPGRADE;
 				}
 				UpdateMusicStream(audio->music);
+
+				Vector2 mousePos = GetMousePosition();
+				bool clickedUpgrade = false;
+				int lastUpgrade = gameState->pickedUpgrade; 
+				for (int i = 0; i < UPGRADE_COUNT; i++) 
+				{
+					if (CheckCollisionPointRec(mousePos, gameState->upgradeCards[i].rect)) 
+					{
+						gameState->pickedUpgrade = i; 
+						if (lastUpgrade != gameState->pickedUpgrade) 
+						{
+							PlaySound(audio->cardFx);
+						}
+						if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) 
+						{
+							clickedUpgrade = true;
+						}
+						break;
+					}
+				}
 				if (IsKeyPressed(KEY_LEFT)) {
+					PlaySound(audio->cardFx);
 					gameState->pickedUpgrade = (Upgrade)((gameState->pickedUpgrade - 1 + UPGRADE_COUNT) % UPGRADE_COUNT);
 				} else if (IsKeyPressed(KEY_RIGHT)) {
+					PlaySound(audio->cardFx);
 					gameState->pickedUpgrade = (Upgrade)((gameState->pickedUpgrade + 1) % UPGRADE_COUNT);
 				}
 
-				if (IsKeyPressed(KEY_ENTER)) {                    
+				if (IsKeyPressed(KEY_ENTER) || clickedUpgrade) {
 					if (gameState->pickedUpgrade == UPGRADE_MULTISHOT) {
 						gameState->player.playerMultishot = true;
 					} else if (gameState->pickedUpgrade == UPGRADE_DAMAGE) {
@@ -783,10 +835,17 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 		case STATE_PAUSED:
 			{
 				PauseMusicStream(audio->music);
-				if (IsKeyPressed(KEY_ESCAPE)) {
-					if (gameState->lastState == STATE_RUNNING) {
-						ResumeMusicStream(audio->music);
+				if (options->languageChanged)
+				{
+					options->languageChanged = false;
+					switch (options->language)
+					{
+						case LANG_EN: PlaySound(audio->langEn); break;
+						case LANG_DE: PlaySound(audio->langDe); break;
+						case LANG_ZH: PlaySound(audio->langZh); break;
 					}
+				}
+				if (IsKeyPressed(KEY_ESCAPE)) {
 					gameState->state = gameState->lastState;
 				}
 				break;
@@ -904,8 +963,12 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 
 						Vector2 texSize = { width, height };
 						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
-						DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, (Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
-						// DrawRectangleLines(asteroid->collider.x, asteroid->collider.y, asteroid->collider.width, asteroid->collider.height, GREEN);
+						DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
+								(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
+						// DrawRectangleLines(asteroid->collider.x, asteroid->collider.y, 
+						// 		asteroid->collider.width, asteroid->collider.height, GREEN);
+						// DrawRectangleLines(asteroidDrawRect.x, asteroidDrawRect.y,
+						// 		asteroidDrawRect.width, asteroidDrawRect.height, GREEN);
 					}
 				}
 				// Draw Player
@@ -1055,7 +1118,7 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 			.y = pos_y + height / 2.0f,
 		};
 
-		float* anim = &gameState->upgradeSelectAnim[i];
+		float* anim = &gameState->upgradeCards[i].animationTime;
 
 		// Animate scaling and rotation
 		if (gameState->pickedUpgrade == i) {
@@ -1078,6 +1141,16 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 
 		// Pivot for rotation
 		Vector2 pivot = { upgradeRect.width / 2.0f, upgradeRect.height / 2.0f };
+
+		// Store rect for collision detection with mouse
+		gameState->upgradeCards[i].rect = (Rectangle){
+			.x = upgradeRect.x - pivot.x,
+			.y = upgradeRect.y - pivot.y,
+			.width = upgradeRect.width,
+			.height = upgradeRect.height,
+		};
+		// Note: Debug draw
+		// DrawRectangleLines(gameState->upgradeCards[i].rect.x, gameState->upgradeCards[i].rect.y, gameState->upgradeCards[i].rect.width, gameState->upgradeCards[i].rect.height, RED);
 
 		// Text offsets
 		Vector2 cardCenter = { upgradeRect.x + upgradeRect.width*0.5f, upgradeRect.y + upgradeRect.height*0.5f };
@@ -1151,13 +1224,13 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 	}
 	if (options->language != options->lastLanguage)
 	{
+		options->languageChanged = true;
 		switch (options->language)
 		{
-			case 0: LocSetLanguage(LANG_EN); break;
-			case 1: LocSetLanguage(LANG_DE); break;
-			case 2: LocSetLanguage(LANG_ZH); break;
+			case LANG_EN: LocSetLanguage(LANG_EN); break;
+			case LANG_DE: LocSetLanguage(LANG_DE); break;
+			case LANG_ZH: LocSetLanguage(LANG_ZH); break;
 		}
-
 		UnloadFont(options->font);
 		options->font = LoadLanguageFont("fonts/UnifontExMono.ttf", options->maxFontSize, options->language);
 		GuiSetFont(options->font);
