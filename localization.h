@@ -291,13 +291,14 @@ void DrawTextWrapped(Font font,
                      float fontSize,
                      TextAlign align,
                      float rotation,
+					 float scaling,
                      Vector2 pivot,
                      Color color)
 {
+	fontSize *= (1.0f + scaling);
     float spacing = GetDefaultSpacing(fontSize);
     TWrap(wrapped, capacity, font, text, maxWidth, fontSize, spacing);
 
-    float lineHeight = fontSize;   // keep this consistent
     float yOffset = 0.0f;
 
     const char *lineStart = wrapped;
@@ -339,10 +340,9 @@ void DrawTextWrapped(Font font,
             if (*p == '\0')
                 break;
 
-            yOffset += lineHeight;
+            yOffset += fontSize;
             lineStart = p + 1;
         }
-
         p++;
     }
 }

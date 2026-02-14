@@ -1038,34 +1038,38 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 		[UPGRADE_FIRERATE]  = TXT_UPGRADE_FIRERATE,
 	};
 	char upgradeBuffer[2048] = {0};
-	const int fontSize = 18.0f;
+	const int fontSize = 4.0f;
 	const float rotScal  = 3.0f;
 	const float timeScal = 0.1f;
-	float animSpeed = 3.0f;
+	float pulseScaling = 0.0f;
+	float animSpeed = 2.0f;
+	float yOff = 0.0f;
+	float rotation = 0.0f;
 
 	for (int i = 0; i < UPGRADE_COUNT; i++) {
-		Rectangle upgradeRect = {0};
-		upgradeRect.width  = width;
-		upgradeRect.height = height;
-		upgradeRect.x = pos_x + (i - 1) * spacing_x + width / 2.0f; // i-1 to center the middle upgrade
-		upgradeRect.y = pos_y + height / 2.0f;
+		Rectangle upgradeRect = 
+		{
+			.width  = width,
+			.height = height,
+			.x = pos_x + (i - 1) * spacing_x + width / 2.0f, // i-1 to center the middle upgrade
+			.y = pos_y + height / 2.0f,
+		};
+
 		float* anim = &gameState->upgradeSelectAnim[i];
 
 		// Animate scaling and rotation
-		float rotation = 0.0f;
 		if (gameState->pickedUpgrade == i) {
+			pulseScaling = 0.10f * sinf(gameState->time * 2.2f);
 			rotation = rotScal * cosf(gameState->time / timeScal);
-			scaling = 3.0f + 0.10f * sinf(gameState->time * 2.2f);
-			// scaling = 3.0f;
 			*anim += gameState->dt * animSpeed;
 		} else {
-			scaling = 3.0f;
+			pulseScaling = 0.0f;
+			rotation = 0.0f;
 			*anim -= gameState->dt * animSpeed;
 		}
+		scaling = 3.0f + pulseScaling;
 		*anim = Clamp(*anim, 0.0f, 1.0f);
-
-		// Compute vertical offset using easing
-		float yOff = -40.0f * EaseOutBack(*anim);
+		yOff = -40.0f * EaseOutBack(*anim);
 		upgradeRect.y += yOff;
 
 		// Apply scaling
@@ -1076,9 +1080,9 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 		Vector2 pivot = { upgradeRect.width / 2.0f, upgradeRect.height / 2.0f };
 
 		// Text offsets
+		Vector2 cardCenter = { upgradeRect.x + upgradeRect.width*0.5f, upgradeRect.y + upgradeRect.height*0.5f };
 		Vector2 textOffset = { 8.0f * scaling, 45.0f * scaling };
 		Vector2 textPos    = { upgradeRect.x + textOffset.x, upgradeRect.y + textOffset.y };
-		Vector2 cardCenter = { upgradeRect.x + upgradeRect.width*0.5f, upgradeRect.y + upgradeRect.height*0.5f };
 
 		// Draw the upgrade sprite
 		DrawTexturePro(atlas->textureAtlas, getSprite(upgradeToSprite[i]).coords, 
@@ -1092,6 +1096,7 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 						fontSize, 
 						ALIGN_LEFT,
 						rotation,
+						scaling,
 						(Vector2){cardCenter.x - textPos.x, cardCenter.y - textPos.y},
 						WHITE);
 
