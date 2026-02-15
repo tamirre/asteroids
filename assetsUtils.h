@@ -20,7 +20,7 @@ typedef struct TextureAtlas
     Texture2D textureAtlas;
     Image imageAtlas;
     Color* pixelsAtlas;
-    SpriteAnimation playerAnimation;
+	SpriteAnimation animations[ANIMATION_COUNT];
 } TextureAtlas;
 
 typedef struct SpriteMask {
@@ -123,24 +123,32 @@ TextureAtlas initTextureAtlas(SpriteMask spriteMasks[])
 	// for (int i = 0; i < SPRITE_COUNT; i++)
 	// {
 	// 	if (getSprite(i).numFrames > 1) animCount++;
-	// 	// fprintf(stdout, "Sprite %d has %d frames\n", i, getSprite(i).numFrames);
 	// }
 
-	// for (int i = 0; i < animCount; i++) {
-	//
-	// }
 
-    atlas.playerAnimation = createSpriteAnimation(atlas.textureAtlas, SPRITE_PLAYER, 7, getSprite(SPRITE_PLAYER).numFrames);
+	//    atlas.playerAnimation = createSpriteAnimation(atlas.textureAtlas, SPRITE_PLAYER, 7, getSprite(SPRITE_PLAYER).numFrames);
+	// atlas.darkMatterAnimation = createSpriteAnimation(atlas.textureAtlas, SPRITE_DARKMATTER, 7, getSprite(SPRITE_DARKMATTER).numFrames);
 	// printf("Player Animation: %d fps\n", atlas.playerAnimation.framesPerSecond);
 	// printf("Player Animation: %d number of frames\n", atlas.playerAnimation.rectanglesLength );
 	// for(int i = 0; i < atlas.playerAnimation.rectanglesLength; i++)
 	// {
 	// 	printf("Rectangle %i: %f %f %f %f\n", i, atlas.playerAnimation.rectangles[i].x, atlas.playerAnimation.rectangles[i].y, atlas.playerAnimation.rectangles[i].width, atlas.playerAnimation.rectangles[i].height);
 	// }
+	
+	// for (int i = 0; i < SPRITE; i++) 
+	// {
+	// }
 
 	// SpriteMask spriteMasks2[SPRITE_COUNT];
+	int animCount = 0;
 	for (int i = 0; i < SPRITE_COUNT; i++)
 	{
+		if (getSprite(i).numFrames > 1)
+		{
+			atlas.animations[animCount] = createSpriteAnimation(atlas.textureAtlas, i, 7, getSprite(i).numFrames);
+			// printf("Animation %i: %i frames\n", animCount, getSprite(SpriteToAnimation[i]).numFrames);
+			animCount++;
+		}
 		spriteMasks[i].pixels = getPixelsFromAtlas(atlasImage, getSprite(i), getSprite(i).numFrames);
 		spriteMasks[i].width = getSprite(i).coords.width / getSprite(i).numFrames;
 		spriteMasks[i].height = getSprite(i).coords.height;

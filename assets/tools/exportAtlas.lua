@@ -3,7 +3,8 @@
 -- ============================================================
 
 local PIVOT_LAYER_NAME = "Pivot"
-local ATLAS_SIZE = 2048
+local ATLAS_SIZE = 4096
+-- local animCount = 0
 
 -- ------------------- helpers -------------------
 local function ceilDiv2(x) return math.floor((x + 1) / 2) end
@@ -16,7 +17,7 @@ end
 local function sanitizeName(name)
   local s = name:upper()
   s = s:gsub("[^%w]", "_")
-  return "SPRITE_" .. s
+  return s
 end
 local function normalizeFrameName(filename)
   local n = filename:gsub("%.aseprite$", "")
@@ -58,6 +59,10 @@ for _, path in ipairs(files) do
   -- print(spr.filename)
   -- print(#spr.frames)
   local frameCount = #spr.frames
+  -- if frameCount > 1 then
+  --  animCount = animCount + 1
+  -- end
+
   local frameW     = spr.width * frameCount
   local frameH     = spr.height
 
@@ -136,7 +141,7 @@ h:write("#pragma once\n")
 h:write("#include \"raylib.h\"\n")
 -- h:write("#include \"assetsUtils.h\"\n")
 h:write("#define internal static\n\n")
-
+-- h:write(string.format("#define ANIMATION_COUNT (%d)\n\n", animCount))
 -- Sprite struct
 h:write("typedef struct Sprite {\n")
 h:write("    Texture2D texture;\n")
@@ -154,10 +159,40 @@ end
 table.sort(spriteNames)
 
 for _, name in ipairs(spriteNames) do
-  h:write("    " .. sanitizeName(name) .. ",\n")
+  h:write("    " .. "SPRITE_" .. sanitizeName(name) .. ",\n")
 end
 h:write("    SPRITE_COUNT\n")
 h:write("} SpriteID;\n\n")
+-- enum AnimationID
+h:write("typedef enum AnimationID {\n")
+
+for _, name in ipairs(spriteNames) do
+  local meta = spriteMeta[name]
+  if meta.frameCount and meta.frameCount > 1 then
+    local clean = 
+    h:write("    ANIM_" .. sanitizeName(name) .. ",\n")
+  end
+end
+h:write("    ANIMATION_COUNT\n")
+h:write("} AnimationID;\n\n")
+
+-- SpriteToAnimation lookup table
+h:write("static int SpriteToAnimation[SPRITE_COUNT] = {\n")
+
+local spriteNames = {}
+for name in pairs(spriteMeta) do
+  table.insert(spriteNames, name)
+end
+table.sort(spriteNames)
+
+for _, name in ipairs(spriteNames) do
+  local meta = spriteMeta[name]
+  if meta.frameCount and meta.frameCount > 1 then
+    local clean = sanitizeName(name)
+    h:write("    [SPRITE_" .. clean .. "] = ANIM_" .. clean .. ",\n")
+  end
+end
+h:write("};\n\n")
 
 -- getSprite()
 h:write("static inline Sprite getSprite(SpriteID spriteID) {\n")
@@ -168,7 +203,7 @@ for _, name in ipairs(spriteNames) do
   local m = spriteMeta[name]
   h:write(string.format(
     "        case %s: { s.coords = (Rectangle){%d, %d, %d, %d}; s.pivotOffset = (Vector2){%d, %d}; s.numFrames = %d; break; }\n",
-    sanitizeName(name),
+    "SPRITE_" .. sanitizeName(name),
     m.offsetX - (m.frameWidth/m.frameCount)*(m.frameCount-1),
     m.offsetY,
     m.frameWidth,

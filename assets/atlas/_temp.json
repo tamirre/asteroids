@@ -9,8 +9,368 @@
     "duration": 100
    },
    {
+    "filename": "darkMatter 0.aseprite",
+    "frame": { "x": 65, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 1.aseprite",
+    "frame": { "x": 162, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 2.aseprite",
+    "frame": { "x": 259, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 3.aseprite",
+    "frame": { "x": 356, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 4.aseprite",
+    "frame": { "x": 453, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 5.aseprite",
+    "frame": { "x": 550, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 6.aseprite",
+    "frame": { "x": 647, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 7.aseprite",
+    "frame": { "x": 744, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 8.aseprite",
+    "frame": { "x": 841, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 9.aseprite",
+    "frame": { "x": 938, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 10.aseprite",
+    "frame": { "x": 1035, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 11.aseprite",
+    "frame": { "x": 1132, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 12.aseprite",
+    "frame": { "x": 1229, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 13.aseprite",
+    "frame": { "x": 1326, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 14.aseprite",
+    "frame": { "x": 1423, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 15.aseprite",
+    "frame": { "x": 1520, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 16.aseprite",
+    "frame": { "x": 1617, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 17.aseprite",
+    "frame": { "x": 1714, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 18.aseprite",
+    "frame": { "x": 1811, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 19.aseprite",
+    "frame": { "x": 1908, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 20.aseprite",
+    "frame": { "x": 2005, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 21.aseprite",
+    "frame": { "x": 2102, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 22.aseprite",
+    "frame": { "x": 2199, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 23.aseprite",
+    "frame": { "x": 2296, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 24.aseprite",
+    "frame": { "x": 2393, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 25.aseprite",
+    "frame": { "x": 2490, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 26.aseprite",
+    "frame": { "x": 2587, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 27.aseprite",
+    "frame": { "x": 2684, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 28.aseprite",
+    "frame": { "x": 2781, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 29.aseprite",
+    "frame": { "x": 2878, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 30.aseprite",
+    "frame": { "x": 2975, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 31.aseprite",
+    "frame": { "x": 3072, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 32.aseprite",
+    "frame": { "x": 3169, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 33.aseprite",
+    "frame": { "x": 3266, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 34.aseprite",
+    "frame": { "x": 3363, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 35.aseprite",
+    "frame": { "x": 3460, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 36.aseprite",
+    "frame": { "x": 3557, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 37.aseprite",
+    "frame": { "x": 3654, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 38.aseprite",
+    "frame": { "x": 3751, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
+    "filename": "darkMatter 39.aseprite",
+    "frame": { "x": 3848, "y": 0, "w": 96, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
+    "sourceSize": { "w": 96, "h": 96 },
+    "duration": 100
+   },
+   {
     "filename": "star2.aseprite",
-    "frame": { "x": 65, "y": 0, "w": 3, "h": 3 },
+    "frame": { "x": 3945, "y": 0, "w": 3, "h": 3 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 3, "h": 3 },
@@ -19,7 +379,7 @@
    },
    {
     "filename": "upgradeFireRate.aseprite",
-    "frame": { "x": 69, "y": 0, "w": 48, "h": 67 },
+    "frame": { "x": 3949, "y": 0, "w": 48, "h": 67 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 67 },
@@ -28,7 +388,7 @@
    },
    {
     "filename": "asteroid3.aseprite",
-    "frame": { "x": 118, "y": 0, "w": 96, "h": 96 },
+    "frame": { "x": 3998, "y": 0, "w": 96, "h": 96 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 96, "h": 96 },
@@ -37,7 +397,7 @@
    },
    {
     "filename": "player 0.aseprite",
-    "frame": { "x": 215, "y": 0, "w": 38, "h": 64 },
+    "frame": { "x": 0, "y": 97, "w": 38, "h": 64 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 38, "h": 64 },
@@ -46,7 +406,7 @@
    },
    {
     "filename": "player 1.aseprite",
-    "frame": { "x": 254, "y": 0, "w": 38, "h": 64 },
+    "frame": { "x": 39, "y": 97, "w": 38, "h": 64 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 38, "h": 64 },
@@ -55,7 +415,7 @@
    },
    {
     "filename": "player 2.aseprite",
-    "frame": { "x": 293, "y": 0, "w": 38, "h": 64 },
+    "frame": { "x": 78, "y": 97, "w": 38, "h": 64 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 38, "h": 64 },
@@ -64,7 +424,7 @@
    },
    {
     "filename": "player 3.aseprite",
-    "frame": { "x": 332, "y": 0, "w": 38, "h": 64 },
+    "frame": { "x": 117, "y": 97, "w": 38, "h": 64 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 38, "h": 64 },
@@ -73,7 +433,7 @@
    },
    {
     "filename": "player 4.aseprite",
-    "frame": { "x": 371, "y": 0, "w": 38, "h": 64 },
+    "frame": { "x": 156, "y": 97, "w": 38, "h": 64 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 38, "h": 64 },
@@ -82,7 +442,7 @@
    },
    {
     "filename": "star1.aseprite",
-    "frame": { "x": 410, "y": 0, "w": 5, "h": 5 },
+    "frame": { "x": 195, "y": 97, "w": 5, "h": 5 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 5, "h": 5 },
@@ -91,7 +451,7 @@
    },
    {
     "filename": "asteroid1.aseprite",
-    "frame": { "x": 416, "y": 0, "w": 64, "h": 64 },
+    "frame": { "x": 201, "y": 97, "w": 64, "h": 64 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 64 },
@@ -100,7 +460,7 @@
    },
    {
     "filename": "heart.aseprite",
-    "frame": { "x": 481, "y": 0, "w": 17, "h": 17 },
+    "frame": { "x": 266, "y": 97, "w": 17, "h": 17 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 17, "h": 17 },
@@ -109,7 +469,7 @@
    },
    {
     "filename": "upgradeMultiShot.aseprite",
-    "frame": { "x": 499, "y": 0, "w": 48, "h": 67 },
+    "frame": { "x": 284, "y": 97, "w": 48, "h": 67 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 67 },
@@ -118,7 +478,7 @@
    },
    {
     "filename": "upgradeDamage.aseprite",
-    "frame": { "x": 548, "y": 0, "w": 48, "h": 67 },
+    "frame": { "x": 333, "y": 97, "w": 48, "h": 67 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 67 },
@@ -127,7 +487,7 @@
    },
    {
     "filename": "bullet.aseprite",
-    "frame": { "x": 597, "y": 0, "w": 2, "h": 7 },
+    "frame": { "x": 382, "y": 97, "w": 2, "h": 7 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 2, "h": 7 },
@@ -140,7 +500,7 @@
   "version": "1.x-dev",
   "image": "atlas.png",
   "format": "RGBA8888",
-  "size": { "w": 2048, "h": 2048 },
+  "size": { "w": 4096, "h": 4096 },
   "scale": "1"
  }
 }
