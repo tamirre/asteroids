@@ -2,13 +2,13 @@
 // gcc asteroids.c -Wall -o asteroids -Ithird_party/include -lraylib -lm -ldl -lpthread -lGL
 #include <stdio.h>
 #include <math.h>
-#include "raymath.h"
 
 #include "assetsData.h"
 #include "txt.h"
 #include "assetsUtils.h"
 #include "localization.h"
-#define RAYMATH_IMPLEMENTATION
+
+#include "raymath.h"
 #include "raylib.h"
 #define RAYGUI_IMPLEMENTATION
 #include "third_party/include/raygui.h"
@@ -42,7 +42,6 @@
 #endif
 
 #define ASSERT(x) if (!(x)) { printf("Assertion failed on line %d: %s\n", __LINE__, #x); exit(1); }
-
 
 typedef enum State
 {
@@ -83,9 +82,7 @@ typedef struct Asteroid {
     float angularVelocity;
     float rotation;
     char textureFile[100];
-    int type;
     Sprite sprite;
-	Color* pixels;
 	Rectangle collider;
 } Asteroid;
 
@@ -678,13 +675,10 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						Sprite asteroidSprite;
 						if (whichAsteroid < 6) {
 							asteroidSprite = getSprite(SPRITE_ASTEROID1);
-							asteroid.pixels = spriteMasks[SPRITE_ASTEROID1].pixels;
 						} else if (whichAsteroid < 9) {
 							asteroidSprite = getSprite(SPRITE_ASTEROID2);
-							asteroid.pixels = spriteMasks[SPRITE_ASTEROID2].pixels;
 						} else {
 							asteroidSprite = getSprite(SPRITE_ASTEROID3);
-							asteroid.pixels = spriteMasks[SPRITE_ASTEROID3].pixels;
 						}
 						asteroid.sprite = asteroidSprite;
 						asteroid.position.y -= asteroid.sprite.coords.height; // to make them come into screen smoothly
@@ -722,7 +716,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 							{
 								Rectangle collisionRec = GetCollisionRec(asteroid->collider, bullet->collider);
 								Rectangle bulletSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_DARKMATTER]]);
-								if (pixelPerfectCollision(spriteMasks[SPRITE_DARKMATTER].pixels, asteroid->pixels, 
+								if (pixelPerfectCollision(spriteMasks[SPRITE_DARKMATTER].pixels, spriteMasks[asteroid->sprite.spriteID].pixels, 
 											bulletSrc.width, asteroid->sprite.coords.width,
 											bulletSrc.height, asteroid->sprite.coords.height,
 											bullet->collider, asteroid->collider, collisionRec, bullet->rotation, asteroid->rotation))
@@ -763,7 +757,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 							Rectangle collisionRec = GetCollisionRec(asteroid->collider, playerRec);
 							// DrawRectangleLinesEx(collisionRec, 2.0, RED);
 							Rectangle playerSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_PLAYER]]);
-							if (pixelPerfectCollision(spriteMasks[SPRITE_PLAYER].pixels, asteroid->pixels, 
+							if (pixelPerfectCollision(spriteMasks[SPRITE_PLAYER].pixels, spriteMasks[asteroid->sprite.spriteID].pixels, 
 										playerSrc.width, asteroid->sprite.coords.width,
 										playerSrc.height, asteroid->sprite.coords.height, 
 										playerRec, asteroid->collider, collisionRec, 0.0f, asteroid->rotation))
@@ -1426,4 +1420,3 @@ int main() {
     CloseWindow();
     return 0;
 }
-

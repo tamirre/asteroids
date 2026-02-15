@@ -142,13 +142,6 @@ h:write("#include \"raylib.h\"\n")
 -- h:write("#include \"assetsUtils.h\"\n")
 h:write("#define internal static\n\n")
 -- h:write(string.format("#define ANIMATION_COUNT (%d)\n\n", animCount))
--- Sprite struct
-h:write("typedef struct Sprite {\n")
-h:write("    Texture2D texture;\n")
-h:write("    Rectangle coords;\n")
-h:write("    Vector2 pivotOffset;\n")
-h:write("    int numFrames;\n")
-h:write("} Sprite;\n\n")
 
 -- enum SpriteID
 h:write("typedef enum SpriteID {\n")
@@ -163,6 +156,16 @@ for _, name in ipairs(spriteNames) do
 end
 h:write("    SPRITE_COUNT\n")
 h:write("} SpriteID;\n\n")
+
+-- Sprite struct
+h:write("typedef struct Sprite {\n")
+h:write("    Texture2D texture;\n")
+h:write("    Rectangle coords;\n")
+h:write("    Vector2 pivotOffset;\n")
+h:write("    int numFrames;\n")
+h:write("    SpriteID spriteID;\n")
+h:write("} Sprite;\n\n")
+
 -- enum AnimationID
 h:write("typedef enum AnimationID {\n")
 
@@ -202,7 +205,7 @@ h:write("    switch(spriteID) {\n")
 for _, name in ipairs(spriteNames) do
   local m = spriteMeta[name]
   h:write(string.format(
-    "        case %s: { s.coords = (Rectangle){%d, %d, %d, %d}; s.pivotOffset = (Vector2){%d, %d}; s.numFrames = %d; break; }\n",
+    "        case %s: { s.coords = (Rectangle){%d, %d, %d, %d}; s.pivotOffset = (Vector2){%d, %d}; s.numFrames = %d; s.spriteID = %s; break; }\n",
     "SPRITE_" .. sanitizeName(name),
     m.offsetX - (m.frameWidth/m.frameCount)*(m.frameCount-1),
     m.offsetY,
@@ -210,8 +213,9 @@ for _, name in ipairs(spriteNames) do
     m.frameHeight,
     m.pivotX,
     m.pivotY,
-    m.frameCount
-  ))
+    m.frameCount,
+	"SPRITE_" .. sanitizeName(name)
+))
 end
 
 h:write("        default: break;\n")
