@@ -135,6 +135,8 @@ typedef struct Options {
 	int lastLanguage;
 	bool languageEditMode;
 	bool languageChanged;
+	bool disableCursor;
+	Vector2 lastMousePos;
 } Options;
 
 typedef struct GameState {
@@ -278,6 +280,8 @@ void initializeOptions(Options* options) {
 		.language = LANG_EN,
 		.lastLanguage = LANG_EN,
 		.languageChanged = false,
+		.disableCursor = false,
+		.lastMousePos = (Vector2){0,0},
 	};
 	GuiSetStyle(DEFAULT, TEXT_SIZE, 24);
 	GuiSetStyle(DEFAULT, TEXT_SPACING, 2);
@@ -786,9 +790,28 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 				Vector2 mousePos = GetMousePosition();
 				bool clickedUpgrade = false;
 				int lastUpgrade = gameState->pickedUpgrade; 
+				if (IsKeyPressed(KEY_LEFT)) 
+				{
+					PlaySound(audio->cardFx);
+					gameState->pickedUpgrade = (Upgrade)((gameState->pickedUpgrade - 1 + UPGRADE_COUNT) % UPGRADE_COUNT);
+				} 
+				else if (IsKeyPressed(KEY_RIGHT)) 
+				{
+					PlaySound(audio->cardFx);
+					gameState->pickedUpgrade = (Upgrade)((gameState->pickedUpgrade + 1) % UPGRADE_COUNT);
+				}
+				if (mousePos.x == options->lastMousePos.x || mousePos.y == options->lastMousePos.y)
+				{
+					options->disableCursor = true;
+				} 
+				else 
+				{
+					options->disableCursor = false;
+				}
+				options->lastMousePos = mousePos;
 				for (int i = 0; i < UPGRADE_COUNT; i++) 
 				{
-					if (CheckCollisionPointRec(mousePos, gameState->upgradeCards[i].rect)) 
+					if (CheckCollisionPointRec(mousePos, gameState->upgradeCards[i].rect) && !options->disableCursor)
 					{
 						gameState->pickedUpgrade = i; 
 						if (lastUpgrade != gameState->pickedUpgrade) 
@@ -802,14 +825,6 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						break;
 					}
 				}
-				if (IsKeyPressed(KEY_LEFT)) {
-					PlaySound(audio->cardFx);
-					gameState->pickedUpgrade = (Upgrade)((gameState->pickedUpgrade - 1 + UPGRADE_COUNT) % UPGRADE_COUNT);
-				} else if (IsKeyPressed(KEY_RIGHT)) {
-					PlaySound(audio->cardFx);
-					gameState->pickedUpgrade = (Upgrade)((gameState->pickedUpgrade + 1) % UPGRADE_COUNT);
-				}
-
 				if (IsKeyPressed(KEY_ENTER) || clickedUpgrade) {
 					if (gameState->pickedUpgrade == UPGRADE_MULTISHOT) {
 						gameState->player.playerMultishot = true;
