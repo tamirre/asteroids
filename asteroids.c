@@ -25,6 +25,7 @@
 #define WINDOW_TITLE ("Asteroids")
 #define MAX_BULLETS (1000)
 #define MAX_ASTEROIDS (100)
+#define MAX_EXPLOSIONS (100)
 #define MAX_STARS (50)
 #ifdef PLATFORM_WEB
 	#define TARGET_FPS (60)
@@ -96,6 +97,12 @@ typedef struct Bullet {
 	Rectangle collider;
 } Bullet;
 
+typedef struct Explosion {
+    Vector2 position;
+    float startTime;
+    bool active;
+} Explosion;
+
 typedef struct Player {
     float playerVelocity;
     Vector2 playerPosition;
@@ -149,6 +156,8 @@ typedef struct GameState {
     // Projectiles
     Bullet bullets[MAX_BULLETS];
     int bulletCount;
+	Explosion explosions[MAX_EXPLOSIONS];
+	int explosionCount;
     // asteroids
     Asteroid asteroids[MAX_ASTEROIDS];
     int asteroidCount;
@@ -580,7 +589,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 				{
 
 					PlaySound(audio->laserFx);
-					float bulletSize = 0.5f;
+					float bulletSize = 1.0f;
 					if (gameState->player.playerMultishot == true && gameState->bulletCount < MAX_BULLETS-3)
 					{
 						float bulletOffset = 0.0f;
@@ -589,7 +598,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 							.position = gameState->player.playerPosition,
 							.velocity = (Vector2){0.0f, 500.0f},
 							.damage = 1.0*gameState->player.damageMulti,
-							.sprite = getSprite(SPRITE_DARKMATTER),
+							.sprite = getSprite(SPRITE_BULLET),
 							.rotation = 0.0f,
 							.size = bulletSize,
 						};
@@ -601,8 +610,8 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 							.position = (Vector2){gameState->player.playerPosition.x - bulletOffset, gameState->player.playerPosition.y + 0.0f},
 							.velocity = (Vector2){sqrt(pow(500.0f,2) - pow(450.0f,2)), 450.0f},
 							.damage = 1.0*gameState->player.damageMulti,
-							.sprite = getSprite(SPRITE_DARKMATTER),
-							.rotation = 0.0f,
+							.sprite = getSprite(SPRITE_BULLET),
+							.rotation = -15.0f,
 							.size = bulletSize,
 						};
 						// bullet2.position.x -= bullet2.sprite.coords.width * bullet2.size / bullet2.sprite.numFrames / 2.0f;
@@ -613,8 +622,8 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 							.position = (Vector2){gameState->player.playerPosition.x + bulletOffset, gameState->player.playerPosition.y + 0.0f},
 							.velocity = (Vector2){-sqrt(pow(500.0f,2) - pow(450.0f,2)), 450.0f},
 							.damage = 1.0*gameState->player.damageMulti,
-							.sprite = getSprite(SPRITE_DARKMATTER),
-							.rotation = 0.0f,
+							.sprite = getSprite(SPRITE_BULLET),
+							.rotation = 15.0f,
 							.size = bulletSize,
 						};
 						// bullet3.position.x -= bullet3.sprite.coords.width * bullet3.size / bullet3.sprite.numFrames / 2.0f;
@@ -630,7 +639,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 							.position = gameState->player.playerPosition,
 							.velocity = (Vector2){0.0f, 500.0f},
 							.damage = 1.0*gameState->player.damageMulti,
-							.sprite = getSprite(SPRITE_DARKMATTER),
+							.sprite = getSprite(SPRITE_BULLET),
 							.rotation = 0.0f,
 							.size = bulletSize,
 						};
@@ -705,22 +714,20 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
 						{
 							Bullet* bullet = &gameState->bullets[bulletIndex];
-							// Rectangle bulletRec = {
-							// 	.width = bullet->sprite.coords.width / bullet->sprite.numFrames * bullet->size,
-							// 	.height = bullet->sprite.coords.height * bullet->size,
-							// 	.x = gameState->bullets[bulletIndex].position.x,
-							// 	.y = gameState->bullets[bulletIndex].position.y,
-							// };
-							
 							if(CheckCollisionRecs(asteroid->collider, bullet->collider))
 							{
 								Rectangle collisionRec = GetCollisionRec(asteroid->collider, bullet->collider);
-								Rectangle bulletSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_DARKMATTER]]);
-								if (pixelPerfectCollision(spriteMasks[SPRITE_DARKMATTER].pixels, spriteMasks[asteroid->sprite.spriteID].pixels, 
+								Rectangle bulletSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_BULLET]]);
+								if (pixelPerfectCollision(spriteMasks[SPRITE_BULLET].pixels, spriteMasks[asteroid->sprite.spriteID].pixels, 
 											bulletSrc.width, asteroid->sprite.coords.width,
 											bulletSrc.height, asteroid->sprite.coords.height,
 											bullet->collider, asteroid->collider, collisionRec, bullet->rotation, asteroid->rotation))
 								{
+									Explosion* e = &gameState->explosions[gameState->explosionCount++];
+									e->position = bullet->position;
+									e->startTime = GetTime();
+									e->active = true;
+
 									// Replace with bullet with last bullet
 									*bullet = gameState->bullets[--gameState->bulletCount];
 									asteroid->health -= bullet->damage;
@@ -955,9 +962,9 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
 					{
 						Bullet* bullet = &gameState->bullets[bulletIndex];
-						const int texture_x = bullet->position.x - bullet->sprite.coords.width * bullet->size / getSprite(SPRITE_DARKMATTER).numFrames / 2.0;
+						const int texture_x = bullet->position.x - bullet->sprite.coords.width * bullet->size / getSprite(SPRITE_BULLET).numFrames / 2.0;
 						const int texture_y = bullet->position.y - bullet->sprite.coords.height * bullet->size / 2.0;
-						const float width = bullet->sprite.coords.width / getSprite(SPRITE_DARKMATTER).numFrames * bullet->size;
+						const float width = bullet->sprite.coords.width / getSprite(SPRITE_BULLET).numFrames * bullet->size;
 						const float height = bullet->sprite.coords.height * bullet->size;
 						Rectangle bulletRec = {
 							.width = width,
@@ -969,9 +976,38 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						Vector2 texSize = { bulletRec.width, bulletRec.height };
 						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						// Change the frame per second speed of animation
-						atlas->animations[SpriteToAnimation[SPRITE_DARKMATTER]].framesPerSecond = 14;
-						DrawSpriteAnimationPro(atlas->animations[SpriteToAnimation[SPRITE_DARKMATTER]], bulletRec, (Vector2){0, 0}, bullet->rotation, WHITE, shader);
+						// atlas->animations[SpriteToAnimation[SPRITE_BULLET]].framesPerSecond = 14;
+						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_BULLET]], bulletRec, (Vector2){0, 0}, bullet->rotation, WHITE, shader);
 						// DrawRectangleLines(bulletRec.x, bulletRec.y, bulletRec.width, bulletRec.height, RED);
+					}
+					Sprite sprite = getSprite(SPRITE_EXPLOSION);
+					float width  = sprite.coords.width / sprite.numFrames;
+					float height = sprite.coords.height;
+					for (int i = 0; i < gameState->explosionCount; i++)
+					{
+						Explosion* e = &gameState->explosions[i];
+						if (!e->active) continue;
+
+						Rectangle dest = {
+							e->position.x - width/2,
+							e->position.y - height/2,
+							width,
+							height
+						};
+
+						bool finished = DrawSpriteAnimationOnce(
+								atlas->textureAtlas,
+								atlas->animations[SpriteToAnimation[SPRITE_EXPLOSION]],
+								dest,
+								(Vector2){0, 0},
+								0.0f,
+								WHITE,
+								shader,
+								e->startTime
+								);
+
+						if (finished)
+							e->active = false;
 					}
 				}
 				// Draw asteroids
@@ -1006,10 +1042,10 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					gameState->player.sprite.coords.height * gameState->player.size}; // origin in coordinates and scale
 				Vector2 origin = {0, 0}; // so it draws from top left of image
 				if (gameState->player.invulTime <= 0.0f) {
-					DrawSpriteAnimationPro(atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], destination, origin, 0, WHITE, shader);
+					DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], destination, origin, 0, WHITE, shader);
 				} else {
 					if (((int)(gameState->player.invulTime * 10)) % 2 == 0) {
-						DrawSpriteAnimationPro(atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], destination, origin, 0, WHITE, shader);
+						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], destination, origin, 0, WHITE, shader);
 					}
 				}
 				// DrawRectangleLines(destination.x, destination.y, destination.width, destination.height, BLUE);

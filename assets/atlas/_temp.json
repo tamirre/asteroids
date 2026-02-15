@@ -441,8 +441,107 @@
     "duration": 100
    },
    {
+    "filename": "explosion 0.aseprite",
+    "frame": { "x": 195, "y": 97, "w": 64, "h": 64 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 64 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   {
+    "filename": "explosion 1.aseprite",
+    "frame": { "x": 260, "y": 97, "w": 64, "h": 64 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 64 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   {
+    "filename": "explosion 2.aseprite",
+    "frame": { "x": 325, "y": 97, "w": 64, "h": 64 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 64 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   {
+    "filename": "explosion 3.aseprite",
+    "frame": { "x": 390, "y": 97, "w": 64, "h": 64 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 64 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   {
+    "filename": "explosion 4.aseprite",
+    "frame": { "x": 455, "y": 97, "w": 64, "h": 64 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 64 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   {
+    "filename": "explosion 5.aseprite",
+    "frame": { "x": 520, "y": 97, "w": 64, "h": 64 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 64 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   {
+    "filename": "explosion 6.aseprite",
+    "frame": { "x": 585, "y": 97, "w": 64, "h": 64 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 64 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   {
+    "filename": "explosion 7.aseprite",
+    "frame": { "x": 650, "y": 97, "w": 64, "h": 64 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 64 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   {
+    "filename": "explosion 8.aseprite",
+    "frame": { "x": 715, "y": 97, "w": 64, "h": 64 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 64 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   {
+    "filename": "explosion 9.aseprite",
+    "frame": { "x": 780, "y": 97, "w": 64, "h": 64 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 64 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   {
+    "filename": "explosion 10.aseprite",
+    "frame": { "x": 845, "y": 97, "w": 64, "h": 64 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 64 },
+    "sourceSize": { "w": 64, "h": 64 },
+    "duration": 100
+   },
+   {
     "filename": "star1.aseprite",
-    "frame": { "x": 195, "y": 97, "w": 5, "h": 5 },
+    "frame": { "x": 910, "y": 97, "w": 5, "h": 5 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 5, "h": 5 },
@@ -451,7 +550,7 @@
    },
    {
     "filename": "asteroid1.aseprite",
-    "frame": { "x": 201, "y": 97, "w": 64, "h": 64 },
+    "frame": { "x": 916, "y": 97, "w": 64, "h": 64 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 64 },
@@ -460,7 +559,7 @@
    },
    {
     "filename": "heart.aseprite",
-    "frame": { "x": 266, "y": 97, "w": 17, "h": 17 },
+    "frame": { "x": 981, "y": 97, "w": 17, "h": 17 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 17, "h": 17 },
@@ -469,7 +568,7 @@
    },
    {
     "filename": "upgradeMultiShot.aseprite",
-    "frame": { "x": 284, "y": 97, "w": 48, "h": 67 },
+    "frame": { "x": 999, "y": 97, "w": 48, "h": 67 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 67 },
@@ -478,7 +577,7 @@
    },
    {
     "filename": "upgradeDamage.aseprite",
-    "frame": { "x": 333, "y": 97, "w": 48, "h": 67 },
+    "frame": { "x": 1048, "y": 97, "w": 48, "h": 67 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 67 },
@@ -486,12 +585,57 @@
     "duration": 100
    },
    {
-    "filename": "bullet.aseprite",
-    "frame": { "x": 382, "y": 97, "w": 2, "h": 7 },
+    "filename": "bullet 0.aseprite",
+    "frame": { "x": 1097, "y": 97, "w": 32, "h": 48 },
     "rotated": false,
     "trimmed": false,
-    "spriteSourceSize": { "x": 0, "y": 0, "w": 2, "h": 7 },
-    "sourceSize": { "w": 2, "h": 7 },
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 48 },
+    "sourceSize": { "w": 32, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "bullet 1.aseprite",
+    "frame": { "x": 1130, "y": 97, "w": 32, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 48 },
+    "sourceSize": { "w": 32, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "bullet 2.aseprite",
+    "frame": { "x": 1163, "y": 97, "w": 32, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 48 },
+    "sourceSize": { "w": 32, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "bullet 3.aseprite",
+    "frame": { "x": 1196, "y": 97, "w": 32, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 48 },
+    "sourceSize": { "w": 32, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "bullet 4.aseprite",
+    "frame": { "x": 1229, "y": 97, "w": 32, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 48 },
+    "sourceSize": { "w": 32, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "bullet 5.aseprite",
+    "frame": { "x": 1262, "y": 97, "w": 32, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 48 },
+    "sourceSize": { "w": 32, "h": 48 },
     "duration": 100
    }
  ],

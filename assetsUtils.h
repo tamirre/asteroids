@@ -8,7 +8,6 @@
 
 typedef struct SpriteAnimation
 {
-    Texture2D atlas;
     int framesPerSecond;
     float timeStarted;
     Rectangle* rectangles;
@@ -67,7 +66,6 @@ SpriteAnimation createSpriteAnimation(Texture2D atlas, SpriteID spriteID, int fr
 
     SpriteAnimation spriteAnimation = 
     {
-        .atlas = atlas,
         .framesPerSecond = framesPerSecond,
         .rectanglesLength = numFrames,
         .rectangles = NULL,
@@ -93,14 +91,42 @@ SpriteAnimation createSpriteAnimation(Texture2D atlas, SpriteID spriteID, int fr
     return spriteAnimation;
 }
 
-void DrawSpriteAnimationPro(SpriteAnimation animation, Rectangle destination, Vector2 origin, float rotation, Color tint, Shader shader)
+bool DrawSpriteAnimationOnce(Texture2D atlas,
+                             SpriteAnimation animation,
+                             Rectangle destination,
+                             Vector2 origin,
+                             float rotation,
+                             Color tint,
+                             Shader shader,
+                             float startTime)
+{
+    int texSizeLoc = GetShaderLocation(shader, "textureSize");
+
+    float elapsed = GetTime() - startTime;
+
+    int frame = (int)(elapsed * animation.framesPerSecond);
+
+    if (frame >= animation.rectanglesLength)
+        return true; // animation finished
+
+    Rectangle source = animation.rectangles[frame];
+
+    Vector2 texSize = { source.width, source.height };
+    SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+
+    DrawTexturePro(atlas, source, destination, origin, rotation, tint);
+
+    return false; // still playing
+}
+
+void DrawSpriteAnimationPro(Texture2D atlas, SpriteAnimation animation, Rectangle destination, Vector2 origin, float rotation, Color tint, Shader shader)
 {
 	int texSizeLoc = GetShaderLocation(shader, "textureSize");
     int index = (int)(GetTime() * animation.framesPerSecond) % animation.rectanglesLength;
     Rectangle source = animation.rectangles[index];
 	Vector2 texSize = { animation.rectangles->width, animation.rectangles->height };
 	SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
-    DrawTexturePro(animation.atlas, source, destination, origin, rotation, tint);
+    DrawTexturePro(atlas, source, destination, origin, rotation, tint);
 }
 
 void FreeSpriteAnimation(SpriteAnimation animation)
@@ -119,27 +145,6 @@ TextureAtlas initTextureAtlas(SpriteMask spriteMasks[])
 	Image atlasImage = LoadImageFromTexture(atlas.textureAtlas);
     ImageFormat(&atlasImage, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
 
-	// int animCount = 0;
-	// for (int i = 0; i < SPRITE_COUNT; i++)
-	// {
-	// 	if (getSprite(i).numFrames > 1) animCount++;
-	// }
-
-
-	//    atlas.playerAnimation = createSpriteAnimation(atlas.textureAtlas, SPRITE_PLAYER, 7, getSprite(SPRITE_PLAYER).numFrames);
-	// atlas.darkMatterAnimation = createSpriteAnimation(atlas.textureAtlas, SPRITE_DARKMATTER, 7, getSprite(SPRITE_DARKMATTER).numFrames);
-	// printf("Player Animation: %d fps\n", atlas.playerAnimation.framesPerSecond);
-	// printf("Player Animation: %d number of frames\n", atlas.playerAnimation.rectanglesLength );
-	// for(int i = 0; i < atlas.playerAnimation.rectanglesLength; i++)
-	// {
-	// 	printf("Rectangle %i: %f %f %f %f\n", i, atlas.playerAnimation.rectangles[i].x, atlas.playerAnimation.rectangles[i].y, atlas.playerAnimation.rectangles[i].width, atlas.playerAnimation.rectangles[i].height);
-	// }
-	
-	// for (int i = 0; i < SPRITE; i++) 
-	// {
-	// }
-
-	// SpriteMask spriteMasks2[SPRITE_COUNT];
 	int animCount = 0;
 	for (int i = 0; i < SPRITE_COUNT; i++)
 	{
@@ -155,7 +160,6 @@ TextureAtlas initTextureAtlas(SpriteMask spriteMasks[])
 	}
 
     UnloadImage(atlasImage);
-
     return atlas;
 }
 
