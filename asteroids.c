@@ -834,9 +834,11 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						Boost boost = {
 							.position = (Vector2) {boostXPosition, 0},
 							.velocity = (Vector2) {0, GetRandomValue(30.0f, 65.0f) * 5.0f / (float)size},
-							.angularVelocity = GetRandomValue(-40.0f, 40.0f),
+							// .angularVelocity = GetRandomValue(-40.0f, 40.0f),
+							.angularVelocity = 0.0f,
 							.size = 1.0f,
-							.rotation = GetRandomValue(0.0f, 360.0f),
+							// .rotation = GetRandomValue(0.0f, 360.0f),
+							.rotation = 0.0f,
 						};
 						Sprite boostSprite;
 						boostSprite = getSprite(SPRITE_SCRAPMETAL);
@@ -853,21 +855,39 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						Boost* boost = &gameState->boosts[boostIndex];
 						boost->position.y += boost->velocity.y * dt;
 						boost->rotation += boost->angularVelocity * dt;
-						float width  = boost->sprite.coords.width * boost->size;
+						float width  = boost->sprite.coords.width / boost->sprite.numFrames * boost->size;
 						float height = boost->sprite.coords.height * boost->size;
-						Rectangle boostDrawRect = {
-							.x = boost->position.x,
-							.y = boost->position.y, 
+						boost->collider = (Rectangle) {
+							.x = boost->position.x - width / 2.0f,
+							.y = boost->position.y - height / 2.0f,
 							.width = width,
 							.height = height, 
 						};
-						boost->collider = boostDrawRect;
-						Vector2 texSize = { width, height };
-						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
-						DrawTexturePro(atlas->textureAtlas, boost->sprite.coords, 
-								boostDrawRect, 
-								(Vector2){0, 0}, boost->rotation, WHITE);
-						// DrawRectangleLines(boostDrawRect.x, boostDrawRect.y, boostDrawRect.width, boostDrawRect.height, RED);
+						// Check if boost is off-screen
+						if (boost->position.y > options->screenHeight + boost->sprite.coords.height * boost->size)
+						{
+							*boost = gameState->boosts[--gameState->boostCount];
+						}
+						float playerWidth = gameState->player.sprite.coords.width/gameState->player.animationFrames * gameState->player.size;
+						float playerHeight = gameState->player.sprite.coords.height * gameState->player.size;
+						Rectangle playerRec = {
+							.width = playerWidth,
+							.height =  playerHeight,
+							.x = gameState->player.playerPosition.x - playerWidth/2.0f,
+							.y = gameState->player.playerPosition.y - playerHeight/2.0f,
+						};
+						if(CheckCollisionRecs(boost->collider, playerRec))
+						{
+							Rectangle collisionRec = GetCollisionRec(boost->collider, playerRec);
+							Rectangle playerSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_PLAYER]]);
+							if (pixelPerfectCollision(spriteMasks[SPRITE_PLAYER].pixels, spriteMasks[boost->sprite.spriteID].pixels, 
+										playerSrc.width, boost->sprite.coords.width,
+										playerSrc.height, boost->sprite.coords.height, 
+										playerRec, boost->collider, collisionRec, 0.0f, boost->rotation))
+							{
+								*boost = gameState->boosts[--gameState->boostCount];
+							}
+						}
 					}
 				}
 				if (IsKeyPressed(KEY_ESCAPE)) {
@@ -1087,6 +1107,28 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						// 		asteroid->collider.width, asteroid->collider.height, GREEN);
 						// DrawRectangleLines(asteroidDrawRect.x, asteroidDrawRect.y,
 						// 		asteroidDrawRect.width, asteroidDrawRect.height, GREEN);
+					}
+				}
+				// Draw boosts
+				{
+					for (int boostIndex = 0; boostIndex < gameState->boostCount; boostIndex++)
+					{
+						Boost* boost = &gameState->boosts[boostIndex];
+						float width = boost->sprite.coords.width / boost->sprite.numFrames * boost->size;
+						float height = boost->sprite.coords.height * boost->size;
+						Rectangle boostDrawRect = {
+							.x = boost->position.x,
+							.y = boost->position.y, 
+							.width = width,
+							.height = height, 
+						};
+						Vector2 texSize = { boost->collider.width, boost->collider.height };
+						Vector2 pivot = { boost->collider.width / 2.0f, boost->collider.height / 2.0f };
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						// Rectangle destination = {texture_x, texture_y, width, height}; // origin in coordinates and scale
+						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_SCRAPMETAL]], boostDrawRect, pivot, boost->rotation, WHITE, shader);
+						// DrawRectangleLines(boostDrawRect.x, boostDrawRect.y, boostDrawRect.width, boostDrawRect.height, RED);
+						// DrawRectangleLines(boost->collider.x, boost->collider.y, boost->collider.width, boost->collider.height, GREEN);
 					}
 				}
 
