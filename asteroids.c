@@ -18,14 +18,14 @@
     #include <emscripten/emscripten.h>
 #endif
 
-#define MIN_SCREEN_WIDTH (1280.0f)
-#define MIN_SCREEN_HEIGHT (720.0f)
+#define MIN_SCREEN_WIDTH (1440.0f)
+#define MIN_SCREEN_HEIGHT (810.0f)
 #define VIRTUAL_WIDTH (1440.0f)
 #define VIRTUAL_HEIGHT (810.0f)
 #define WINDOW_TITLE ("Asteroids")
 #define MAX_BULLETS (1000)
 #define MAX_ASTEROIDS (100)
-#define MAX_EXPLOSIONS (100)
+#define MAX_EXPLOSIONS (20)
 #define MAX_STARS (50)
 #define MAX_BOOSTS (2)
 #ifdef PLATFORM_WEB
@@ -284,7 +284,7 @@ void initializeGameState(GameState* gameState) {
         .asteroidSpawnRate = 0.2f,
         .boostCount = 0,
         .boostSpawnTime = 0.0f,
-        .boostSpawnRate = 10.0f,
+        .boostSpawnRate = 15.0f,
         .spawnTime = 0.0,
         .experience = 1000,
         .starCount = 0,
@@ -477,7 +477,13 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 #ifndef PLATFORM_WEB
 				if (IsKeyPressed(KEY_F)) 
 				{
+					options->previousWidth = options->screenWidth;
+					options->previousHeight = options->screenHeight;
 					ToggleFullscreen();
+					// options->screenWidth = GetRenderWidth();
+					// options->screenHeight = GetRenderHeight();
+					options->screenWidth = GetScreenWidth();
+					options->screenHeight = GetScreenHeight();
 				}
 #endif
 				if (IsKeyPressed(KEY_V)) {
@@ -597,29 +603,40 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 					gameState->player.invulTime -= dt;
 				}
 
+				float screenWidth = VIRTUAL_WIDTH;
+				float screenHeight = VIRTUAL_HEIGHT;
 				if (IsKeyDown(KEY_W)) {
-					if(!CheckCollisionPointLine(gameState->player.playerPosition, (Vector2) {0, 0}, (Vector2) {options->screenWidth, 0}, gameState->player.sprite.coords.width/gameState->player.animationFrames / 2))
+					if(!CheckCollisionPointLine(gameState->player.playerPosition, 
+								                (Vector2) {0, 0}, 
+												(Vector2) {screenWidth, 0}, 
+												gameState->player.sprite.coords.height))
 					{
 						gameState->player.playerPosition.y -= gameState->player.playerVelocity * dt;
 					}   
 				}
 				if (IsKeyDown(KEY_S)) {
-					if(!CheckCollisionPointLine(gameState->player.playerPosition, (Vector2) {0, options->screenHeight}, (Vector2) {options->screenWidth, options->screenHeight}, gameState->player.sprite.coords.height / 2))
+					if(!CheckCollisionPointLine(gameState->player.playerPosition, 
+								                (Vector2) {0, screenHeight}, 
+												(Vector2) {screenWidth, screenHeight}, 
+												gameState->player.sprite.coords.height))
 					{
 						gameState->player.playerPosition.y += gameState->player.playerVelocity * dt;
 					}
 				}
 				if (IsKeyDown(KEY_A)) {
-					if(!CheckCollisionPointLine(gameState->player.playerPosition, (Vector2) {0, 0}, (Vector2) {0, options->screenHeight}, gameState->player.sprite.coords.width/gameState->player.animationFrames / 2))
+					if(!CheckCollisionPointLine(gameState->player.playerPosition, 
+								                (Vector2) {0, 0}, 
+												(Vector2) {0, screenHeight}, 
+												gameState->player.sprite.coords.width/gameState->player.animationFrames))
 					{
 						gameState->player.playerPosition.x -= gameState->player.playerVelocity * dt;
 					}
 				}
 				if (IsKeyDown(KEY_D)) {
 					if(!CheckCollisionPointLine(gameState->player.playerPosition, 
-								(Vector2) {options->screenWidth, 0},
-								(Vector2) {options->screenWidth, options->screenHeight}, 
-								gameState->player.sprite.coords.width/gameState->player.animationFrames / 2))
+												(Vector2) {screenWidth, 0}, 
+												(Vector2) {screenWidth, screenHeight}, 
+												gameState->player.sprite.coords.width/gameState->player.animationFrames))
 					{
 						gameState->player.playerPosition.x += gameState->player.playerVelocity * dt;
 					}
@@ -779,14 +796,17 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 											bullet->collider, asteroid->collider, collisionRec, bullet->rotation, asteroid->rotation))
 								{
 
-									PlaySound(audio->explosionFx);
-									Explosion* explosion = &gameState->explosions[gameState->explosionCount++];
-									explosion->position = bullet->position;
-									explosion->position.y -= bulletSrc.height/2.0f;
-									explosion->velocity = asteroid->velocity;
-									explosion->startTime = GetTime();
-									explosion->active = true;
-
+									Explosion* explosion = NULL;
+									if (gameState->explosionCount < MAX_EXPLOSIONS)
+									{
+										PlaySound(audio->explosionFx);
+										explosion = &gameState->explosions[gameState->explosionCount++];
+										explosion->position = bullet->position;
+										explosion->position.y -= bulletSrc.height/2.0f;
+										explosion->velocity = asteroid->velocity;
+										explosion->startTime = GetTime();
+										explosion->active = true;
+									}
 									// Replace with bullet with last bullet
 									*bullet = gameState->bullets[--gameState->bulletCount];
 									asteroid->health -= bullet->damage;
@@ -794,7 +814,10 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 									{
 										gameState->experience += MAX((int)(asteroid->size * 100),1);
 										*asteroid = gameState->asteroids[--gameState->asteroidCount];
-										explosion->velocity.y = 0.0f;
+										if(explosion != NULL)
+										{
+											explosion->velocity.y = 0.0f;
+										}
 									}
 								}
 							}
@@ -852,7 +875,10 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 				for (int explosionIndex = 0; explosionIndex < gameState->explosionCount; explosionIndex++)
 				{
 					Explosion* explosion = &gameState->explosions[explosionIndex];
-					explosion->position.y += explosion->velocity.y * dt;
+					if (explosion->active)
+					{
+						explosion->position.y += explosion->velocity.y * dt;
+					}
 				}
 
 				// Spawn boosts
@@ -926,7 +952,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						}
 					}
 				}
-				if (IsKeyPressed(KEY_ESCAPE)) {
+				if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) {
 					gameState->state = STATE_PAUSED;
 					gameState->lastState = STATE_RUNNING;
 				}
@@ -934,7 +960,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 			}
 		case STATE_UPGRADE:
 			{
-				if (IsKeyPressed(KEY_ESCAPE)) {
+				if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) {
 					gameState->state = STATE_PAUSED;
 					gameState->lastState = STATE_UPGRADE;
 				}
@@ -1023,7 +1049,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 					setFxVolume(audio, options->fxVolume);
 					options->fxVolumeChanged = false;
 				}
-				if (IsKeyPressed(KEY_ESCAPE)) 
+				if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) 
 				{
 					gameState->state = gameState->lastState;
 				}
@@ -1050,8 +1076,10 @@ Rectangle GetScaledViewport(int winW, int winH)
     };
 }
 
-void HandleResize(float* previousWidth, float* previousHeight)
+void HandleResize(Options* options)
 {
+	float* previousWidth = &options->previousWidth;
+	float* previousHeight = &options->previousHeight;
 	int width  = GetRenderWidth();
 	int height = GetRenderHeight();
 	if (width != *previousWidth || height != *previousHeight) 
@@ -1063,6 +1091,8 @@ void HandleResize(float* previousWidth, float* previousHeight)
 			width  = width  < MIN_SCREEN_WIDTH ? MIN_SCREEN_WIDTH : width;
 			height = height < MIN_SCREEN_HEIGHT ? MIN_SCREEN_HEIGHT: height;
 		}
+		options->screenWidth = width;
+		options->screenHeight = height;
 		SetWindowSize(width, height);
 	}
 }
@@ -1187,12 +1217,17 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					float height = sprite.coords.height;
 					for (int i = 0; i < gameState->explosionCount; i++)
 					{
-						Explosion* e = &gameState->explosions[i];
-						if (!e->active) continue;
+						Explosion* explosion = &gameState->explosions[i];
+						if (!explosion->active) 
+						{
+							// Replace with last explosion
+							*explosion = gameState->explosions[--gameState->explosionCount];
+							continue;
+						}
 
 						Rectangle dest = {
-							e->position.x - width/2,
-							e->position.y - height/2,
+							explosion->position.x - width/2,
+							explosion->position.y - height/2,
 							width,
 							height
 						};
@@ -1207,11 +1242,11 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 								0.0f,
 								WHITE,
 								shader,
-								e->startTime
+								explosion->startTime
 								);
 
 						if (finished)
-							e->active = false;
+							explosion->active = false;
 					}
 				}
 				// Draw Player
@@ -1433,7 +1468,7 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 	Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	draw_text_centered(options->font, T(TXT_GAME_PAUSED), (Vector2){dst.width/2.0f, dst.height/5.0f}, 40, WHITE);
 	// Draw a window box
-	const float boxWidth = 400.0f;
+	const float boxWidth = 475.0f;
 	const float boxHeight = 350.0f;
 	const float boxPosX = options->screenWidth/2;
 	const float boxPosY = options->screenHeight/2;
@@ -1463,18 +1498,21 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 		shouldExit = true;
 	}
 	// int GuiSliderBar(Rectangle bounds, const char *textLeft, const char *textRight, float *value, float minValue, float maxValue)
-	if (GuiSliderBar((Rectangle){ boxPosX-sliderWidth/2+boxWidth/6, 
-								  boxPosY-sliderHeight/2-boxHeight/6+1*boxHeight/12, 
-							      sliderWidth, sliderHeight }, "0%", "100%", &options->musicVolume, 0.0f, 0.5f)) 
+	if (!options->languageEditMode) 
 	{
-		options->musicVolumeChanged = true;
-	}
-	// int GuiSliderBar(Rectangle bounds, const char *textLeft, const char *textRight, float *value, float minValue, float maxValue)
-	if (GuiSliderBar((Rectangle){ boxPosX-sliderWidth/2+boxWidth/6, 
-								  boxPosY-sliderHeight/2-boxHeight/6+2*boxHeight/12, 
-							      sliderWidth, sliderHeight }, "0%", "100%", &options->fxVolume, 0.0f, 0.5f)) 
-	{
-		options->fxVolumeChanged = true;
+		if (GuiSliderBar((Rectangle){ boxPosX-sliderWidth/2+boxWidth/6, 
+					boxPosY-sliderHeight/2-boxHeight/6+1*boxHeight/12, 
+					sliderWidth, sliderHeight }, "0%", "100%", &options->musicVolume, 0.0f, 0.5f)) 
+		{
+			options->musicVolumeChanged = true;
+		}
+		// int GuiSliderBar(Rectangle bounds, const char *textLeft, const char *textRight, float *value, float minValue, float maxValue)
+		if (GuiSliderBar((Rectangle){ boxPosX-sliderWidth/2+boxWidth/6, 
+					boxPosY-sliderHeight/2-boxHeight/6+2*boxHeight/12, 
+					sliderWidth, sliderHeight }, "0%", "100%", &options->fxVolume, 0.0f, 0.5f)) 
+		{
+			options->fxVolumeChanged = true;
+		}
 	}
 	if (GuiButton((Rectangle){ boxPosX-boxWidth/4-buttonWidth/2, 
 							   boxPosY-buttonHeight/4+boxHeight/6, 
@@ -1520,6 +1558,7 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 			{
 				DrawHealthBar(gameState, options, atlas);
 				DrawScore(gameState, options, atlas);
+				DrawCircleV(gameState->player.playerPosition, 5.0f, RED);
 				if (gameState->player.shieldEnabled)
 				{
 					char shieldText[100] = {0};
@@ -1527,7 +1566,7 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 					sprintf(shieldText, "%.2f", gameState->player.shieldTime);
 					Vector2 position = gameState->player.playerPosition;
 					position.y -= gameState->player.sprite.coords.height * gameState->player.size / 2.0f + textSize;
-					position.x -= MeasureTextEx(options->font, shieldText, textSize, 0).x / 2.0f;
+					position.x -= MeasureTextEx(options->font, shieldText, textSize, GetDefaultSpacing(textSize)).x / 2.0f;
 					if (gameState->player.shieldTime > 2.0f)
 					{
 						DrawTextEx(options->font, shieldText, position, textSize, 0, WHITE);
@@ -1622,7 +1661,7 @@ void UpdateDrawFrame()
 {
 	gameState.dt = GetFrameTime() * gameState.timeScale;
 	gameState.time += gameState.dt;
-	HandleResize(&options.previousWidth, &options.previousHeight);
+	HandleResize(&options);
 	UpdateGame(&gameState, &options, &atlas, spriteMasks, &audio, gameState.dt);
 	DrawLightmap(&gameState, &options, &litScene, lightShader);
 	DrawScene(&gameState, &options, &atlas, &scene, shader);
@@ -1643,20 +1682,26 @@ int main() {
 	// LocSetLanguage(LANG_DE);
 	// LocSetLanguage(LANG_ZH);
 
-	ConfigFlags configFlags = FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT | FLAG_BORDERLESS_WINDOWED_MODE;
+	ConfigFlags configFlags = FLAG_WINDOW_RESIZABLE | 
+		                      FLAG_VSYNC_HINT | 
+							  FLAG_BORDERLESS_WINDOWED_MODE | 
+							  // FLAG_WINDOW_TOPMOST | 
+							  // FLAG_FULLSCREEN_MODE |
+							  FLAG_WINDOW_UNDECORATED;
 	SetConfigFlags(configFlags);
 	gameState.player.playerPosition = (Vector2){options.screenWidth / 2.0f, options.screenHeight / 2.0f};
 
 	InitWindow(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_TITLE);
 	SetWindowMinSize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+	
 	// Disable Exit on ESC
     SetExitKey(KEY_NULL);
+
 	initializeOptions(&options);
 	initializeGameState(&gameState);
-
-    atlas = initTextureAtlas(spriteMasks);
 	initializeAudio(&audio, &options);
 
+    atlas = initTextureAtlas(spriteMasks);
 	scene = LoadRenderTexture(options.screenWidth, options.screenHeight);
 	litScene = LoadRenderTexture(options.screenWidth, options.screenHeight);
 
@@ -1685,3 +1730,4 @@ int main() {
     CloseWindow();
     return 0;
 }
+
