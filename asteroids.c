@@ -27,6 +27,7 @@
 #define MAX_ASTEROIDS (100)
 #define MAX_EXPLOSIONS (100)
 #define MAX_STARS (50)
+#define MAX_BOOSTS (2)
 #ifdef PLATFORM_WEB
 	#define TARGET_FPS (60)
 #else
@@ -86,6 +87,16 @@ typedef struct Asteroid {
     Sprite sprite;
 	Rectangle collider;
 } Asteroid;
+
+typedef struct Boost {
+	Vector2 position;
+	Vector2 velocity;
+	float size;
+	float rotation;
+	float angularVelocity;
+	Sprite sprite;
+	Rectangle collider;
+} Boost;
 
 typedef struct Bullet {
     Vector2 position;
@@ -163,8 +174,12 @@ typedef struct GameState {
     // asteroids
     Asteroid asteroids[MAX_ASTEROIDS];
     int asteroidCount;
-    float spawnTime;
-    float asteroidSpawnRate;
+	float spawnTime;
+	float asteroidSpawnRate;
+	Boost boosts[MAX_BOOSTS];
+	int boostCount;
+	float boostSpawnTime;
+	float boostSpawnRate;
     // float lastasteroidXPosition;
     // Parallax background stars
     Star stars[MAX_STARS];
@@ -252,6 +267,8 @@ void initializeGameState(GameState* gameState) {
         .bulletCount = 0,
         .asteroidCount = 0,
         .asteroidSpawnRate = 0.2f,
+        .boostCount = 0,
+        .boostSpawnTime = 1.5f,
         .spawnTime = 0.0,
         .experience = 1000,
         .starCount = 0,
@@ -674,17 +691,17 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 					if (gameState->spawnTime > gameState->asteroidSpawnRate && gameState->asteroidCount < MAX_ASTEROIDS) 
 					{
 						// int size = (int)GetRandomValue(1, 3);
-						float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
 						// float size = 1.0f;
+						float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
 						float minSpawnDistance = 50.0f * size;  
 						float asteroidXPosition = MAX(minSpawnDistance, GetRandomValue(0, options->screenWidth)); 
-						Asteroid asteroid = {
+						Asteroid asteroid =
+						{
 							.position = (Vector2) {asteroidXPosition, 0},
-							.health = (int) (size+1.0) * 2.0,
+							.health = (int) (size + 1.0) * 2.0,
 							.velocity = (Vector2) {0, GetRandomValue(30.0f, 65.0f) * 5.0f / (float)size},
 							.angularVelocity = GetRandomValue(-40.0f, 40.0f),
 							.size = size,
-							.rotation = GetRandomValue(0.0f, 360.0f),
 						};
 						int whichAsteroid = GetRandomValue(1,10);
 						Sprite asteroidSprite;
@@ -796,15 +813,63 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 							*asteroid = gameState->asteroids[--gameState->asteroidCount];
 						}
 					}
-					// Update explosions
-					for (int explosionIndex = 0; explosionIndex < gameState->explosionCount; explosionIndex++)
-					{
-						Explosion* explosion = &gameState->explosions[explosionIndex];
-						explosion->position.y += explosion->velocity.y * dt;
-					}
-
+				}
+				// Update explosions
+				for (int explosionIndex = 0; explosionIndex < gameState->explosionCount; explosionIndex++)
+				{
+					Explosion* explosion = &gameState->explosions[explosionIndex];
+					explosion->position.y += explosion->velocity.y * dt;
 				}
 
+				// Spawn boosts
+				{
+					gameState->boostSpawnTime += dt;
+					if (gameState->boostSpawnTime > gameState->boostSpawnRate && gameState->boostCount < MAX_BOOSTS)
+					{
+						// int size = (int)GetRandomValue(1, 3);
+						float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
+						// float size = 1.0f;
+						float minSpawnDistance = 50.0f * size;  
+						float boostXPosition = MAX(minSpawnDistance, GetRandomValue(0, options->screenWidth)); 
+						Boost boost = {
+							.position = (Vector2) {boostXPosition, 0},
+							.velocity = (Vector2) {0, GetRandomValue(30.0f, 65.0f) * 5.0f / (float)size},
+							.angularVelocity = GetRandomValue(-40.0f, 40.0f),
+							.size = 1.0f,
+							.rotation = GetRandomValue(0.0f, 360.0f),
+						};
+						Sprite boostSprite;
+						boostSprite = getSprite(SPRITE_SCRAPMETAL);
+						boost.sprite = boostSprite;
+						boost.position.y -= boost.sprite.coords.height; // to make them come into screen smoothly
+						gameState->boostSpawnTime = 0;
+						gameState->boosts[gameState->boostCount++] = boost;
+					}
+				}
+				// Update boosts
+				{
+					for (int boostIndex = 0; boostIndex < gameState->boostCount; boostIndex++)
+					{
+						Boost* boost = &gameState->boosts[boostIndex];
+						boost->position.y += boost->velocity.y * dt;
+						boost->rotation += boost->angularVelocity * dt;
+						float width  = boost->sprite.coords.width * boost->size;
+						float height = boost->sprite.coords.height * boost->size;
+						Rectangle boostDrawRect = {
+							.x = boost->position.x,
+							.y = boost->position.y, 
+							.width = width,
+							.height = height, 
+						};
+						boost->collider = boostDrawRect;
+						Vector2 texSize = { width, height };
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						DrawTexturePro(atlas->textureAtlas, boost->sprite.coords, 
+								boostDrawRect, 
+								(Vector2){0, 0}, boost->rotation, WHITE);
+						// DrawRectangleLines(boostDrawRect.x, boostDrawRect.y, boostDrawRect.width, boostDrawRect.height, RED);
+					}
+				}
 				if (IsKeyPressed(KEY_ESCAPE)) {
 					gameState->state = STATE_PAUSED;
 					gameState->lastState = STATE_RUNNING;
