@@ -137,6 +137,7 @@ typedef struct Audio {
     Sound blastFx;
 	Sound cardFx;
 	Sound explosionFx;
+	Sound shieldFx;
 	Sound langEn;
 	Sound langDe;
 	Sound langZh;
@@ -224,6 +225,7 @@ void cleanup(TextureAtlas atlas, Options options, Audio audio, SpriteMask sprite
 	UnloadSound(audio.hitFx);
 	UnloadSound(audio.blastFx);
 	UnloadSound(audio.cardFx);
+	UnloadSound(audio.shieldFx);
 	UnloadSound(audio.langEn);
 	UnloadSound(audio.langDe);
 	UnloadSound(audio.langZh);
@@ -241,7 +243,7 @@ void initializeAudio(Audio* audio) {
 	audio->blastFx = LoadSound("audio/laserPowerGunshot.wav");
 	ASSERT(IsSoundValid(audio->blastFx));
 	audio->cardFx = LoadSound("audio/cardSelect.mp3");
-	ASSERT(IsSoundValid(audio->blastFx));
+	ASSERT(IsSoundValid(audio->cardFx));
 	audio->langEn = LoadSound("audio/america.mp3");
 	ASSERT(IsSoundValid(audio->langEn));
 	audio->langDe = LoadSound("audio/erika.mp3");
@@ -250,11 +252,14 @@ void initializeAudio(Audio* audio) {
 	ASSERT(IsSoundValid(audio->langZh));
 	audio->explosionFx = LoadSound("audio/explosionBlast.wav");
 	ASSERT(IsSoundValid(audio->explosionFx));
+	audio->shieldFx = LoadSound("audio/shield.wav");
+	ASSERT(IsSoundValid(audio->shieldFx));
 	PlayMusicStream(audio->music);
 	SetMusicVolume(audio->music, 0.05);
 	SetSoundVolume(audio->hitFx, 0.25);
 	SetSoundVolume(audio->blastFx, 0.10);
 	SetSoundVolume(audio->explosionFx, 0.10);
+	SetSoundVolume(audio->shieldFx, 0.20);
 	SetSoundVolume(audio->cardFx, 0.25);
 	SetSoundVolume(audio->langEn, 0.25);
 	SetSoundVolume(audio->langDe, 0.25);
@@ -270,7 +275,8 @@ void initializeGameState(GameState* gameState) {
         .asteroidCount = 0,
         .asteroidSpawnRate = 0.2f,
         .boostCount = 0,
-        .boostSpawnTime = 1.5f,
+        .boostSpawnTime = 0.0f,
+        .boostSpawnRate = 10.0f,
         .spawnTime = 0.0,
         .experience = 1000,
         .starCount = 0,
@@ -302,7 +308,7 @@ void initializeGameState(GameState* gameState) {
         .shootTime = 1.0f,
         .damageMulti = 1.5f,
 		.shieldEnabled = false,
-		.shieldTime = 6.0f,
+		.shieldTime = 5.25f,
     };
 }
 
@@ -613,10 +619,11 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 				if (gameState->player.shieldEnabled && gameState->player.shieldTime > 0.0f)
 				{
 					gameState->player.shieldTime -= dt;
-					if (gameState->player.shieldTime < 0.0f)
-					{
-						gameState->player.shieldEnabled = false;
-					}
+				}
+				if (gameState->player.shieldTime < 0.0f)
+				{
+					gameState->player.shieldEnabled = false;
+					gameState->player.shieldTime = 5.25f;
 				}
 				// Shoot bullets
 				while (IsKeyDown(KEY_SPACE) 
@@ -801,7 +808,9 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 							// Replace with last asteroid
 							*asteroid = gameState->asteroids[--gameState->asteroidCount];
 						}
-						if(CheckCollisionRecs(asteroid->collider, playerRec) && gameState->player.invulTime <= 0.0f)
+						if(CheckCollisionRecs(asteroid->collider, playerRec) && 
+								gameState->player.invulTime <= 0.0f &&
+								gameState->player.shieldEnabled == false)
 						{
 							Rectangle collisionRec = GetCollisionRec(asteroid->collider, playerRec);
 							// DrawRectangleLinesEx(collisionRec, 2.0, RED);
@@ -900,6 +909,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 							{
 								*boost = gameState->boosts[--gameState->boostCount];
 								gameState->player.shieldEnabled = true;
+								PlaySound(audio->shieldFx);
 							}
 						}
 					}
@@ -1200,6 +1210,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 				// Draw shield
 				if (gameState->player.shieldEnabled)
 				{
+					atlas->animations[SpriteToAnimation[SPRITE_SHIELD]].framesPerSecond = 14;
 					Vector2 texSize = { getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.width / getSprite(SpriteToAnimation[SPRITE_SHIELD]).numFrames, 
 										getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.height };
 					SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
@@ -1464,6 +1475,24 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 			{
 				DrawHealthBar(gameState, options, atlas);
 				DrawScore(gameState, options, atlas);
+				if (gameState->player.shieldEnabled)
+				{
+					char shieldText[100] = {0};
+					const float textSize = 18.0f;
+					sprintf(shieldText, "%.2f", gameState->player.shieldTime);
+					Vector2 position = gameState->player.playerPosition;
+					position.y -= gameState->player.sprite.coords.height * gameState->player.size / 2.0f + textSize;
+					position.x -= MeasureTextEx(options->font, shieldText, textSize, 0).x / 2.0f;
+					if (gameState->player.shieldTime > 2.0f)
+					{
+						DrawTextEx(options->font, shieldText, position, textSize, 0, WHITE);
+					}
+					else
+					{
+						DrawTextEx(options->font, shieldText, position, textSize, 0, RED);
+					}
+
+				}
 				break;
 			}
 		case STATE_MAIN_MENU:
