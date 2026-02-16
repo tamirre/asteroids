@@ -128,6 +128,8 @@ typedef struct Player {
     float fireRate;
     float shootTime;
     float damageMulti;
+	bool shieldEnabled;
+	float shieldTime;
 } Player;
 
 typedef struct Audio {
@@ -299,6 +301,8 @@ void initializeGameState(GameState* gameState) {
         .fireRate = 1.0f,
         .shootTime = 1.0f,
         .damageMulti = 1.5f,
+		.shieldEnabled = false,
+		.shieldTime = 6.0f,
     };
 }
 
@@ -567,6 +571,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
                         star->position.y += star->velocity * dt;
                     }
                 }
+				// Update Player
 				if (gameState->player.invulTime < 0.0f)
 				{
 					gameState->player.invulTime = 0.0f;
@@ -605,6 +610,14 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 				{
 					gameState->player.shootTime += dt;
 				} 
+				if (gameState->player.shieldEnabled && gameState->player.shieldTime > 0.0f)
+				{
+					gameState->player.shieldTime -= dt;
+					if (gameState->player.shieldTime < 0.0f)
+					{
+						gameState->player.shieldEnabled = false;
+					}
+				}
 				// Shoot bullets
 				while (IsKeyDown(KEY_SPACE) 
 						&& gameState->player.shootTime >= 1.0f/gameState->player.fireRate
@@ -886,6 +899,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 										playerRec, boost->collider, collisionRec, 0.0f, boost->rotation))
 							{
 								*boost = gameState->boosts[--gameState->boostCount];
+								gameState->player.shieldEnabled = true;
 							}
 						}
 					}
@@ -1150,6 +1164,8 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 							height
 						};
 
+						Vector2 texSize = { width, height };
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						bool finished = DrawSpriteAnimationOnce(
 								atlas->textureAtlas,
 								atlas->animations[SpriteToAnimation[SPRITE_EXPLOSION]],
@@ -1168,19 +1184,27 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 				// Draw Player
 				const int texture_x = gameState->player.playerPosition.x - gameState->player.sprite.coords.width * gameState->player.size / gameState->player.animationFrames / 2.0;
 				const int texture_y = gameState->player.playerPosition.y - gameState->player.sprite.coords.height * gameState->player.size / 2.0;
-				Rectangle destination = {texture_x, texture_y, 
+				Rectangle playerDestination = {texture_x, texture_y, 
 					gameState->player.sprite.coords.width / gameState->player.animationFrames * gameState->player.size, 
 					gameState->player.sprite.coords.height * gameState->player.size}; // origin in coordinates and scale
 				Vector2 origin = {0, 0}; // so it draws from top left of image
 				if (gameState->player.invulTime <= 0.0f) {
-					DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], destination, origin, 0, WHITE, shader);
+					DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, shader);
 				} else {
 					if (((int)(gameState->player.invulTime * 10)) % 2 == 0) {
-						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], destination, origin, 0, WHITE, shader);
+						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, shader);
 					}
 				}
-				// DrawRectangleLines(destination.x, destination.y, destination.width, destination.height, BLUE);
-				// if(!options->disableShaders) EndShaderMode();
+				// DrawRectangleLines(playerDestination.x, playerDestination.y, playerDestination.width, playerDestination.height, BLUE);
+				
+				// Draw shield
+				if (gameState->player.shieldEnabled)
+				{
+					Vector2 texSize = { getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.width / getSprite(SpriteToAnimation[SPRITE_SHIELD]).numFrames, 
+										getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.height };
+					SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+					DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_SHIELD]], playerDestination, origin, 0, WHITE, shader);
+				}
 				break;
 			}
 		case STATE_UPGRADE:
