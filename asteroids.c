@@ -159,6 +159,10 @@ typedef struct Options {
 	bool languageChanged;
 	bool disableCursor;
 	Vector2 lastMousePos;
+	float musicVolume;
+	float fxVolume;
+	bool musicVolumeChanged;
+	bool fxVolumeChanged;
 } Options;
 
 typedef struct GameState {
@@ -233,7 +237,18 @@ void cleanup(TextureAtlas atlas, Options options, Audio audio, SpriteMask sprite
 	CloseAudioDevice();
 }
 
-void initializeAudio(Audio* audio) {
+void setFxVolume(Audio* audio, float volume) {
+	SetSoundVolume(audio->hitFx, volume);
+	SetSoundVolume(audio->blastFx, volume*0.5f);
+	SetSoundVolume(audio->explosionFx, volume*0.5f);
+	SetSoundVolume(audio->shieldFx, volume);
+	SetSoundVolume(audio->cardFx, volume);
+	SetSoundVolume(audio->langEn, volume);
+	SetSoundVolume(audio->langDe, volume);
+	SetSoundVolume(audio->langZh, volume);
+}
+
+void initializeAudio(Audio* audio, Options* options) {
 	InitAudioDevice();
 	ASSERT(IsAudioDeviceReady());
 	audio->music = LoadMusicStream("audio/soundtrack.mp3");
@@ -255,15 +270,8 @@ void initializeAudio(Audio* audio) {
 	audio->shieldFx = LoadSound("audio/shield.wav");
 	ASSERT(IsSoundValid(audio->shieldFx));
 	PlayMusicStream(audio->music);
-	SetMusicVolume(audio->music, 0.05);
-	SetSoundVolume(audio->hitFx, 0.25);
-	SetSoundVolume(audio->blastFx, 0.10);
-	SetSoundVolume(audio->explosionFx, 0.10);
-	SetSoundVolume(audio->shieldFx, 0.20);
-	SetSoundVolume(audio->cardFx, 0.25);
-	SetSoundVolume(audio->langEn, 0.25);
-	SetSoundVolume(audio->langDe, 0.25);
-	SetSoundVolume(audio->langZh, 0.25);
+	SetMusicVolume(audio->music, options->musicVolume);
+	setFxVolume(audio, options->fxVolume);
 }
 
 void initializeGameState(GameState* gameState) {
@@ -327,6 +335,10 @@ void initializeOptions(Options* options) {
 		.languageChanged = false,
 		.disableCursor = false,
 		.lastMousePos = (Vector2){0,0},
+		.musicVolume = 0.05f,
+		.fxVolume = 0.25f,
+		.musicVolumeChanged = false,
+		.fxVolumeChanged = false,
 	};
 	GuiSetStyle(DEFAULT, TEXT_SIZE, 24);
 	GuiSetStyle(DEFAULT, TEXT_SPACING, 2);
@@ -1001,7 +1013,18 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						case LANG_ZH: PlaySound(audio->langZh); break;
 					}
 				}
-				if (IsKeyPressed(KEY_ESCAPE)) {
+				if (options->musicVolumeChanged) 
+				{
+					SetMusicVolume(audio->music, options->musicVolume);
+					options->musicVolumeChanged = false;
+				}
+				if (options->fxVolumeChanged) 
+				{
+					setFxVolume(audio, options->fxVolume);
+					options->fxVolumeChanged = false;
+				}
+				if (IsKeyPressed(KEY_ESCAPE)) 
+				{
 					gameState->state = gameState->lastState;
 				}
 				break;
@@ -1410,8 +1433,8 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 	Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	draw_text_centered(options->font, T(TXT_GAME_PAUSED), (Vector2){dst.width/2.0f, dst.height/5.0f}, 40, WHITE);
 	// Draw a window box
-	const float boxWidth = 300.0f;
-	const float boxHeight = 250.0f;
+	const float boxWidth = 400.0f;
+	const float boxHeight = 350.0f;
 	const float boxPosX = options->screenWidth/2;
 	const float boxPosY = options->screenHeight/2;
 	GuiWindowBox((Rectangle){boxPosX-boxWidth/2,
@@ -1420,16 +1443,38 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 	// Language label
 	const float labelWidth = 160.0f;
 	const float labelHeight = 100.0f;
-	GuiLabel((Rectangle){ boxPosX-labelWidth/2-boxWidth/6, 
-						  boxPosY-labelHeight/2-boxHeight/6, 
-						  labelWidth, labelHeight}, T(TXT_LANGUAGE));
 	const float buttonWidth = 100;
 	const float buttonHeight = 50;
+	const float sliderWidth = 160;
+	const float sliderHeight = 20;
+	GuiLabel((Rectangle){ boxPosX-labelWidth/2-boxWidth/6, 
+			boxPosY-labelHeight/2-boxHeight/6, 
+			labelWidth, labelHeight}, T(TXT_LANGUAGE));
+	GuiLabel((Rectangle){ boxPosX-labelWidth/2-boxWidth/6, 
+			boxPosY-labelHeight/2-boxHeight/6+1*boxHeight/12, 
+			labelWidth, labelHeight}, T(TXT_MUSICVOLUME));
+	GuiLabel((Rectangle){ boxPosX-labelWidth/2-boxWidth/6, 
+			boxPosY-labelHeight/2-boxHeight/6+2*boxHeight/12, 
+			labelWidth, labelHeight}, T(TXT_FXVOLUME));
 	if (GuiButton((Rectangle){ boxPosX+boxWidth/4-buttonWidth/2, 
 							   boxPosY-buttonHeight/4+boxHeight/6, 
 							   buttonWidth, buttonHeight }, T(TXT_QUIT))) 
 	{
 		shouldExit = true;
+	}
+	// int GuiSliderBar(Rectangle bounds, const char *textLeft, const char *textRight, float *value, float minValue, float maxValue)
+	if (GuiSliderBar((Rectangle){ boxPosX-sliderWidth/2+boxWidth/6, 
+								  boxPosY-sliderHeight/2-boxHeight/6+1*boxHeight/12, 
+							      sliderWidth, sliderHeight }, "0%", "100%", &options->musicVolume, 0.0f, 0.5f)) 
+	{
+		options->musicVolumeChanged = true;
+	}
+	// int GuiSliderBar(Rectangle bounds, const char *textLeft, const char *textRight, float *value, float minValue, float maxValue)
+	if (GuiSliderBar((Rectangle){ boxPosX-sliderWidth/2+boxWidth/6, 
+								  boxPosY-sliderHeight/2-boxHeight/6+2*boxHeight/12, 
+							      sliderWidth, sliderHeight }, "0%", "100%", &options->fxVolume, 0.0f, 0.5f)) 
+	{
+		options->fxVolumeChanged = true;
 	}
 	if (GuiButton((Rectangle){ boxPosX-boxWidth/4-buttonWidth/2, 
 							   boxPosY-buttonHeight/4+boxHeight/6, 
@@ -1610,7 +1655,7 @@ int main() {
 	initializeGameState(&gameState);
 
     atlas = initTextureAtlas(spriteMasks);
-	initializeAudio(&audio);
+	initializeAudio(&audio, &options);
 
 	scene = LoadRenderTexture(options.screenWidth, options.screenHeight);
 	litScene = LoadRenderTexture(options.screenWidth, options.screenHeight);

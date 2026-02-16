@@ -25,6 +25,8 @@ typedef enum {
 	TXT_QUIT,
 	TXT_CONTINUE,
 	TXT_SETTINGS,
+	TXT_MUSICVOLUME,
+	TXT_FXVOLUME,
 	TXT_COUNT
 } TextID;
 
@@ -59,6 +61,8 @@ static const char *gText[LANG_COUNT][TXT_COUNT] = {
 	"Quit",
 	"Continue",
 	"Settings",
+	"Music Volume:",
+	"FX Volume:",
   },
   {
 	"",
@@ -83,6 +87,8 @@ static const char *gText[LANG_COUNT][TXT_COUNT] = {
 	"Beenden",
 	"Fortfahren",
 	"Einstellungen",
+	"Musik Lautstärke:",
+	"FX Lautstärke:",
   },
   {
 	"",
@@ -107,5 +113,7 @@ static const char *gText[LANG_COUNT][TXT_COUNT] = {
 	"辞职 ",
 	"继续 ",
 	"设置",
+	"音乐音量:",
+	"效果音量:",
   },
 };
