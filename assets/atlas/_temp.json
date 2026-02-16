@@ -558,8 +558,152 @@
     "duration": 100
    },
    {
+    "filename": "scrapMetal 0.aseprite",
+    "frame": { "x": 981, "y": 97, "w": 48, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 48 },
+    "sourceSize": { "w": 48, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "scrapMetal 1.aseprite",
+    "frame": { "x": 1030, "y": 97, "w": 48, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 48 },
+    "sourceSize": { "w": 48, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "scrapMetal 2.aseprite",
+    "frame": { "x": 1079, "y": 97, "w": 48, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 48 },
+    "sourceSize": { "w": 48, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "scrapMetal 3.aseprite",
+    "frame": { "x": 1128, "y": 97, "w": 48, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 48 },
+    "sourceSize": { "w": 48, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "scrapMetal 4.aseprite",
+    "frame": { "x": 1177, "y": 97, "w": 48, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 48 },
+    "sourceSize": { "w": 48, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "scrapMetal 5.aseprite",
+    "frame": { "x": 1226, "y": 97, "w": 48, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 48 },
+    "sourceSize": { "w": 48, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "scrapMetal 6.aseprite",
+    "frame": { "x": 1275, "y": 97, "w": 48, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 48 },
+    "sourceSize": { "w": 48, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "scrapMetal 7.aseprite",
+    "frame": { "x": 1324, "y": 97, "w": 48, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 48 },
+    "sourceSize": { "w": 48, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "scrapMetal 8.aseprite",
+    "frame": { "x": 1373, "y": 97, "w": 48, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 48 },
+    "sourceSize": { "w": 48, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "scrapMetal 9.aseprite",
+    "frame": { "x": 1422, "y": 97, "w": 48, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 48 },
+    "sourceSize": { "w": 48, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "scrapMetal 10.aseprite",
+    "frame": { "x": 1471, "y": 97, "w": 48, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 48 },
+    "sourceSize": { "w": 48, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "scrapMetal 11.aseprite",
+    "frame": { "x": 1520, "y": 97, "w": 48, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 48 },
+    "sourceSize": { "w": 48, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "scrapMetal 12.aseprite",
+    "frame": { "x": 1569, "y": 97, "w": 48, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 48 },
+    "sourceSize": { "w": 48, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "scrapMetal 13.aseprite",
+    "frame": { "x": 1618, "y": 97, "w": 48, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 48 },
+    "sourceSize": { "w": 48, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "scrapMetal 14.aseprite",
+    "frame": { "x": 1667, "y": 97, "w": 48, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 48 },
+    "sourceSize": { "w": 48, "h": 48 },
+    "duration": 100
+   },
+   {
+    "filename": "scrapMetal 15.aseprite",
+    "frame": { "x": 1716, "y": 97, "w": 48, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 48 },
+    "sourceSize": { "w": 48, "h": 48 },
+    "duration": 100
+   },
+   {
     "filename": "heart.aseprite",
-    "frame": { "x": 981, "y": 97, "w": 17, "h": 17 },
+    "frame": { "x": 1765, "y": 97, "w": 17, "h": 17 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 17, "h": 17 },
@@ -568,7 +712,7 @@
    },
    {
     "filename": "upgradeMultiShot.aseprite",
-    "frame": { "x": 999, "y": 97, "w": 48, "h": 67 },
+    "frame": { "x": 1783, "y": 97, "w": 48, "h": 67 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 67 },
@@ -577,7 +721,7 @@
    },
    {
     "filename": "upgradeDamage.aseprite",
-    "frame": { "x": 1048, "y": 97, "w": 48, "h": 67 },
+    "frame": { "x": 1832, "y": 97, "w": 48, "h": 67 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 48, "h": 67 },
@@ -586,7 +730,7 @@
    },
    {
     "filename": "bullet 0.aseprite",
-    "frame": { "x": 1097, "y": 97, "w": 32, "h": 48 },
+    "frame": { "x": 1881, "y": 97, "w": 32, "h": 48 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 48 },
@@ -595,7 +739,7 @@
    },
    {
     "filename": "bullet 1.aseprite",
-    "frame": { "x": 1130, "y": 97, "w": 32, "h": 48 },
+    "frame": { "x": 1914, "y": 97, "w": 32, "h": 48 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 48 },
@@ -604,7 +748,7 @@
    },
    {
     "filename": "bullet 2.aseprite",
-    "frame": { "x": 1163, "y": 97, "w": 32, "h": 48 },
+    "frame": { "x": 1947, "y": 97, "w": 32, "h": 48 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 48 },
@@ -613,7 +757,7 @@
    },
    {
     "filename": "bullet 3.aseprite",
-    "frame": { "x": 1196, "y": 97, "w": 32, "h": 48 },
+    "frame": { "x": 1980, "y": 97, "w": 32, "h": 48 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 48 },
@@ -622,7 +766,7 @@
    },
    {
     "filename": "bullet 4.aseprite",
-    "frame": { "x": 1229, "y": 97, "w": 32, "h": 48 },
+    "frame": { "x": 2013, "y": 97, "w": 32, "h": 48 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 48 },
@@ -631,7 +775,7 @@
    },
    {
     "filename": "bullet 5.aseprite",
-    "frame": { "x": 1262, "y": 97, "w": 32, "h": 48 },
+    "frame": { "x": 2046, "y": 97, "w": 32, "h": 48 },
     "rotated": false,
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 48 },
