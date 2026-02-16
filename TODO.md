@@ -3,6 +3,8 @@
 - [ ] make it fun
 - [ ] hot code reloading
 - [ ] add particle effects
+- [ ] savestates
+- [ ] rework sprite system to use arbitrary animation frame position in texture atlas (non-continuous animation sprite sheets in atlas)
 - [x] localisation with different languages
 - [x] try out rayGUI 
 - [x] figure out how to build for web

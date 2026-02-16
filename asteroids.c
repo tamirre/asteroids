@@ -79,7 +79,7 @@ typedef struct Asteroid {
     Vector2 position;
     int health;
     float size;
-    float velocity;
+    Vector2 velocity;
     float angularVelocity;
     float rotation;
     char textureFile[100];
@@ -99,6 +99,7 @@ typedef struct Bullet {
 
 typedef struct Explosion {
     Vector2 position;
+	Vector2 velocity;
     float startTime;
     bool active;
 } Explosion;
@@ -120,8 +121,9 @@ typedef struct Player {
 
 typedef struct Audio {
     Sound hitFx;
-    Sound laserFx;
+    Sound blastFx;
 	Sound cardFx;
+	Sound explosionFx;
 	Sound langEn;
 	Sound langDe;
 	Sound langZh;
@@ -203,11 +205,12 @@ void cleanup(TextureAtlas atlas, Options options, Audio audio, SpriteMask sprite
 	}
 	UnloadMusicStream(audio.music);
 	UnloadSound(audio.hitFx);
-	UnloadSound(audio.laserFx);
+	UnloadSound(audio.blastFx);
 	UnloadSound(audio.cardFx);
 	UnloadSound(audio.langEn);
 	UnloadSound(audio.langDe);
 	UnloadSound(audio.langZh);
+	UnloadSound(audio.explosionFx);
 	CloseAudioDevice();
 }
 
@@ -218,20 +221,23 @@ void initializeAudio(Audio* audio) {
 	ASSERT(IsMusicValid(audio->music));
 	audio->hitFx = LoadSound("audio/hit.wav");
 	ASSERT(IsSoundValid(audio->hitFx));
-	audio->laserFx = LoadSound("audio/laser.wav");
-	ASSERT(IsSoundValid(audio->laserFx));
+	audio->blastFx = LoadSound("audio/laserPowerGunshot.wav");
+	ASSERT(IsSoundValid(audio->blastFx));
 	audio->cardFx = LoadSound("audio/cardSelect.mp3");
-	ASSERT(IsSoundValid(audio->laserFx));
+	ASSERT(IsSoundValid(audio->blastFx));
 	audio->langEn = LoadSound("audio/america.mp3");
 	ASSERT(IsSoundValid(audio->langEn));
 	audio->langDe = LoadSound("audio/erika.mp3");
 	ASSERT(IsSoundValid(audio->langDe));
 	audio->langZh = LoadSound("audio/bingchilling.mp3");
 	ASSERT(IsSoundValid(audio->langZh));
+	audio->explosionFx = LoadSound("audio/explosionBlast.wav");
+	ASSERT(IsSoundValid(audio->explosionFx));
 	PlayMusicStream(audio->music);
 	SetMusicVolume(audio->music, 0.05);
 	SetSoundVolume(audio->hitFx, 0.25);
-	SetSoundVolume(audio->laserFx, 0.25);
+	SetSoundVolume(audio->blastFx, 0.10);
+	SetSoundVolume(audio->explosionFx, 0.10);
 	SetSoundVolume(audio->cardFx, 0.25);
 	SetSoundVolume(audio->langEn, 0.25);
 	SetSoundVolume(audio->langDe, 0.25);
@@ -588,8 +594,8 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						&& gameState->bulletCount <= MAX_BULLETS)
 				{
 
-					PlaySound(audio->laserFx);
-					float bulletSize = 1.0f;
+					PlaySound(audio->blastFx);
+					float bulletSize = 0.5f;
 					if (gameState->player.playerMultishot == true && gameState->bulletCount < MAX_BULLETS-3)
 					{
 						float bulletOffset = 0.0f;
@@ -675,7 +681,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						Asteroid asteroid = {
 							.position = (Vector2) {asteroidXPosition, 0},
 							.health = (int) (size+1.0) * 2.0,
-							.velocity = GetRandomValue(30.0f, 65.0f) * 5.0f / (float)size,
+							.velocity = (Vector2) {0, GetRandomValue(30.0f, 65.0f) * 5.0f / (float)size},
 							.angularVelocity = GetRandomValue(-40.0f, 40.0f),
 							.size = size,
 							.rotation = GetRandomValue(0.0f, 360.0f),
@@ -700,7 +706,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 					for (int asteroidIndex = 0; asteroidIndex < gameState->asteroidCount; asteroidIndex++)
 					{
 						Asteroid* asteroid = &gameState->asteroids[asteroidIndex];
-						asteroid->position.y += asteroid->velocity * dt;
+						asteroid->position.y += asteroid->velocity.y * dt;
 						asteroid->rotation   += asteroid->angularVelocity * dt;
 						float width  = asteroid->sprite.coords.width * asteroid->size;
 						float height = asteroid->sprite.coords.height * asteroid->size;
@@ -723,10 +729,14 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 											bulletSrc.height, asteroid->sprite.coords.height,
 											bullet->collider, asteroid->collider, collisionRec, bullet->rotation, asteroid->rotation))
 								{
-									Explosion* e = &gameState->explosions[gameState->explosionCount++];
-									e->position = bullet->position;
-									e->startTime = GetTime();
-									e->active = true;
+
+									PlaySound(audio->explosionFx);
+									Explosion* explosion = &gameState->explosions[gameState->explosionCount++];
+									explosion->position = bullet->position;
+									explosion->position.y -= bulletSrc.height/2.0f;
+									explosion->velocity = asteroid->velocity;
+									explosion->startTime = GetTime();
+									explosion->active = true;
 
 									// Replace with bullet with last bullet
 									*bullet = gameState->bullets[--gameState->bulletCount];
@@ -735,10 +745,12 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 									{
 										gameState->experience += MAX((int)(asteroid->size * 100),1);
 										*asteroid = gameState->asteroids[--gameState->asteroidCount];
+										explosion->velocity.y = 0.0f;
 									}
 								}
 							}
 						}
+
 						float playerWidth = gameState->player.sprite.coords.width/gameState->player.animationFrames * gameState->player.size;
 						float playerHeight = gameState->player.sprite.coords.height * gameState->player.size;
 						Rectangle playerRec = {
@@ -784,6 +796,13 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 							*asteroid = gameState->asteroids[--gameState->asteroidCount];
 						}
 					}
+					// Update explosions
+					for (int explosionIndex = 0; explosionIndex < gameState->explosionCount; explosionIndex++)
+					{
+						Explosion* explosion = &gameState->explosions[explosionIndex];
+						explosion->position.y += explosion->velocity.y * dt;
+					}
+
 				}
 
 				if (IsKeyPressed(KEY_ESCAPE)) {
@@ -980,7 +999,36 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_BULLET]], bulletRec, (Vector2){0, 0}, bullet->rotation, WHITE, shader);
 						// DrawRectangleLines(bulletRec.x, bulletRec.y, bulletRec.width, bulletRec.height, RED);
 					}
+				}
+				// Draw asteroids
+				{
+					for (int asteroidIndex = 0; asteroidIndex < gameState->asteroidCount; asteroidIndex++)
+					{
+						Asteroid* asteroid = &gameState->asteroids[asteroidIndex];
+						float width = asteroid->sprite.coords.width * asteroid->size;
+						float height = asteroid->sprite.coords.height * asteroid->size;
+						Rectangle asteroidDrawRect = {
+							.x = asteroid->position.x,
+							.y = asteroid->position.y, 
+							.width = width,
+							.height = height, 
+						};
+
+						Vector2 texSize = { width, height };
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
+								(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
+						// DrawRectangleLines(asteroid->collider.x, asteroid->collider.y, 
+						// 		asteroid->collider.width, asteroid->collider.height, GREEN);
+						// DrawRectangleLines(asteroidDrawRect.x, asteroidDrawRect.y,
+						// 		asteroidDrawRect.width, asteroidDrawRect.height, GREEN);
+					}
+				}
+
+				// Draw explosions
+				{
 					Sprite sprite = getSprite(SPRITE_EXPLOSION);
+					atlas->animations[SpriteToAnimation[SPRITE_EXPLOSION]].framesPerSecond = 14;
 					float width  = sprite.coords.width / sprite.numFrames;
 					float height = sprite.coords.height;
 					for (int i = 0; i < gameState->explosionCount; i++)
@@ -1008,30 +1056,6 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 
 						if (finished)
 							e->active = false;
-					}
-				}
-				// Draw asteroids
-				{
-					for (int asteroidIndex = 0; asteroidIndex < gameState->asteroidCount; asteroidIndex++)
-					{
-						Asteroid* asteroid = &gameState->asteroids[asteroidIndex];
-						float width = asteroid->sprite.coords.width * asteroid->size;
-						float height = asteroid->sprite.coords.height * asteroid->size;
-						Rectangle asteroidDrawRect = {
-							.x = asteroid->position.x,
-							.y = asteroid->position.y, 
-							.width = width,
-							.height = height, 
-						};
-
-						Vector2 texSize = { width, height };
-						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
-						DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
-								(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
-						// DrawRectangleLines(asteroid->collider.x, asteroid->collider.y, 
-						// 		asteroid->collider.width, asteroid->collider.height, GREEN);
-						// DrawRectangleLines(asteroidDrawRect.x, asteroidDrawRect.y,
-						// 		asteroidDrawRect.width, asteroidDrawRect.height, GREEN);
 					}
 				}
 				// Draw Player
