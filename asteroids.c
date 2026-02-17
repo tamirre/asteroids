@@ -956,7 +956,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 							.velocity = (Vector2) {0, GetRandomValue(30.0f, 65.0f) * 5.0f / (float)size},
 							// .angularVelocity = GetRandomValue(-40.0f, 40.0f),
 							.angularVelocity = 0.0f,
-							.size = 1.0f,
+							.size = 2.0f,
 							// .rotation = GetRandomValue(0.0f, 360.0f),
 							.rotation = 0.0f,
 						};
@@ -1000,9 +1000,10 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						{
 							Rectangle collisionRec = GetCollisionRec(boost->collider, playerRec);
 							Rectangle playerSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_PLAYER]]);
+							Rectangle boostSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_SCRAPMETAL]]);
 							if (pixelPerfectCollision(spriteMasks[SPRITE_PLAYER].pixels, spriteMasks[boost->sprite.spriteID].pixels, 
-										playerSrc.width, boost->sprite.coords.width,
-										playerSrc.height, boost->sprite.coords.height, 
+										playerSrc.width, boostSrc.width,
+										playerSrc.height, boostSrc.height,
 										playerRec, boost->collider, collisionRec, 0.0f, boost->rotation))
 							{
 								*boost = gameState->boosts[--gameState->boostCount];
