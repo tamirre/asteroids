@@ -284,7 +284,7 @@ void initializeGameState(GameState* gameState) {
         .asteroidSpawnRate = 0.2f,
         .boostCount = 0,
         .boostSpawnTime = 0.0f,
-        .boostSpawnRate = 15.0f,
+        .boostSpawnRate = 1.0f,
         .spawnTime = 0.0,
         .experience = 1000,
         .starCount = 0,
@@ -452,6 +452,45 @@ bool pixelPerfectCollision(
     return false;
 }
 
+Rectangle GetScaledViewport(int winW, int winH)
+{
+    float scale = fminf(
+        (float)winW / VIRTUAL_WIDTH,
+        (float)winH / VIRTUAL_HEIGHT
+    );
+
+    float w = VIRTUAL_WIDTH  * scale;
+    float h = VIRTUAL_HEIGHT * scale;
+
+    return (Rectangle){
+        (winW - w) / 2.0f,
+        (winH - h) / 2.0f,
+        w,
+        h
+    };
+}
+
+void HandleResize(Options* options)
+{
+	float* previousWidth = &options->previousWidth;
+	float* previousHeight = &options->previousHeight;
+	int width  = GetRenderWidth();
+	int height = GetRenderHeight();
+	if (width != *previousWidth || height != *previousHeight) 
+	{
+		float aspect = (float)VIRTUAL_WIDTH / VIRTUAL_HEIGHT;
+		height = (int)(width / aspect); // adjust height to maintain ratio
+
+		if (width < MIN_SCREEN_WIDTH || height < MIN_SCREEN_HEIGHT) {
+			width  = width  < MIN_SCREEN_WIDTH ? MIN_SCREEN_WIDTH : width;
+			height = height < MIN_SCREEN_HEIGHT ? MIN_SCREEN_HEIGHT: height;
+		}
+		options->screenWidth = width;
+		options->screenHeight = height;
+		SetWindowSize(width, height);
+	}
+}
+
 void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, SpriteMask spriteMasks[], Audio* audio, float dt)
 {
 	static bool cursorHidden = true;
@@ -477,13 +516,31 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 #ifndef PLATFORM_WEB
 				if (IsKeyPressed(KEY_F)) 
 				{
-					options->previousWidth = options->screenWidth;
-					options->previousHeight = options->screenHeight;
+					options->previousWidth = GetRenderWidth();
+					options->previousHeight = GetRenderHeight();
+					// printf("Previous width: %f\n", options->previousWidth);
+					// printf("Previous height: %f\n", options->previousHeight);
 					ToggleFullscreen();
+					SetWindowSize(options->screenWidth, options->screenHeight);
 					// options->screenWidth = GetRenderWidth();
 					// options->screenHeight = GetRenderHeight();
-					options->screenWidth = GetScreenWidth();
-					options->screenHeight = GetScreenHeight();
+					// Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+					// options->screenWidth = dst.width;
+					// options->screenHeight = dst.height;
+					// options->previousWidth = GetScreenWidth();
+					// options->previousHeight = GetScreenHeight();
+					int monitor = GetCurrentMonitor();
+					int monitorWidth = GetMonitorWidth(monitor);
+					int monitorHeight = GetMonitorHeight(monitor);
+					options->screenWidth = monitorWidth;
+					options->screenHeight = monitorHeight;
+					// printf("Monitor width: %d\n", monitorWidth);
+					// printf("Monitor height: %d\n", monitorHeight);
+					// printf("New width: %f\n", options->screenWidth);
+					// printf("New height: %f\n", options->screenHeight);
+					// gameState->player.playerPosition.x -= abs(monitorWidth-options->screenWidth);
+					// gameState->player.playerPosition.y -= abs(monitorHeight-options->screenHeight);
+
 				}
 #endif
 				if (IsKeyPressed(KEY_V)) {
@@ -1058,44 +1115,6 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 	}
 }
 
-Rectangle GetScaledViewport(int winW, int winH)
-{
-    float scale = fminf(
-        (float)winW / VIRTUAL_WIDTH,
-        (float)winH / VIRTUAL_HEIGHT
-    );
-
-    float w = VIRTUAL_WIDTH  * scale;
-    float h = VIRTUAL_HEIGHT * scale;
-
-    return (Rectangle){
-        (winW - w) / 2.0f,
-        (winH - h) / 2.0f,
-        w,
-        h
-    };
-}
-
-void HandleResize(Options* options)
-{
-	float* previousWidth = &options->previousWidth;
-	float* previousHeight = &options->previousHeight;
-	int width  = GetRenderWidth();
-	int height = GetRenderHeight();
-	if (width != *previousWidth || height != *previousHeight) 
-	{
-		float aspect = (float)VIRTUAL_WIDTH / VIRTUAL_HEIGHT;
-		height = (int)(width / aspect); // adjust height to maintain ratio
-
-		if (width < MIN_SCREEN_WIDTH || height < MIN_SCREEN_HEIGHT) {
-			width  = width  < MIN_SCREEN_WIDTH ? MIN_SCREEN_WIDTH : width;
-			height = height < MIN_SCREEN_HEIGHT ? MIN_SCREEN_HEIGHT: height;
-		}
-		options->screenWidth = width;
-		options->screenHeight = height;
-		SetWindowSize(width, height);
-	}
-}
 
 void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, RenderTexture2D* scene, Shader shader)
 {
@@ -1564,8 +1583,17 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 					char shieldText[100] = {0};
 					const float textSize = 18.0f;
 					sprintf(shieldText, "%.2f", gameState->player.shieldTime);
-					Vector2 position = gameState->player.playerPosition;
-					position.y -= gameState->player.sprite.coords.height * gameState->player.size / 2.0f + textSize;
+					float playerWidth = gameState->player.sprite.coords.width/gameState->player.animationFrames * gameState->player.size;
+					float playerHeight = gameState->player.sprite.coords.height * gameState->player.size;
+					Rectangle playerRec = {
+						.width = playerWidth,
+						.height =  playerHeight,
+						.x = gameState->player.playerPosition.x - playerWidth/2.0f,
+						.y = gameState->player.playerPosition.y - playerHeight/2.0f,
+					};
+					// Vector2 position = gameState->player.playerPosition;
+					Vector2 position = (Vector2) {playerRec.x + playerRec.width/2.0f, playerRec.y};
+					position.y -= textSize;
 					position.x -= MeasureTextEx(options->font, shieldText, textSize, GetDefaultSpacing(textSize)).x / 2.0f;
 					if (gameState->player.shieldTime > 2.0f)
 					{
@@ -1684,10 +1712,10 @@ int main() {
 
 	ConfigFlags configFlags = FLAG_WINDOW_RESIZABLE | 
 		                      FLAG_VSYNC_HINT | 
-							  FLAG_BORDERLESS_WINDOWED_MODE | 
+							  FLAG_BORDERLESS_WINDOWED_MODE;
 							  // FLAG_WINDOW_TOPMOST | 
 							  // FLAG_FULLSCREEN_MODE |
-							  FLAG_WINDOW_UNDECORATED;
+							  // FLAG_WINDOW_UNDECORATED;
 	SetConfigFlags(configFlags);
 	gameState.player.playerPosition = (Vector2){options.screenWidth / 2.0f, options.screenHeight / 2.0f};
 
