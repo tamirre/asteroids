@@ -3,6 +3,7 @@
 - [ ] add particle effects
 - [ ] hot code reloading
 - [ ] savestates
+- [ ] add enemies that do more interesting actions, e.g. chase player while dodging bullets/asteroids
 - [ ] rework sprite system to use arbitrary animation frame position in texture atlas (non-continuous animation sprite sheets in atlas)
 - [ ] make it fun
 - [x] add collectable upgrades for boosts, e.g. shields

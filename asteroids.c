@@ -518,32 +518,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 #ifndef PLATFORM_WEB
 				if (IsKeyPressed(KEY_F)) 
 				{
-					// options->previousWidth = GetRenderWidth();
-					// options->previousHeight = GetRenderHeight();
-					// printf("Previous width: %f\n", options->previousWidth);
-					// printf("Previous height: %f\n", options->previousHeight);
 					ToggleFullscreen();
-					// SetWindowSize(options->screenWidth, options->screenHeight);
-					// options->screenWidth = GetRenderWidth();
-					// options->screenHeight = GetRenderHeight();
-					// Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
-					// options->screenWidth = dst.width;
-					// options->screenHeight = dst.height;
-					// options->previousWidth = GetScreenWidth();
-					// options->previousHeight = GetScreenHeight();
-					// int monitor = GetCurrentMonitor();
-					// int monitorWidth = GetMonitorWidth(monitor);
-					// int monitorHeight = GetMonitorHeight(monitor);
-					// options->screenWidth = monitorWidth;
-					// options->screenHeight = monitorHeight;
-					// SetWindowSize(options->screenWidth, options->screenHeight);
-					// printf("Monitor width: %d\n", monitorWidth);
-					// printf("Monitor height: %d\n", monitorHeight);
-					// printf("New width: %f\n", options->screenWidth);
-					// printf("New height: %f\n", options->screenHeight);
-					// gameState->player.playerPosition.x -= abs(monitorWidth-options->screenWidth);
-					// gameState->player.playerPosition.y -= abs(monitorHeight-options->screenHeight);
-
 				}
 #endif
 				if (IsKeyPressed(KEY_V)) {
