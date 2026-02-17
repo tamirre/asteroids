@@ -487,7 +487,7 @@ void HandleResize(Options* options)
 		}
 		options->screenWidth = width;
 		options->screenHeight = height;
-		SetWindowSize(width, height);
+		// SetWindowSize(width, height);
 	}
 }
 
@@ -496,6 +496,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 	static bool cursorHidden = true;
 	static bool stepMode = false;
 	static bool stepOnce = false;
+	const Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 
 	switch (gameState->state) 
 	{
@@ -508,6 +509,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 			}
 		case STATE_RUNNING:
 			{
+				float viewportScale = viewport.width / VIRTUAL_WIDTH;
 				if (!IsMusicStreamPlaying(audio->music)) ResumeMusicStream(audio->music);
 				// Step debugging mode
 				if (IsKeyPressed(KEY_J)) stepMode = !stepMode;
@@ -516,12 +518,12 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 #ifndef PLATFORM_WEB
 				if (IsKeyPressed(KEY_F)) 
 				{
-					options->previousWidth = GetRenderWidth();
-					options->previousHeight = GetRenderHeight();
+					// options->previousWidth = GetRenderWidth();
+					// options->previousHeight = GetRenderHeight();
 					// printf("Previous width: %f\n", options->previousWidth);
 					// printf("Previous height: %f\n", options->previousHeight);
 					ToggleFullscreen();
-					SetWindowSize(options->screenWidth, options->screenHeight);
+					// SetWindowSize(options->screenWidth, options->screenHeight);
 					// options->screenWidth = GetRenderWidth();
 					// options->screenHeight = GetRenderHeight();
 					// Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
@@ -529,11 +531,12 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 					// options->screenHeight = dst.height;
 					// options->previousWidth = GetScreenWidth();
 					// options->previousHeight = GetScreenHeight();
-					int monitor = GetCurrentMonitor();
-					int monitorWidth = GetMonitorWidth(monitor);
-					int monitorHeight = GetMonitorHeight(monitor);
-					options->screenWidth = monitorWidth;
-					options->screenHeight = monitorHeight;
+					// int monitor = GetCurrentMonitor();
+					// int monitorWidth = GetMonitorWidth(monitor);
+					// int monitorHeight = GetMonitorHeight(monitor);
+					// options->screenWidth = monitorWidth;
+					// options->screenHeight = monitorHeight;
+					// SetWindowSize(options->screenWidth, options->screenHeight);
 					// printf("Monitor width: %d\n", monitorWidth);
 					// printf("Monitor height: %d\n", monitorHeight);
 					// printf("New width: %f\n", options->screenWidth);
@@ -556,8 +559,8 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 				stepOnce = false;
 
 				const Rectangle screenRect = {
-					.height = options->screenHeight,
-					.width = options->screenWidth,
+					.height = viewport.height,
+					.width = viewport.width,
 					.x = 0,
 					.y = 0
 				};
@@ -660,40 +663,40 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 					gameState->player.invulTime -= dt;
 				}
 
-				float screenWidth = VIRTUAL_WIDTH;
-				float screenHeight = VIRTUAL_HEIGHT;
+				// float screenWidth = VIRTUAL_WIDTH;
+				// float screenHeight = VIRTUAL_HEIGHT;
 				if (IsKeyDown(KEY_W)) {
-					if(!CheckCollisionPointLine(gameState->player.playerPosition, 
+					if(!CheckCollisionPointLine((Vector2) {gameState->player.playerPosition.x * viewportScale, gameState->player.playerPosition.y * viewportScale},
 								                (Vector2) {0, 0}, 
-												(Vector2) {screenWidth, 0}, 
-												gameState->player.sprite.coords.height))
+												(Vector2) {viewport.width, 0},
+												gameState->player.sprite.coords.height * viewportScale))
 					{
 						gameState->player.playerPosition.y -= gameState->player.playerVelocity * dt;
 					}   
 				}
 				if (IsKeyDown(KEY_S)) {
-					if(!CheckCollisionPointLine(gameState->player.playerPosition, 
-								                (Vector2) {0, screenHeight}, 
-												(Vector2) {screenWidth, screenHeight}, 
-												gameState->player.sprite.coords.height))
+					if(!CheckCollisionPointLine((Vector2) {gameState->player.playerPosition.x * viewportScale, gameState->player.playerPosition.y * viewportScale},
+								                (Vector2) {0, viewport.height},
+												(Vector2) {viewport.width, viewport.height},
+												gameState->player.sprite.coords.height * viewportScale))
 					{
 						gameState->player.playerPosition.y += gameState->player.playerVelocity * dt;
 					}
 				}
 				if (IsKeyDown(KEY_A)) {
-					if(!CheckCollisionPointLine(gameState->player.playerPosition, 
+					if(!CheckCollisionPointLine((Vector2) {gameState->player.playerPosition.x * viewportScale, gameState->player.playerPosition.y * viewportScale},
 								                (Vector2) {0, 0}, 
-												(Vector2) {0, screenHeight}, 
-												gameState->player.sprite.coords.width/gameState->player.animationFrames))
+												(Vector2) {0, viewport.height},
+												gameState->player.sprite.coords.width / gameState->player.animationFrames * viewportScale))
 					{
 						gameState->player.playerPosition.x -= gameState->player.playerVelocity * dt;
 					}
 				}
 				if (IsKeyDown(KEY_D)) {
-					if(!CheckCollisionPointLine(gameState->player.playerPosition, 
-												(Vector2) {screenWidth, 0}, 
-												(Vector2) {screenWidth, screenHeight}, 
-												gameState->player.sprite.coords.width/gameState->player.animationFrames))
+					if(!CheckCollisionPointLine((Vector2) {gameState->player.playerPosition.x * viewportScale, gameState->player.playerPosition.y * viewportScale},
+												(Vector2) {viewport.width, 0},
+												(Vector2) {viewport.width, viewport.height},
+												gameState->player.sprite.coords.width / gameState->player.animationFrames * viewportScale))
 					{
 						gameState->player.playerPosition.x += gameState->player.playerVelocity * dt;
 					}
@@ -800,7 +803,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						// float size = 1.0f;
 						float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
 						float minSpawnDistance = 50.0f * size;  
-						float asteroidXPosition = MAX(minSpawnDistance, GetRandomValue(0, options->screenWidth)); 
+						float asteroidXPosition = MAX(minSpawnDistance, GetRandomValue(0, viewport.width));
 						Asteroid asteroid =
 						{
 							.position = (Vector2) {asteroidXPosition, 0},
@@ -890,8 +893,8 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						};
 						// DrawRectangleLinesEx(playerRec, 1.0, BLUE);
 						Rectangle screenRectExtended = {
-							.width = options->screenWidth + asteroid->sprite.coords.width,
-							.height = options->screenHeight + asteroid->sprite.coords.height,
+							.width = viewport.width + asteroid->sprite.coords.width,
+							.height = viewport.height + asteroid->sprite.coords.height,
 							.x = 0.0,
 							.y = asteroid->position.y, // to make them scroll into screen smoothly
 						};
@@ -922,7 +925,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 							}
 						}
 						// Check if asteroid is off-screen
-						if (asteroid->position.y > options->screenHeight + asteroid->sprite.coords.height * asteroid->size)
+						if (asteroid->position.y > viewport.height + asteroid->sprite.coords.height * asteroid->size)
 						{
 							*asteroid = gameState->asteroids[--gameState->asteroidCount];
 						}
@@ -947,7 +950,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
 						// float size = 1.0f;
 						float minSpawnDistance = 50.0f * size;  
-						float boostXPosition = MAX(minSpawnDistance, GetRandomValue(0, options->screenWidth)); 
+						float boostXPosition = MAX(minSpawnDistance, GetRandomValue(0, viewport.width));
 						Boost boost = {
 							.position = (Vector2) {boostXPosition, 0},
 							.velocity = (Vector2) {0, GetRandomValue(30.0f, 65.0f) * 5.0f / (float)size},
@@ -981,7 +984,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 							.height = height, 
 						};
 						// Check if boost is off-screen
-						if (boost->position.y > options->screenHeight + boost->sprite.coords.height * boost->size)
+						if (boost->position.y > viewport.height + boost->sprite.coords.height * boost->size)
 						{
 							*boost = gameState->boosts[--gameState->boostCount];
 						}
@@ -1079,7 +1082,6 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 					initializeGameState(gameState);
 					initializeOptions(options);
 					gameState->state = STATE_RUNNING;
-					// gameState->player.playerPosition = (Vector2){options->screenWidth / 2.0f, options->screenHeight / 2.0f};
 				}
 				break;
 			}
@@ -1121,13 +1123,6 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 	int texSizeLoc = GetShaderLocation(shader, "textureSize");
 	BeginTextureMode(*scene);
 
-	const Rectangle screenRect = {
-		.height = options->screenHeight,
-		.width = options->screenWidth,
-		.x = 0,
-		.y = 0
-	};
-
 	switch (gameState->state) {
 		case STATE_MAIN_MENU:
 			{
@@ -1143,11 +1138,6 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					for (int starIndex = 0; starIndex < gameState->starCount; starIndex++)
 					{
 						Star* star = &gameState->stars[starIndex];
-						if(!CheckCollisionPointRec(star->position, screenRect))
-						{
-							// Replace with last star
-							*star = gameState->stars[--gameState->starCount];
-						}
 
 						const int texture_x = star->position.x - star->sprite.coords.width / 2.0 * star->size;
 						const int texture_y = star->position.y - star->sprite.coords.height / 2.0 * star->size;
@@ -1282,6 +1272,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, shader);
 					}
 				}
+				// DrawCircleV(gameState->player.playerPosition, 8.0f, GREEN);
 				// DrawRectangleLines(playerDestination.x, playerDestination.y, playerDestination.width, playerDestination.height, BLUE);
 				
 				// Draw shield
@@ -1313,11 +1304,12 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 
 void DrawLightmap(GameState* gameState, Options* options, RenderTexture2D* litScene, Shader lightShader)
 {
+	const Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	int uLightPos = GetShaderLocation(lightShader, "lightPos");
 	int uLightRadius = GetShaderLocation(lightShader, "lightRadius");
 	int uAspect = GetShaderLocation(lightShader, "aspect");
 	float lightRadius = 0.1f;  // normalized radius
-	float aspect = (float)options->screenWidth / (float)options->screenHeight;
+	float aspect = (float)viewport.width / (float)viewport.height;
 	SetShaderValueTexture(lightShader, GetShaderLocation(lightShader, "lightTexture"), litScene->texture);
 	SetShaderValue(lightShader, uLightRadius, &lightRadius, SHADER_UNIFORM_FLOAT);
 	SetShaderValue(lightShader, uAspect, &aspect, SHADER_UNIFORM_FLOAT);
@@ -1332,13 +1324,13 @@ void DrawLightmap(GameState* gameState, Options* options, RenderTexture2D* litSc
 
 	for (int i = 0; i < gameState->bulletCount; i++) {
 		// convert pixel -> normalized UV (0–1)
-		lights[lc].x = gameState->bullets[i].position.x / (float)options->screenWidth;
-		lights[lc].y = 1.0f - gameState->bullets[i].position.y / (float)options->screenHeight;
+		lights[lc].x = gameState->bullets[i].position.x / (float)viewport.width;
+		lights[lc].y = 1.0f - gameState->bullets[i].position.y / (float)viewport.height;
 		lc++;
 	}
 
-	lights[lc].x = gameState->player.playerPosition.x / (float)options->screenWidth;
-	lights[lc].y = 1.0f - gameState->player.playerPosition.y / (float)options->screenHeight;
+	lights[lc].x = gameState->player.playerPosition.x / (float)viewport.width;
+	lights[lc].y = 1.0f - gameState->player.playerPosition.y / (float)viewport.height;
 	lc++;
 	// Upload array
 	SetShaderValue(lightShader, uLightCount, &lc, SHADER_UNIFORM_INT);
@@ -1484,8 +1476,8 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 
 void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 {
-	Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
-	draw_text_centered(options->font, T(TXT_GAME_PAUSED), (Vector2){dst.width/2.0f, dst.height/5.0f}, 40, WHITE);
+	const Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+	draw_text_centered(options->font, T(TXT_GAME_PAUSED), (Vector2){viewport.width/2.0f, viewport.height/5.0f}, 40, WHITE);
 	// Draw a window box
 	const float boxWidth = 475.0f;
 	const float boxHeight = 350.0f;
@@ -1571,30 +1563,26 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 
 void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 {
-	Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	switch (gameState->state) {
 		case STATE_RUNNING:
 			{
 				DrawHealthBar(gameState, options, atlas);
 				DrawScore(gameState, options, atlas);
-				DrawCircleV(gameState->player.playerPosition, 5.0f, RED);
+				float scale = viewport.width/VIRTUAL_WIDTH;
+				const int texture_x = gameState->player.playerPosition.x * scale;
+				const int texture_y = (gameState->player.playerPosition.y - gameState->player.sprite.coords.height * gameState->player.size / 2.0) * scale;
+				// DrawCircleV(gameState->player.playerPosition, 5.0f, RED);
+				// DrawCircleV((Vector2){texture_x, texture_y}, 5.0f, RED);
 				if (gameState->player.shieldEnabled)
 				{
 					char shieldText[100] = {0};
 					const float textSize = 18.0f;
 					sprintf(shieldText, "%.2f", gameState->player.shieldTime);
-					float playerWidth = gameState->player.sprite.coords.width/gameState->player.animationFrames * gameState->player.size;
-					float playerHeight = gameState->player.sprite.coords.height * gameState->player.size;
-					Rectangle playerRec = {
-						.width = playerWidth,
-						.height =  playerHeight,
-						.x = gameState->player.playerPosition.x - playerWidth/2.0f,
-						.y = gameState->player.playerPosition.y - playerHeight/2.0f,
-					};
-					// Vector2 position = gameState->player.playerPosition;
-					Vector2 position = (Vector2) {playerRec.x + playerRec.width/2.0f, playerRec.y};
+					Vector2 position = (Vector2) {texture_x, texture_y};
 					position.y -= textSize;
 					position.x -= MeasureTextEx(options->font, shieldText, textSize, GetDefaultSpacing(textSize)).x / 2.0f;
+					// DrawCircleV(position, 10.0f, WHITE);
 					if (gameState->player.shieldTime > 2.0f)
 					{
 						DrawTextEx(options->font, shieldText, position, textSize, 0, WHITE);
@@ -1611,14 +1599,14 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 			{
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
-				draw_text_centered(options->font, T(TXT_GAME_TITLE), (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, WHITE);
-				draw_text_centered(options->font, T(TXT_PRESS_TO_PLAY), (Vector2){dst.width/2.0f, dst.height/2.0f + 30}, 20, WHITE);
-				draw_text_centered(options->font, T(TXT_INSTRUCTIONS), (Vector2){dst.width/2.0f, dst.height/2.0f + 50}, 20, WHITE);
-				draw_text_centered(options->font, "v0.1", (Vector2){dst.width/2.0f, dst.height - 15}, 15, WHITE);
+				draw_text_centered(options->font, T(TXT_GAME_TITLE), (Vector2){viewport.width/2.0f, viewport.height/2.0f}, 40, WHITE);
+				draw_text_centered(options->font, T(TXT_PRESS_TO_PLAY), (Vector2){viewport.width/2.0f, viewport.height/2.0f + 30}, 20, WHITE);
+				draw_text_centered(options->font, T(TXT_INSTRUCTIONS), (Vector2){viewport.width/2.0f, viewport.height/2.0f + 50}, 20, WHITE);
+				draw_text_centered(options->font, "v0.1", (Vector2){viewport.width/2.0f, viewport.height - 15}, 15, WHITE);
 
 				// char testBuffer[2048] = {0};
 				// TWrap(testBuffer, 2048, options->font, "This is a test of the text wrapping function.", 50.0, 20.0);
-				// draw_text_centered(options->font, testBuffer, (Vector2){dst.width/2.0f, dst.height - 100}, 15, WHITE);
+				// draw_text_centered(options->font, testBuffer, (Vector2){viewport.width/2.0f, viewport.height - 100}, 15, WHITE);
 				//
 				// DrawTextWrapped(options->font, "This is a test of the text wrapping function. This should also be aligned to the center", testBuffer, 2048,
 				// 				(Vector2){50,60},
@@ -1639,11 +1627,11 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 			{
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
-				draw_text_centered(options->font, T(TXT_GAME_OVER), (Vector2){dst.width/2.0f, dst.height/2.0f}, 40, WHITE);
+				draw_text_centered(options->font, T(TXT_GAME_OVER), (Vector2){viewport.width/2.0f, viewport.height/2.0f}, 40, WHITE);
 				char scoreText[100] = {0};
 				sprintf(scoreText, "Final score: %d", gameState->experience);
-				draw_text_centered(options->font, scoreText, (Vector2){dst.width/2.0f, dst.height/2.0f + 30.0f}, 20.0f, WHITE);
-				draw_text_centered(options->font, T(TXT_TRY_AGAIN), (Vector2){dst.width/2.0f, dst.height/2.0f + 60.0f}, 20.0f, WHITE);
+				draw_text_centered(options->font, scoreText, (Vector2){viewport.width/2.0f, viewport.height/2.0f + 30.0f}, 20.0f, WHITE);
+				draw_text_centered(options->font, T(TXT_TRY_AGAIN), (Vector2){viewport.width/2.0f, viewport.height/2.0f + 60.0f}, 20.0f, WHITE);
 				break;
 			}
 		case STATE_UPGRADE:
@@ -1673,7 +1661,7 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 
 void DrawComposite(RenderTexture2D* scene, Options* options, RenderTexture2D* litScene, GameState* gameState, Shader lightShader)
 {
-    Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+    Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
     Rectangle src = {
         0, 0,
         (float)scene->texture.width,
@@ -1681,7 +1669,7 @@ void DrawComposite(RenderTexture2D* scene, Options* options, RenderTexture2D* li
     };
 
     if (!options->disableShaders) BeginShaderMode(lightShader);
-    DrawTexturePro(scene->texture, src, dst, (Vector2){0, 0}, 0, WHITE);
+    DrawTexturePro(scene->texture, src, viewport, (Vector2){0, 0}, 0, WHITE);
     if (!options->disableShaders) EndShaderMode();
 }
 
