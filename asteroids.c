@@ -1122,7 +1122,8 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					}
 				}
 
-				// if(!options->disableShaders) BeginShaderMode(shader);
+				// if(!options->disableShaders) 
+				BeginShaderMode(shader);
 				// Draw Bullets
 				{
 					for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
@@ -1235,31 +1236,34 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					}
 				}
 				// Draw Player
-				const int texture_x = gameState->player.playerPosition.x - gameState->player.sprite.coords.width * gameState->player.size / gameState->player.animationFrames / 2.0;
-				const int texture_y = gameState->player.playerPosition.y - gameState->player.sprite.coords.height * gameState->player.size / 2.0;
-				Rectangle playerDestination = {texture_x, texture_y, 
-					gameState->player.sprite.coords.width / gameState->player.animationFrames * gameState->player.size, 
-					gameState->player.sprite.coords.height * gameState->player.size}; // origin in coordinates and scale
-				Vector2 origin = {0, 0}; // so it draws from top left of image
-				if (gameState->player.invulTime <= 0.0f) {
-					DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, shader);
-				} else {
-					if (((int)(gameState->player.invulTime * 10)) % 2 == 0) {
+				{
+					const int texture_x = gameState->player.playerPosition.x - gameState->player.sprite.coords.width * gameState->player.size / gameState->player.animationFrames / 2.0;
+					const int texture_y = gameState->player.playerPosition.y - gameState->player.sprite.coords.height * gameState->player.size / 2.0;
+					Rectangle playerDestination = {texture_x, texture_y, 
+						gameState->player.sprite.coords.width / gameState->player.animationFrames * gameState->player.size, 
+						gameState->player.sprite.coords.height * gameState->player.size}; // origin in coordinates and scale
+					Vector2 origin = {0, 0}; // so it draws from top left of image
+					if (gameState->player.invulTime <= 0.0f) {
 						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, shader);
+					} else {
+						if (((int)(gameState->player.invulTime * 10)) % 2 == 0) {
+							DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, shader);
+						}
+					}
+					// DrawCircleV(gameState->player.playerPosition, 8.0f, GREEN);
+					// DrawRectangleLines(playerDestination.x, playerDestination.y, playerDestination.width, playerDestination.height, BLUE);
+
+					// Draw shield
+					if (gameState->player.shieldEnabled)
+					{
+						atlas->animations[SpriteToAnimation[SPRITE_SHIELD]].framesPerSecond = 14;
+						Vector2 texSize = { getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.width / getSprite(SpriteToAnimation[SPRITE_SHIELD]).numFrames, 
+							getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.height };
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_SHIELD]], playerDestination, origin, 0, WHITE, shader);
 					}
 				}
-				// DrawCircleV(gameState->player.playerPosition, 8.0f, GREEN);
-				// DrawRectangleLines(playerDestination.x, playerDestination.y, playerDestination.width, playerDestination.height, BLUE);
-				
-				// Draw shield
-				if (gameState->player.shieldEnabled)
-				{
-					atlas->animations[SpriteToAnimation[SPRITE_SHIELD]].framesPerSecond = 14;
-					Vector2 texSize = { getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.width / getSprite(SpriteToAnimation[SPRITE_SHIELD]).numFrames, 
-										getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.height };
-					SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
-					DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_SHIELD]], playerDestination, origin, 0, WHITE, shader);
-				}
+				EndShaderMode();
 				break;
 			}
 		case STATE_UPGRADE:
@@ -1352,8 +1356,10 @@ float EaseOutBack(float t)
     return 1.0f + c3 * x * x * x + c1 * x * x;
 }
 
-void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
+void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, Shader shader)
 {
+	int texSizeLoc = GetShaderLocation(shader, "textureSize");
+	BeginShaderMode(shader);
 	Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	draw_text_centered(options->font, T(TXT_LEVEL_UP), (Vector2){dst.width/2.0f, dst.height/2.0f - 80.0f}, 40, WHITE);
 	draw_text_centered(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){dst.width/2.0f, dst.height/2.0f - 35.0f}, 40, WHITE);
@@ -1392,6 +1398,8 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 			.y = pos_y + height / 2.0f,
 		};
 
+		Vector2 texSize = { width, height };
+		SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 		float* anim = &gameState->upgradeCards[i].animationTime;
 
 		// Animate scaling and rotation
@@ -1448,6 +1456,7 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas)
 						WHITE);
 
 	}
+	EndShaderMode();
 }
 
 void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
@@ -1537,7 +1546,7 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 	}
 }
 
-void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
+void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader shader)
 {
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	switch (gameState->state) {
@@ -1614,7 +1623,7 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 			{
 				DrawHealthBar(gameState, options, atlas);
 				DrawScore(gameState, options, atlas);
-				DrawUpgrades(gameState, options, atlas);
+				DrawUpgrades(gameState, options, atlas, shader);
 				break;
 			}
 		case STATE_PAUSED:
@@ -1626,7 +1635,7 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas)
 				}
 				else if (gameState->lastState == STATE_UPGRADE) 
 				{
-					DrawUpgrades(gameState, options, atlas);
+					DrawUpgrades(gameState, options, atlas, shader);
 				}
 				DrawPauseMenu(gameState, options, atlas);
 				break;
@@ -1662,7 +1671,7 @@ void UpdateDrawFrame()
 	{
 		ClearBackground(BLACK);
 		DrawComposite(&scene, &options, &litScene, &gameState, lightShader);
-		DrawUI(&gameState, &options, &atlas);
+		DrawUI(&gameState, &options, &atlas, shader);
 	}
 	EndDrawing();
 }

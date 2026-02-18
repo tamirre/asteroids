@@ -1,7 +1,7 @@
 #version 330
 
 uniform sampler2D texture0;
-uniform ivec2 textureSize; // <-- you must set this from C++
+uniform ivec2 textureSize; 
 in vec2 fragTexCoord;
 out vec4 finalColor;
 
