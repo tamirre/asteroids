@@ -55,7 +55,8 @@ emcc -o web/index.html asteroids.c \
 	-s STACK_SIZE=256MB \
 	-s INITIAL_MEMORY=256MB \
 	-s USE_GLFW=3 -s ASYNCIFY -s TOTAL_MEMORY=512MB -s FORCE_FILESYSTEM=1 \
-	--shell-file ~/raylib/src/shell.html $RAYLIB_PATH/web/libraylib.web.a \
+	--shell-file $RAYLIB_PATH/minshell.html $RAYLIB_PATH/web/libraylib.web.a \
+	# --shell-file $RAYLIB_PATH/shell.html $RAYLIB_PATH/web/libraylib.web.a \
 	-DPLATFORM_WEB -s 'EXPORTED_FUNCTIONS=["_free","_malloc","_main"]' -s EXPORTED_RUNTIME_METHODS=ccall \
 	--preload-file assets/atlas \
 	--preload-file audio \
