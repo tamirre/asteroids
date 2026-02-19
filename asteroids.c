@@ -983,6 +983,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 							{
 								*boost = gameState->boosts[--gameState->boostCount];
 								gameState->player.shieldEnabled = true;
+								gameState->player.shieldTime = 5.25f;
 								PlaySound(audio->shieldFx);
 							}
 						}
@@ -1106,6 +1107,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 			}
 		case STATE_RUNNING:
 			{
+				BeginShaderMode(shader);
 				Color backgroundColor = ColorFromHSV(258, 1, 0.07);
 				ClearBackground(backgroundColor);
 
@@ -1117,13 +1119,14 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 
 						const int texture_x = star->position.x - star->sprite.coords.width / 2.0 * star->size;
 						const int texture_y = star->position.y - star->sprite.coords.height / 2.0 * star->size;
+						Vector2 texSize = { star->sprite.coords.width / star->sprite.numFrames, star->sprite.coords.height };
+						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						Color starColor = ColorAlpha(WHITE, star->alpha);
 						DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_STAR1).coords, (Vector2) {texture_x, texture_y}, starColor);
 					}
 				}
 
 				// if(!options->disableShaders) 
-				BeginShaderMode(shader);
 				// Draw Bullets
 				{
 					for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
@@ -1243,6 +1246,8 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						gameState->player.sprite.coords.width / gameState->player.animationFrames * gameState->player.size, 
 						gameState->player.sprite.coords.height * gameState->player.size}; // origin in coordinates and scale
 					Vector2 origin = {0, 0}; // so it draws from top left of image
+					Vector2 texSize = { playerDestination.width, playerDestination.height };
+					SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 					if (gameState->player.invulTime <= 0.0f) {
 						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, shader);
 					} else {
@@ -1257,8 +1262,8 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					if (gameState->player.shieldEnabled)
 					{
 						atlas->animations[SpriteToAnimation[SPRITE_SHIELD]].framesPerSecond = 14;
-						Vector2 texSize = { getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.width / getSprite(SpriteToAnimation[SPRITE_SHIELD]).numFrames, 
-							getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.height };
+						Vector2 texSize = { getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.width / getSprite(SpriteToAnimation[SPRITE_SHIELD]).numFrames,
+											getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.height };
 						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_SHIELD]], playerDestination, origin, 0, WHITE, shader);
 					}
@@ -1320,9 +1325,14 @@ void DrawLightmap(GameState* gameState, Options* options, RenderTexture2D* litSc
 	EndTextureMode();
 }
 
-void DrawHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas)
+void DrawHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas, Shader shader)
 {
+	// Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	// Draw player health
+	int texSizeLoc = GetShaderLocation(shader, "textureSize");
+	Vector2 texSize = { getSprite(SPRITE_HEART).coords.width / getSprite(SPRITE_HEART).numFrames,
+						getSprite(SPRITE_HEART).coords.height };
+	SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 	for (int i = 1; i <= gameState->player.playerHealth; i++)
 	{
 		const int texture_x = i * 16;
@@ -1333,10 +1343,10 @@ void DrawHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas)
 
 void DrawScore(GameState* gameState, Options* options, TextureAtlas* atlas)
 {
-	Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	// Draw Score
-	float recPosX = dst.width * 0.9;
-	float recPosY = dst.height * 0.05;
+	float recPosX = viewport.width * 0.9;
+	float recPosY = viewport.height * 0.05;
 	float recHeight = 30.0f;
 	float recWidth = 100.0f;
 	DrawRectangle(recPosX, recPosY, gameState->experience / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
@@ -1360,14 +1370,14 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 {
 	int texSizeLoc = GetShaderLocation(shader, "textureSize");
 	BeginShaderMode(shader);
-	Rectangle dst = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
-	draw_text_centered(options->font, T(TXT_LEVEL_UP), (Vector2){dst.width/2.0f, dst.height/2.0f - 80.0f}, 40, WHITE);
-	draw_text_centered(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){dst.width/2.0f, dst.height/2.0f - 35.0f}, 40, WHITE);
+	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+	draw_text_centered(options->font, T(TXT_LEVEL_UP), (Vector2){viewport.width/2.0f, viewport.height/2.0f - 80.0f}, 40, WHITE);
+	draw_text_centered(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){viewport.width/2.0f, viewport.height/2.0f - 35.0f}, 40, WHITE);
 	float scaling = 3.0f;
 	const int width  = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width;
 	const int height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height;
-	const int pos_x  = dst.width/2 - width/2;
-	const int pos_y  = dst.height/2 - height/2 + 130;
+	const int pos_x  = viewport.width/2 - width/2;
+	const int pos_y  = viewport.height/2 - height/2 + 130;
 	const int spacing_x = 240;
 
 	const int upgradeToSprite[UPGRADE_COUNT] = {
@@ -1466,8 +1476,8 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 	// Draw a window box
 	const float boxWidth = 475.0f;
 	const float boxHeight = 350.0f;
-	const float boxPosX = options->screenWidth/2;
-	const float boxPosY = options->screenHeight/2;
+	const float boxPosX = viewport.width/2;
+	const float boxPosY = viewport.height/2;
 	GuiWindowBox((Rectangle){boxPosX-boxWidth/2,
 			                 boxPosY-boxHeight/2, 
 							 boxWidth, boxHeight }, T(TXT_SETTINGS));
@@ -1552,7 +1562,7 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader 
 	switch (gameState->state) {
 		case STATE_RUNNING:
 			{
-				DrawHealthBar(gameState, options, atlas);
+				DrawHealthBar(gameState, options, atlas, shader);
 				DrawScore(gameState, options, atlas);
 				float scale = viewport.width/VIRTUAL_WIDTH;
 				const int texture_x = gameState->player.playerPosition.x * scale;
@@ -1621,14 +1631,14 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader 
 			}
 		case STATE_UPGRADE:
 			{
-				DrawHealthBar(gameState, options, atlas);
+				DrawHealthBar(gameState, options, atlas, shader);
 				DrawScore(gameState, options, atlas);
 				DrawUpgrades(gameState, options, atlas, shader);
 				break;
 			}
 		case STATE_PAUSED:
 			{
-				DrawHealthBar(gameState, options, atlas);
+				DrawHealthBar(gameState, options, atlas, shader);
 				DrawScore(gameState, options, atlas);
 				if (gameState->lastState == STATE_RUNNING) 
 				{

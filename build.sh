@@ -56,13 +56,13 @@ emcc -o web/index.html asteroids.c \
 	-s INITIAL_MEMORY=256MB \
 	-s USE_GLFW=3 -s ASYNCIFY -s TOTAL_MEMORY=512MB -s FORCE_FILESYSTEM=1 \
 	--shell-file $RAYLIB_PATH/minshell.html $RAYLIB_PATH/web/libraylib.web.a \
-	# --shell-file $RAYLIB_PATH/shell.html $RAYLIB_PATH/web/libraylib.web.a \
 	-DPLATFORM_WEB -s 'EXPORTED_FUNCTIONS=["_free","_malloc","_main"]' -s EXPORTED_RUNTIME_METHODS=ccall \
 	--preload-file assets/atlas \
 	--preload-file audio \
 	--preload-file fonts \
 	--preload-file shaders 
 	# -s ASSERTIONS=2 -g
+	# --shell-file $RAYLIB_PATH/shell.html $RAYLIB_PATH/web/libraylib.web.a \
 zip -r ${GAME_NAME}_web.zip web/
 else 
 	# gcc asteroids.c -Wall -o $GAME_NAME -Ithird_party/include -lraylib -lm -ldl -lpthread -lGL -fsanitize=address -g 
