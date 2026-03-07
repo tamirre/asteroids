@@ -491,6 +491,22 @@ void HandleResize(Options* options)
 	}
 }
 
+void StopLanguageSelectSounds()
+{
+	if(IsSoundPlaying(audio.langEn))
+	{
+		StopSound(audio.langEn);
+	}
+	if(IsSoundPlaying(audio.langDe))
+	{
+		StopSound(audio.langDe);
+	}
+	if(IsSoundPlaying(audio.langZh))
+	{
+		StopSound(audio.langZh);
+	}
+}
+
 void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, SpriteMask spriteMasks[], Audio* audio, float dt)
 {
 	static bool cursorHidden = true;
@@ -984,6 +1000,10 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 								*boost = gameState->boosts[--gameState->boostCount];
 								gameState->player.shieldEnabled = true;
 								gameState->player.shieldTime = 5.25f;
+								if(IsSoundPlaying(audio->shieldFx))
+								{
+									StopSound(audio->shieldFx);
+								}
 								PlaySound(audio->shieldFx);
 							}
 						}
@@ -1047,7 +1067,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 					} else if (gameState->pickedUpgrade == UPGRADE_DAMAGE) {
 						gameState->player.damageMulti += 0.2f;
 					} else if (gameState->pickedUpgrade == UPGRADE_FIRERATE) {
-						gameState->player.fireRate += 2.0f;
+						gameState->player.fireRate += 0.5f;
 					}
 					gameState->state = STATE_RUNNING;
 				}
@@ -1064,15 +1084,27 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 			}
 		case STATE_PAUSED:
 			{
-				PauseMusicStream(audio->music);
+				// PauseMusicStream(audio->music);
 				if (options->languageChanged)
 				{
 					options->languageChanged = false;
 					switch (options->language)
 					{
-						case LANG_EN: PlaySound(audio->langEn); break;
-						case LANG_DE: PlaySound(audio->langDe); break;
-						case LANG_ZH: PlaySound(audio->langZh); break;
+						case LANG_EN:
+							{
+								StopLanguageSelectSounds();
+								PlaySound(audio->langEn); break;
+							}
+						case LANG_DE:
+							{
+								StopLanguageSelectSounds();
+								PlaySound(audio->langDe); break;
+							}
+						case LANG_ZH:
+							{
+								StopLanguageSelectSounds();
+								PlaySound(audio->langZh); break;
+							}
 					}
 				}
 				if (options->musicVolumeChanged) 
