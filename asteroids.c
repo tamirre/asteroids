@@ -130,6 +130,7 @@ typedef struct Player {
     float damageMulti;
 	bool shieldEnabled;
 	float shieldTime;
+	int level;
 } Player;
 
 typedef struct Audio {
@@ -168,6 +169,7 @@ typedef struct Options {
 typedef struct GameState {
     // General
     int experience;
+	int score;
     State state;
 	State lastState;
 	float timeScale;
@@ -286,7 +288,8 @@ void initializeGameState(GameState* gameState) {
         .boostSpawnTime = 0.0f,
         .boostSpawnRate = 1.0f,
         .spawnTime = 0.0,
-        .experience = 1000,
+        .experience = 0,
+		.score = 0,
         .starCount = 0,
         .starTime = 0,
         .starSpawnRate = 0.25f,
@@ -317,6 +320,7 @@ void initializeGameState(GameState* gameState) {
         .damageMulti = 1.5f,
 		.shieldEnabled = false,
 		.shieldTime = 5.25f,
+		.level = 1,
     };
 }
 
@@ -556,10 +560,11 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 					.y = 0
 				};
 				// Update score
-				if (gameState->experience > 1000.0)
+				if (gameState->experience > 1000.0 * gameState->player.level)
 				{
 					gameState->state = STATE_UPGRADE;
-					gameState->experience -= 1000.0;
+					gameState->experience -= 1000.0 * gameState->player.level;
+					gameState->player.level++;
 				}
 				if (IsKeyPressed(KEY_H))
 				{
@@ -864,6 +869,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 									if (asteroid->health < 1)
 									{
 										gameState->experience += MAX((int)(asteroid->size * 100),1);
+										gameState->score += MAX((int)(asteroid->size * 100),1);
 										*asteroid = gameState->asteroids[--gameState->asteroidCount];
 										if(explosion != NULL)
 										{
@@ -1381,11 +1387,20 @@ void DrawScore(GameState* gameState, Options* options, TextureAtlas* atlas)
 	float recPosY = viewport.height * 0.05;
 	float recHeight = 30.0f;
 	float recWidth = 100.0f;
-	DrawRectangle(recPosX, recPosY, gameState->experience / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
+	DrawRectangle(recPosX, recPosY, gameState->experience / gameState->player.level / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
 	DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
-	// char experienceText[100] = "XP";
 	Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), 20.0f, GetDefaultSpacing(20.0f));
 	DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
+
+	
+	recPosX = viewport.width * 0.5;
+	recPosY = viewport.height * 0.05;
+	textSize = MeasureTextEx(options->font, TF(TXT_SCORE, gameState->score), 
+			                         20.0f, GetDefaultSpacing(20.0f));
+	DrawTextEx(options->font, TF(TXT_SCORE, gameState->score),
+			  (Vector2){recPosX - textSize.x / 2.0f,
+			            recPosY - textSize.y / 2.0f}, 
+						20.0f, GetDefaultSpacing(20.0f), WHITE);
 }
 
 float EaseOutBack(float t)
@@ -1656,7 +1671,7 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader 
 				ClearBackground(backgroundColor);
 				draw_text_centered(options->font, T(TXT_GAME_OVER), (Vector2){viewport.width/2.0f, viewport.height/2.0f}, 40, WHITE);
 				char scoreText[100] = {0};
-				sprintf(scoreText, "Final score: %d", gameState->experience);
+				sprintf(scoreText, "Final score: %d", gameState->score);
 				draw_text_centered(options->font, scoreText, (Vector2){viewport.width/2.0f, viewport.height/2.0f + 30.0f}, 20.0f, WHITE);
 				draw_text_centered(options->font, T(TXT_TRY_AGAIN), (Vector2){viewport.width/2.0f, viewport.height/2.0f + 60.0f}, 20.0f, WHITE);
 				break;
