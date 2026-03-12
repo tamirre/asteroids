@@ -27,7 +27,7 @@
 #define MAX_ASTEROIDS (100)
 #define MAX_EXPLOSIONS (20)
 #define MAX_STARS (50)
-#define MAX_BOOSTS (2)
+#define MAX_BOOSTS (1)
 #ifdef PLATFORM_WEB
 	#define TARGET_FPS (60)
 #else
@@ -1028,6 +1028,10 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 					gameState->lastState = STATE_UPGRADE;
 				}
 				UpdateMusicStream(audio->music);
+				if (IsSoundPlaying(audio->shieldFx))
+				{
+					StopSound(audio->shieldFx);
+				}
 
 				Vector2 mousePos = GetMousePosition();
 				bool clickedUpgrade = false;
@@ -1076,6 +1080,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						gameState->player.fireRate += 0.5f;
 					}
 					gameState->state = STATE_RUNNING;
+					ResumeSound(audio->shieldFx);
 				}
 				break;
 			}

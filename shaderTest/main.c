@@ -3,65 +3,94 @@
 
 int main(void)
 {
-    const int screenWidth = 1080;
-    const int screenHeight = 720;
+    const int screenWidth = 1000;
+    const int screenHeight = 700;
 
-    InitWindow(screenWidth, screenHeight, "Shader-controlled scaling");
+    InitWindow(screenWidth, screenHeight, "raylib sprite scaling test");
     SetTargetFPS(60);
 
     Texture2D texture = LoadTexture("upgradeMultiShot.png");
+
+    // Let the shader control sampling
     SetTextureFilter(texture, TEXTURE_FILTER_POINT);
 
-    Shader shader = LoadShader(0,"shader.glsl");
+    Shader shader = LoadShader(0, "shader.glsl");
 
-    int resLoc = GetShaderLocation(shader, "resolution");
     int texSizeLoc = GetShaderLocation(shader, "textureSize");
-    int scaleLoc = GetShaderLocation(shader, "scale");
-
-    Vector2 resolution = { screenWidth, screenHeight };
     Vector2 texSize = { texture.width, texture.height };
-
-    SetShaderValue(shader, resLoc, &resolution, SHADER_UNIFORM_VEC2);
     SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
 
     float time = 0.0f;
-    float zoom = 3.5f;
+    float scale = 3.5f;
+    float rotation = 0.0f;
 
     bool animateScale = true;
-    bool shaderEnabled = true;
+    bool animateRotation = true;
+    bool shaderOn = true;
 
     while (!WindowShouldClose())
     {
         float dt = GetFrameTime();
         time += dt;
 
+        // toggles
         if (IsKeyPressed(KEY_S)) animateScale = !animateScale;
-        if (IsKeyPressed(KEY_H)) shaderEnabled = !shaderEnabled;
+        if (IsKeyPressed(KEY_R)) animateRotation = !animateRotation;
+        if (IsKeyPressed(KEY_H)) shaderOn = !shaderOn;
 
+        // manual scale
+        if (IsKeyPressed(KEY_J)) scale += 0.1f;
+        if (IsKeyPressed(KEY_K)) scale -= 0.1f;
+
+        // animated scale
         if (animateScale)
-            zoom = 3.5f + 3.0f * sinf(time * 0.5f);
+            scale = 3.5f + 2.0f * sinf(time);
 
-        SetShaderValue(shader, scaleLoc, &zoom, SHADER_UNIFORM_FLOAT);
+        // animated rotation
+        if (animateRotation)
+            rotation = time * 45.0f;   // 45° per second
+
+        Vector2 pos = { screenWidth / 2.0f, screenHeight / 2.0f };
+
+        Rectangle src = { 0, 0, texture.width, texture.height };
+
+        Rectangle dst = {
+            pos.x,
+            pos.y,
+            texture.width * scale,
+            texture.height * scale
+        };
+
+        Vector2 origin = {
+            dst.width / 2,
+            dst.height / 2
+        };
 
         BeginDrawing();
         ClearBackground(BLACK);
 
-        if (shaderEnabled) BeginShaderMode(shader);
+        if (shaderOn) BeginShaderMode(shader);
 
-        // Draw fullscreen quad
-        DrawTexturePro(
-            texture,
-            (Rectangle){0,0,texture.width,texture.height},
-            (Rectangle){0,0,screenWidth,screenHeight},
-            (Vector2){0,0},
-            0.0f,
-            WHITE
-        );
+        DrawTexturePro(texture, src, dst, origin, rotation, WHITE);
 
-        if (shaderEnabled) EndShaderMode();
+        if (shaderOn) EndShaderMode();
 
-        DrawText("S - Toggle Scale Animation", 20, 20, 20, RAYWHITE);
-        DrawText("H - Toggle Shader", 20, 50, 20, RAYWHITE);
+        // Controls
+        DrawText("S - toggle scale animation", 20, 20, 20, RAYWHITE);
+        DrawText("R - toggle rotation", 20, 50, 20, RAYWHITE);
+        DrawText("J/K - adjust scale", 20, 80, 20, RAYWHITE);
+        DrawText("H - toggle shader", 20, 110, 20, RAYWHITE);
+
+        // Status indicators
+        if (shaderOn)
+            DrawText("SHADER: ON", 20, 150, 24, GREEN);
+        else
+            DrawText("SHADER: OFF", 20, 150, 24, RED);
+
+        if (animateRotation)
+            DrawText("ROTATION: ON", 20, 180, 24, GREEN);
+        else
+            DrawText("ROTATION: OFF", 20, 180, 24, RED);
 
         EndDrawing();
     }
@@ -69,5 +98,6 @@ int main(void)
     UnloadShader(shader);
     UnloadTexture(texture);
     CloseWindow();
+
     return 0;
 }
