@@ -1,6 +1,6 @@
 # TODO list: 
 
-- [ ] savestates
+- [x] savestates
 - [ ] hot code reloading
 - [ ] add script to generate audio header file with all sounds
 - [ ] add particle effects

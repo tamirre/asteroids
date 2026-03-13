@@ -20,4 +20,4 @@ asteroids
 web/
 *.zip
 third_party/raygui/
-./save.dat
+save.dat

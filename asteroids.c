@@ -375,7 +375,7 @@ void loadSaveState()
 	FILE* file = fopen("save.dat", "rb");
 	if (file == NULL)
 	{
-		printf("Error opening file\n");
+		printf("Error: could not open savestate file\n");
 		return;
 	}
 	fread(&gameState, sizeof(GameState), 1, file);
@@ -1776,6 +1776,7 @@ void UpdateDrawFrame()
 int main() {
     SetTargetFPS(TARGET_FPS);
 
+	// set default language
 	LocSetLanguage(LANG_EN);
 	// LocSetLanguage(LANG_DE);
 	// LocSetLanguage(LANG_ZH);
