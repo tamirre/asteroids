@@ -27,6 +27,7 @@ typedef enum {
 	TXT_SETTINGS,
 	TXT_MUSICVOLUME,
 	TXT_FXVOLUME,
+	TXT_SHOW_COLLIDERS,
 	TXT_COUNT
 } TextID;
 
@@ -63,6 +64,7 @@ static const char *gText[LANG_COUNT][TXT_COUNT] = {
 	"Settings",
 	"Music Volume:",
 	"FX Volume:",
+	"Show colliders",
   },
   {
 	"",
@@ -89,6 +91,7 @@ static const char *gText[LANG_COUNT][TXT_COUNT] = {
 	"Einstellungen",
 	"Musik Lautstärke:",
 	"FX Lautstärke:",
+	"Zeige Kollisionsboxen",
   },
   {
 	"",
@@ -115,5 +118,6 @@ static const char *gText[LANG_COUNT][TXT_COUNT] = {
 	"设置",
 	"音乐音量:",
 	"效果音量:",
+	"显示碰撞 ",
   },
 };

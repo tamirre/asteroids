@@ -156,6 +156,7 @@ typedef struct Options {
 	float fxVolume;
 	bool musicVolumeChanged;
 	bool fxVolumeChanged;
+	bool showColliders;
 } Options;
 
 typedef struct GameState {
@@ -320,6 +321,7 @@ void initializeOptions(Options* options) {
 		.fxVolume = 0.25f,
 		.musicVolumeChanged = false,
 		.fxVolumeChanged = false,
+		.showColliders = false,
 	};
 	GuiSetStyle(DEFAULT, TEXT_SIZE, 24);
 	GuiSetStyle(DEFAULT, TEXT_SPACING, 2);
@@ -897,7 +899,6 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 							.x = gameState->player.playerPosition.x - playerWidth/2.0f,
 							.y = gameState->player.playerPosition.y - playerHeight/2.0f,
 						};
-						// DrawRectangleLinesEx(playerRec, 1.0, BLUE);
 						Rectangle screenRectExtended = {
 							.width = viewport.width + asteroid->sprite.coords.width,
 							.height = viewport.height + asteroid->sprite.coords.height,
@@ -1221,8 +1222,12 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
 								(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
-						// DrawRectangleLines(asteroid->collider.x, asteroid->collider.y, 
-						// 		asteroid->collider.width, asteroid->collider.height, GREEN);
+						if (options->showColliders)
+						{
+							DrawRectangleLines(asteroid->collider.x, asteroid->collider.y, 
+											   asteroid->collider.width, asteroid->collider.height, GREEN);
+						}
+
 						// DrawRectangleLines(asteroidDrawRect.x, asteroidDrawRect.y,
 						// 		asteroidDrawRect.width, asteroidDrawRect.height, GREEN);
 					}
@@ -1247,6 +1252,11 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_SCRAPMETAL]], boostDrawRect, pivot, boost->rotation, WHITE, shader);
 						// DrawRectangleLines(boostDrawRect.x, boostDrawRect.y, boostDrawRect.width, boostDrawRect.height, RED);
 						// DrawRectangleLines(boost->collider.x, boost->collider.y, boost->collider.width, boost->collider.height, GREEN);
+						if (options->showColliders)
+						{
+							DrawRectangleLines(boost->collider.x, boost->collider.y, 
+											   boost->collider.width, boost->collider.height, GREEN);
+						}
 					}
 				}
 
@@ -1549,6 +1559,8 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 	const float buttonHeight = 50;
 	const float sliderWidth = 160;
 	const float sliderHeight = 20;
+	const float checkboxWidth = 20;
+	const float checkboxHeight = 20;
 	GuiLabel((Rectangle){ boxPosX-labelWidth/2-boxWidth/6, 
 			boxPosY-labelHeight/2-boxHeight/6, 
 			labelWidth, labelHeight}, T(TXT_LANGUAGE));
@@ -1558,12 +1570,6 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 	GuiLabel((Rectangle){ boxPosX-labelWidth/2-boxWidth/6, 
 			boxPosY-labelHeight/2-boxHeight/6+2*boxHeight/12, 
 			labelWidth, labelHeight}, T(TXT_FXVOLUME));
-	if (GuiButton((Rectangle){ boxPosX+boxWidth/4-buttonWidth/2, 
-							   boxPosY-buttonHeight/4+boxHeight/6, 
-							   buttonWidth, buttonHeight }, T(TXT_QUIT))) 
-	{
-		shouldExit = true;
-	}
 	// int GuiSliderBar(Rectangle bounds, const char *textLeft, const char *textRight, float *value, float minValue, float maxValue)
 	if (!options->languageEditMode) 
 	{
@@ -1581,11 +1587,21 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 			options->fxVolumeChanged = true;
 		}
 	}
-	if (GuiButton((Rectangle){ boxPosX-boxWidth/4-buttonWidth/2, 
-							   boxPosY-buttonHeight/4+boxHeight/6, 
+	GuiCheckBox((Rectangle){ boxPosX-labelWidth/2-boxWidth/6, 
+							 boxPosY-sliderHeight/2-boxHeight/6+3*boxHeight/12, 
+							 checkboxWidth, checkboxHeight }, T(TXT_SHOW_COLLIDERS), &options->showColliders);
+
+	if (GuiButton((Rectangle){ boxPosX-boxWidth/4-buttonWidth/2+checkboxWidth, 
+							   boxPosY-buttonHeight/4+boxHeight/6+checkboxHeight, 
 							   buttonWidth, buttonHeight }, T(TXT_CONTINUE))) 
 	{
 		gameState->state = gameState->lastState;
+	}
+	if (GuiButton((Rectangle){ boxPosX+boxWidth/4-buttonWidth/2+checkboxWidth, 
+							   boxPosY-buttonHeight/4+boxHeight/6+checkboxHeight, 
+							   buttonWidth, buttonHeight }, T(TXT_QUIT))) 
+	{
+		shouldExit = true;
 	}
 	// Draw dropdown box
 	const float dropdownWidth = 160.0f;
