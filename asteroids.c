@@ -5,6 +5,7 @@
 
 #include "assetsData.h"
 #include "txt.h"
+#include "audio.h"
 #include "assetsUtils.h"
 #include "localization.h"
 
@@ -136,17 +137,17 @@ typedef struct Player {
 	int level;
 } Player;
 
-typedef struct Audio {
-    Sound hitFx;
-    Sound blastFx;
-	Sound cardFx;
-	Sound explosionFx;
-	Sound shieldFx;
-	Sound langEn;
-	Sound langDe;
-	Sound langZh;
-	Music music;
-} Audio;
+// typedef struct Audio {
+//     Sound hitFx;
+//     Sound blastFx;
+// 	Sound cardFx;
+// 	Sound explosionFx;
+// 	Sound shieldFx;
+// 	Sound langEn;
+// 	Sound langDe;
+// 	Sound langZh;
+// 	Music music;
+// } Audio;
 
 typedef struct Options {
 	float screenWidth;
@@ -230,52 +231,76 @@ void cleanup(TextureAtlas atlas, Options options, Audio audio, SpriteMask sprite
 	{
 		UnloadImageColors(spriteMasks[i].pixels);
 	}
-	UnloadMusicStream(audio.music);
-	UnloadSound(audio.hitFx);
-	UnloadSound(audio.blastFx);
-	UnloadSound(audio.cardFx);
-	UnloadSound(audio.shieldFx);
-	UnloadSound(audio.langEn);
-	UnloadSound(audio.langDe);
-	UnloadSound(audio.langZh);
-	UnloadSound(audio.explosionFx);
+	// UnloadMusicStream(audio.music);
+	// UnloadSound(audio.hitFx);
+	// UnloadSound(audio.blastFx);
+	// UnloadSound(audio.cardFx);
+	// UnloadSound(audio.shieldFx);
+	// UnloadSound(audio.langEn);
+	// UnloadSound(audio.langDe);
+	// UnloadSound(audio.langZh);
+	// UnloadSound(audio.explosionFx);
+	for (int i = 0; i < MUSIC_COUNT; i++)
+	{
+		UnloadMusicStream(audio.music[i]);
+	}
+	for (int i = 0; i < SOUND_COUNT; i++)
+	{
+		UnloadSound(audio.sounds[i]);
+	}
 	CloseAudioDevice();
 }
 
 void setFxVolume(Audio* audio, float volume) {
-	SetSoundVolume(audio->hitFx, volume);
-	SetSoundVolume(audio->blastFx, volume*0.5f);
-	SetSoundVolume(audio->explosionFx, volume*0.5f);
-	SetSoundVolume(audio->shieldFx, volume);
-	SetSoundVolume(audio->cardFx, volume);
-	SetSoundVolume(audio->langEn, volume);
-	SetSoundVolume(audio->langDe, volume);
-	SetSoundVolume(audio->langZh, volume);
+	// SetSoundVolume(audio->hitFx, volume);
+	// SetSoundVolume(audio->blastFx, volume*0.5f);
+	// SetSoundVolume(audio->explosionFx, volume*0.5f);
+	// SetSoundVolume(audio->shieldFx, volume);
+	// SetSoundVolume(audio->cardFx, volume);
+	// SetSoundVolume(audio->langEn, volume);
+	// SetSoundVolume(audio->langDe, volume);
+	// SetSoundVolume(audio->langZh, volume);
+	for (int i = 0; i < SOUND_COUNT; i++)
+	{
+		SetSoundVolume(audio->sounds[i], volume);
+	}
 }
 
 void initializeAudio(Audio* audio, Options* options) {
 	InitAudioDevice();
 	ASSERT(IsAudioDeviceReady());
-	audio->music = LoadMusicStream("audio/soundtrack.mp3");
-	ASSERT(IsMusicValid(audio->music));
-	audio->hitFx = LoadSound("audio/hit.wav");
-	ASSERT(IsSoundValid(audio->hitFx));
-	audio->blastFx = LoadSound("audio/laserPowerGunshot.wav");
-	ASSERT(IsSoundValid(audio->blastFx));
-	audio->cardFx = LoadSound("audio/cardSelect.mp3");
-	ASSERT(IsSoundValid(audio->cardFx));
-	audio->langEn = LoadSound("audio/america.mp3");
-	ASSERT(IsSoundValid(audio->langEn));
-	audio->langDe = LoadSound("audio/erika.mp3");
-	ASSERT(IsSoundValid(audio->langDe));
-	audio->langZh = LoadSound("audio/bingchilling.mp3");
-	ASSERT(IsSoundValid(audio->langZh));
-	audio->explosionFx = LoadSound("audio/explosionBlast.wav");
-	ASSERT(IsSoundValid(audio->explosionFx));
-	audio->shieldFx = LoadSound("audio/shield.wav");
-	ASSERT(IsSoundValid(audio->shieldFx));
-	PlayMusicStream(audio->music);
-	SetMusicVolume(audio->music, options->musicVolume);
+	for (int i = 0; i < MUSIC_COUNT; i++)
+	{
+		audio->music[i] = LoadMusicStream(music_files[i]);
+		ASSERT(IsMusicValid(audio->music[i]));
+	}
+	for (int i = 0; i < SOUND_COUNT; i++)
+	{
+		audio->sounds[i] = LoadSound(sound_files[i]);
+		ASSERT(IsSoundValid(audio->sounds[i]));
+	}
+	// audio->music = LoadMusicStream("audio/soundtrack.mp3");
+	// audio->music = LoadMusicStream("audio/soundtrack.mp3");
+	// ASSERT(IsMusicValid(audio->music));
+	// audio->hitFx = LoadSound("audio/hit.wav");
+	// ASSERT(IsSoundValid(audio->hitFx));
+	// audio->blastFx = LoadSound("audio/laserPowerGunshot.wav");
+	// ASSERT(IsSoundValid(audio->blastFx));
+	// audio->cardFx = LoadSound("audio/cardSelect.mp3");
+	// ASSERT(IsSoundValid(audio->cardFx));
+	// audio->langEn = LoadSound("audio/america.mp3");
+	// ASSERT(IsSoundValid(audio->langEn));
+	// audio->langDe = LoadSound("audio/erika.mp3");
+	// ASSERT(IsSoundValid(audio->langDe));
+	// audio->langZh = LoadSound("audio/bingchilling.mp3");
+	// ASSERT(IsSoundValid(audio->langZh));
+	// audio->explosionFx = LoadSound("audio/explosionBlast.wav");
+	// ASSERT(IsSoundValid(audio->explosionFx));
+	// audio->shieldFx = LoadSound("audio/shield.wav");
+	// ASSERT(IsSoundValid(audio->shieldFx));
+	int currentSongtrackID = 0;
+	PlayMusicStream(audio->music[currentSongtrackID]);
+	SetMusicVolume(audio->music[currentSongtrackID], options->musicVolume);
 	setFxVolume(audio, options->fxVolume);
 }
 
@@ -524,17 +549,17 @@ void HandleResize(Options* options)
 
 void StopLanguageSelectSounds()
 {
-	if(IsSoundPlaying(audio.langEn))
+	if(IsSoundPlaying(audio.sounds[SOUND_BINGCHILLING]))
 	{
-		StopSound(audio.langEn);
+		StopSound(audio.sounds[SOUND_BINGCHILLING]);
 	}
-	if(IsSoundPlaying(audio.langDe))
+	if(IsSoundPlaying(audio.sounds[SOUND_ERIKA]))
 	{
-		StopSound(audio.langDe);
+		StopSound(audio.sounds[SOUND_ERIKA]);
 	}
-	if(IsSoundPlaying(audio.langZh))
+	if(IsSoundPlaying(audio.sounds[SOUND_AMERICA]))
 	{
-		StopSound(audio.langZh);
+		StopSound(audio.sounds[SOUND_AMERICA]);
 	}
 }
 
@@ -557,7 +582,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 		case STATE_RUNNING:
 			{
 				float viewportScale = viewport.width / VIRTUAL_WIDTH;
-				if (!IsMusicStreamPlaying(audio->music)) ResumeMusicStream(audio->music);
+				if (!IsMusicStreamPlaying(audio->music[0])) ResumeMusicStream(audio->music[0]);
 				// Step debugging mode
 				if (IsKeyPressed(KEY_J)) stepMode = !stepMode;
 				if (IsKeyPressed(KEY_K)) stepOnce = true;
@@ -616,7 +641,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 					cursorHidden = !cursorHidden;
 				}
 
-				UpdateMusicStream(audio->music);
+				UpdateMusicStream(audio->music[0]);
 				// Spawn initial stars for parallax
 				{
 					if (gameState->initStars == 0)
@@ -751,7 +776,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						&& gameState->bulletCount <= MAX_BULLETS)
 				{
 
-					PlaySound(audio->blastFx);
+					PlaySound(audio->sounds[SOUND_GUN]);
 					float bulletSize = 0.5f;
 					if (gameState->player.playerMultishot == true && gameState->bulletCount < MAX_BULLETS-3)
 					{
@@ -890,7 +915,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 									Explosion* explosion = NULL;
 									if (gameState->explosionCount < MAX_EXPLOSIONS)
 									{
-										PlaySound(audio->explosionFx);
+										PlaySound(audio->sounds[SOUND_EXPLOSIONBLAST]);
 										explosion = &gameState->explosions[gameState->explosionCount++];
 										explosion->position = bullet->position;
 										explosion->position.y -= bulletSrc.height/2.0f;
@@ -947,7 +972,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 										playerSrc.height, asteroid->sprite.coords.height, 
 										playerRec, asteroid->collider, collisionRec, 0.0f, asteroid->rotation))
 							{
-								PlaySound(audio->hitFx);
+								PlaySound(audio->sounds[SOUND_HIT]);
 								gameState->player.invulTime = gameState->player.invulDuration;
 								*asteroid = gameState->asteroids[--gameState->asteroidCount];
 								if(--gameState->player.playerHealth < 1) 
@@ -1041,11 +1066,11 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 								*boost = gameState->boosts[--gameState->boostCount];
 								gameState->player.shieldEnabled = true;
 								gameState->player.shieldTime = 5.25f;
-								if(IsSoundPlaying(audio->shieldFx))
+								if(IsSoundPlaying(audio->sounds[SOUND_SHIELD]))
 								{
-									StopSound(audio->shieldFx);
+									StopSound(audio->sounds[SOUND_SHIELD]);
 								}
-								PlaySound(audio->shieldFx);
+								PlaySound(audio->sounds[SOUND_SHIELD]);
 							}
 						}
 					}
@@ -1062,10 +1087,10 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 					gameState->state = STATE_PAUSED;
 					gameState->lastState = STATE_UPGRADE;
 				}
-				UpdateMusicStream(audio->music);
-				if (IsSoundPlaying(audio->shieldFx))
+				UpdateMusicStream(audio->music[0]);
+				if (IsSoundPlaying(audio->sounds[SOUND_SHIELD]))
 				{
-					StopSound(audio->shieldFx);
+					StopSound(audio->sounds[SOUND_SHIELD]);
 				}
 
 				Vector2 mousePos = GetMousePosition();
@@ -1073,12 +1098,12 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 				int lastUpgrade = gameState->pickedUpgrade; 
 				if (IsKeyPressed(KEY_LEFT)) 
 				{
-					PlaySound(audio->cardFx);
+					PlaySound(audio->sounds[SOUND_CARDSELECT]);
 					gameState->pickedUpgrade = (Upgrade)((gameState->pickedUpgrade - 1 + UPGRADE_COUNT) % UPGRADE_COUNT);
 				} 
 				else if (IsKeyPressed(KEY_RIGHT)) 
 				{
-					PlaySound(audio->cardFx);
+					PlaySound(audio->sounds[SOUND_CARDSELECT]);
 					gameState->pickedUpgrade = (Upgrade)((gameState->pickedUpgrade + 1) % UPGRADE_COUNT);
 				}
 				if (mousePos.x == options->lastMousePos.x || mousePos.y == options->lastMousePos.y)
@@ -1097,7 +1122,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						gameState->pickedUpgrade = i; 
 						if (lastUpgrade != gameState->pickedUpgrade) 
 						{
-							PlaySound(audio->cardFx);
+							PlaySound(audio->sounds[SOUND_CARDSELECT]);
 						}
 						if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) 
 						{
@@ -1115,7 +1140,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						gameState->player.fireRate += 0.5f;
 					}
 					gameState->state = STATE_RUNNING;
-					ResumeSound(audio->shieldFx);
+					ResumeSound(audio->sounds[SOUND_SHIELD]);
 				}
 				break;
 			}
@@ -1139,23 +1164,23 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						case LANG_EN:
 							{
 								StopLanguageSelectSounds();
-								PlaySound(audio->langEn); break;
+								PlaySound(audio->sounds[SOUND_AMERICA]); break;
 							}
 						case LANG_DE:
 							{
 								StopLanguageSelectSounds();
-								PlaySound(audio->langDe); break;
+								PlaySound(audio->sounds[SOUND_ERIKA]); break;
 							}
 						case LANG_ZH:
 							{
 								StopLanguageSelectSounds();
-								PlaySound(audio->langZh); break;
+								PlaySound(audio->sounds[SOUND_BINGCHILLING]); break;
 							}
 					}
 				}
 				if (options->musicVolumeChanged) 
 				{
-					SetMusicVolume(audio->music, options->musicVolume);
+					SetMusicVolume(audio->music[0], options->musicVolume);
 					options->musicVolumeChanged = false;
 				}
 				if (options->fxVolumeChanged) 

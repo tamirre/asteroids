@@ -2,10 +2,14 @@
 SECONDS=0
 PLATFORM=""
 REGENERATE_ATLAS=0
-while getopts ":p:a" opt; do
+REGENERATE_LOCALIZATION=0
+REGENERATE_AUDIO=0
+while getopts ":p:a:l:s" opt; do
     case "$opt" in
         p) PLATFORM="$OPTARG" ;;
         a) REGENERATE_ATLAS=1 ;;
+        l) REGENERATE_LOCALIZATION=1 ;;
+        s) REGENERATE_AUDIO=1 ;;
         :)
             echo "Option -$OPTARG requires a value"
             exit 1
@@ -18,8 +22,12 @@ while getopts ":p:a" opt; do
 done
 
 export GAME_NAME=asteroids
-python genLoc.py
-
+if [ "$REGENERATE_LOCALIZATION" == "1" ]; then
+	python genLoc.py
+fi
+if [ "$REGENERATE_AUDIO" == "1" ]; then
+	python genAudio.py
+fi
 if [ "$REGENERATE_ATLAS" == "1" ]; then
 	aseprite -b -script ./assets/tools/exportAtlas.lua	
 	echo "Regenerated atlas"
