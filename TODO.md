@@ -2,6 +2,7 @@
 
 - [x] savestates
 - [ ] hot code reloading
+- [ ] fix collision
 - [x] add script to generate audio header file with all sounds
 - [ ] add particle effects
 - [ ] add enemies that do more interesting actions, e.g. chase player while dodging bullets/asteroids

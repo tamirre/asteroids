@@ -19,14 +19,14 @@
     #include <emscripten/emscripten.h>
 #endif
 
-// #define MIN_SCREEN_WIDTH (1440.0f)
-// #define MIN_SCREEN_HEIGHT (810.0f)
-// #define VIRTUAL_WIDTH (1440.0f)
-// #define VIRTUAL_HEIGHT (810.0f)
-#define MIN_SCREEN_WIDTH (940.0f)
-#define MIN_SCREEN_HEIGHT (540.0f)
-#define VIRTUAL_WIDTH (940.0f)
-#define VIRTUAL_HEIGHT (540.0f)
+#define MIN_SCREEN_WIDTH (1440.0f)
+#define MIN_SCREEN_HEIGHT (810.0f)
+#define VIRTUAL_WIDTH (1440.0f)
+#define VIRTUAL_HEIGHT (810.0f)
+// #define MIN_SCREEN_WIDTH (940.0f)
+// #define MIN_SCREEN_HEIGHT (540.0f)
+// #define VIRTUAL_WIDTH (940.0f)
+// #define VIRTUAL_HEIGHT (540.0f)
 #define WINDOW_TITLE ("Asteroids")
 #define MAX_BULLETS (1000)
 #define MAX_ASTEROIDS (100)
@@ -134,6 +134,7 @@ typedef struct Player {
     float damageMulti;
 	bool shieldEnabled;
 	float shieldTime;
+	Rectangle collider;
 	int level;
 } Player;
 
@@ -204,6 +205,7 @@ static RenderTexture2D litScene;
 static Shader shader;
 static Shader lightShader;
 static int currentSongtrackID = 0;
+static Rectangle currentCollision;
 static bool shouldExit = false;
 
 void cleanup(TextureAtlas atlas, Options options, Audio audio, SpriteMask spriteMasks[]) {
@@ -299,6 +301,7 @@ void initializeGameState(GameState* gameState) {
 		.shieldEnabled = false,
 		.shieldTime = 5.25f,
 		.level = 1,
+		.collider = (Rectangle){0,0,0,0},
     };
 }
 
@@ -893,12 +896,13 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 
 						float playerWidth = gameState->player.sprite.coords.width/gameState->player.animationFrames * gameState->player.size;
 						float playerHeight = gameState->player.sprite.coords.height * gameState->player.size;
-						Rectangle playerRec = {
+						gameState->player.collider = (Rectangle) {
 							.width = playerWidth,
 							.height =  playerHeight,
 							.x = gameState->player.playerPosition.x - playerWidth/2.0f,
 							.y = gameState->player.playerPosition.y - playerHeight/2.0f,
 						};
+						 
 						Rectangle screenRectExtended = {
 							.width = viewport.width + asteroid->sprite.coords.width,
 							.height = viewport.height + asteroid->sprite.coords.height,
@@ -910,21 +914,22 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 							// Replace with last asteroid
 							*asteroid = gameState->asteroids[--gameState->asteroidCount];
 						}
-						if(CheckCollisionRecs(asteroid->collider, playerRec) && 
+						if(CheckCollisionRecs(asteroid->collider, gameState->player.collider) && 
 								gameState->player.invulTime <= 0.0f &&
 								gameState->player.shieldEnabled == false)
 						{
-							Rectangle collisionRec = GetCollisionRec(asteroid->collider, playerRec);
-							// DrawRectangleLinesEx(collisionRec, 2.0, RED);
+							Rectangle collisionRec = GetCollisionRec(asteroid->collider, gameState->player.collider);
+							currentCollision = collisionRec;
 							Rectangle playerSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_PLAYER]]);
 							if (pixelPerfectCollision(spriteMasks[SPRITE_PLAYER].pixels, spriteMasks[asteroid->sprite.spriteID].pixels, 
 										playerSrc.width, asteroid->sprite.coords.width,
 										playerSrc.height, asteroid->sprite.coords.height, 
-										playerRec, asteroid->collider, collisionRec, 0.0f, asteroid->rotation))
+										gameState->player.collider, asteroid->collider, collisionRec, 0.0f, asteroid->rotation))
 							{
 								PlaySound(audio->sounds[SOUND_HIT]);
 								gameState->player.invulTime = gameState->player.invulDuration;
 								*asteroid = gameState->asteroids[--gameState->asteroidCount];
+								currentCollision = (Rectangle){0,0,0,0};
 								if(--gameState->player.playerHealth < 1) 
 								{
 									gameState->state = STATE_GAME_OVER;
@@ -995,23 +1000,16 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						{
 							*boost = gameState->boosts[--gameState->boostCount];
 						}
-						float playerWidth = gameState->player.sprite.coords.width/gameState->player.animationFrames * gameState->player.size;
-						float playerHeight = gameState->player.sprite.coords.height * gameState->player.size;
-						Rectangle playerRec = {
-							.width = playerWidth,
-							.height =  playerHeight,
-							.x = gameState->player.playerPosition.x - playerWidth/2.0f,
-							.y = gameState->player.playerPosition.y - playerHeight/2.0f,
-						};
-						if(CheckCollisionRecs(boost->collider, playerRec))
+						if(CheckCollisionRecs(boost->collider, gameState->player.collider))
 						{
-							Rectangle collisionRec = GetCollisionRec(boost->collider, playerRec);
+							Rectangle collisionRec = GetCollisionRec(boost->collider, gameState->player.collider);
+							currentCollision = collisionRec;
 							Rectangle playerSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_PLAYER]]);
 							Rectangle boostSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_SCRAPMETAL]]);
 							if (pixelPerfectCollision(spriteMasks[SPRITE_PLAYER].pixels, spriteMasks[boost->sprite.spriteID].pixels, 
 										playerSrc.width, boostSrc.width,
 										playerSrc.height, boostSrc.height,
-										playerRec, boost->collider, collisionRec, 0.0f, boost->rotation))
+										gameState->player.collider, boost->collider, collisionRec, 0.0f, boost->rotation))
 							{
 								*boost = gameState->boosts[--gameState->boostCount];
 								gameState->player.shieldEnabled = true;
@@ -1021,6 +1019,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 									StopSound(audio->sounds[SOUND_SHIELD]);
 								}
 								PlaySound(audio->sounds[SOUND_SHIELD]);
+								currentCollision = (Rectangle){0,0,0,0};
 							}
 						}
 					}
@@ -1160,9 +1159,29 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 			}
 		case STATE_RUNNING:
 			{
-				BeginShaderMode(shader);
 				Color backgroundColor = ColorFromHSV(258, 1, 0.07);
 				ClearBackground(backgroundColor);
+				// Draw Colliders (outside of shader mode for corect color)
+				if (options->showColliders)
+				{
+					DrawRectangleLinesEx(gameState->player.collider, 2.0, GREEN);
+					for (int i = 0; i < gameState->bulletCount; i++)
+					{
+						DrawRectangleLinesEx(gameState->bullets[i].collider, 2.0, PURPLE);
+					}
+					for (int i = 0; i < gameState->asteroidCount; i++)
+					{
+						DrawRectangleLinesEx(gameState->asteroids[i].collider, 2.0, BLUE);
+					}
+					for (int i = 0; i < gameState->boostCount; i++)
+					{
+						DrawRectangleLinesEx(gameState->boosts[i].collider, 2.0, YELLOW);
+					}
+					DrawRectangleRec(currentCollision, RED);
+					currentCollision = (Rectangle){0,0,0,0};
+				}
+
+				BeginShaderMode(shader);
 
 				// Draw Stars
 				{
@@ -1222,11 +1241,6 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
 								(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
-						if (options->showColliders)
-						{
-							DrawRectangleLines(asteroid->collider.x, asteroid->collider.y, 
-											   asteroid->collider.width, asteroid->collider.height, GREEN);
-						}
 
 						// DrawRectangleLines(asteroidDrawRect.x, asteroidDrawRect.y,
 						// 		asteroidDrawRect.width, asteroidDrawRect.height, GREEN);
@@ -1252,11 +1266,6 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_SCRAPMETAL]], boostDrawRect, pivot, boost->rotation, WHITE, shader);
 						// DrawRectangleLines(boostDrawRect.x, boostDrawRect.y, boostDrawRect.width, boostDrawRect.height, RED);
 						// DrawRectangleLines(boost->collider.x, boost->collider.y, boost->collider.width, boost->collider.height, GREEN);
-						if (options->showColliders)
-						{
-							DrawRectangleLines(boost->collider.x, boost->collider.y, 
-											   boost->collider.width, boost->collider.height, GREEN);
-						}
 					}
 				}
 
@@ -1416,7 +1425,6 @@ void DrawScore(GameState* gameState, Options* options, TextureAtlas* atlas)
 	Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), 20.0f, GetDefaultSpacing(20.0f));
 	DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
 
-	
 	recPosX = viewport.width * 0.5;
 	recPosY = viewport.height * 0.05;
 	textSize = MeasureTextEx(options->font, TF(TXT_SCORE, gameState->score), 
