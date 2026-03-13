@@ -18,10 +18,14 @@
     #include <emscripten/emscripten.h>
 #endif
 
-#define MIN_SCREEN_WIDTH (1440.0f)
-#define MIN_SCREEN_HEIGHT (810.0f)
-#define VIRTUAL_WIDTH (1440.0f)
-#define VIRTUAL_HEIGHT (810.0f)
+// #define MIN_SCREEN_WIDTH (1440.0f)
+// #define MIN_SCREEN_HEIGHT (810.0f)
+// #define VIRTUAL_WIDTH (1440.0f)
+// #define VIRTUAL_HEIGHT (810.0f)
+#define MIN_SCREEN_WIDTH (940.0f)
+#define MIN_SCREEN_HEIGHT (540.0f)
+#define VIRTUAL_WIDTH (940.0f)
+#define VIRTUAL_HEIGHT (540.0f)
 #define WINDOW_TITLE ("Asteroids")
 #define MAX_BULLETS (1000)
 #define MAX_ASTEROIDS (100)
@@ -31,7 +35,7 @@
 #ifdef PLATFORM_WEB
 	#define TARGET_FPS (60)
 #else
-	#define TARGET_FPS (300)
+	#define TARGET_FPS (30)
 #endif
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
@@ -83,7 +87,6 @@ typedef struct Asteroid {
     Vector2 velocity;
     float angularVelocity;
     float rotation;
-    char textureFile[100];
     Sprite sprite;
 	Rectangle collider;
 } Asteroid;
@@ -367,6 +370,30 @@ void draw_text_centered(Font font, const char* text, Vector2 pos, int fontSize, 
 	DrawTextEx(font, text, (Vector2){pos.x, pos.y}, fontSize, fontSpacing, color);
 }
 
+void loadSaveState()
+{
+	FILE* file = fopen("save.dat", "rb");
+	if (file == NULL)
+	{
+		printf("Error opening file\n");
+		return;
+	}
+	fread(&gameState, sizeof(GameState), 1, file);
+	fclose(file);
+}
+
+void writeSaveState()
+{
+	FILE* file = fopen("save.dat", "wb");
+	if (file == NULL)
+	{
+		printf("Error opening file\n");
+		return;
+	}
+	fwrite(&gameState, sizeof(GameState), 1, file);
+	fclose(file);
+}
+
 bool pixelPerfectCollision(
     Color* pixel1,
     Color* pixel2,
@@ -539,6 +566,14 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 				if (IsKeyPressed(KEY_F)) 
 				{
 					ToggleFullscreen();
+				}
+				if (IsKeyPressed(KEY_F2)) 
+				{
+					writeSaveState();
+				}
+				if (IsKeyPressed(KEY_R)) 
+				{
+					loadSaveState();
 				}
 #endif
 				if (IsKeyPressed(KEY_V)) {
@@ -1392,7 +1427,7 @@ void DrawScore(GameState* gameState, Options* options, TextureAtlas* atlas)
 	float recPosY = viewport.height * 0.05;
 	float recHeight = 30.0f;
 	float recWidth = 100.0f;
-	DrawRectangle(recPosX, recPosY, gameState->experience / gameState->player.level / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
+	DrawRectangle(recPosX, recPosY, gameState->experience / (float)gameState->player.level / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
 	DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
 	Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), 20.0f, GetDefaultSpacing(20.0f));
 	DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
@@ -1426,10 +1461,10 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 	draw_text_centered(options->font, T(TXT_LEVEL_UP), (Vector2){viewport.width/2.0f, viewport.height/2.0f - 80.0f}, 40, WHITE);
 	draw_text_centered(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){viewport.width/2.0f, viewport.height/2.0f - 35.0f}, 40, WHITE);
 	float scaling = 3.0f;
-	const int width  = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width;
-	const int height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height;
-	const int pos_x  = viewport.width/2 - width/2;
-	const int pos_y  = viewport.height/2 - height/2 + 130;
+	const float width  = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width;
+	const float height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height;
+	const float pos_x  = viewport.width/2 - width/2;
+	const float pos_y  = viewport.height/2 - height/2 + 130;
 	const int spacing_x = 240;
 
 	const int upgradeToSprite[UPGRADE_COUNT] = {
@@ -1747,10 +1782,10 @@ int main() {
 
 	ConfigFlags configFlags = FLAG_WINDOW_RESIZABLE | 
 		                      FLAG_VSYNC_HINT | 
-							  FLAG_BORDERLESS_WINDOWED_MODE;
 							  // FLAG_WINDOW_TOPMOST | 
 							  // FLAG_FULLSCREEN_MODE |
-							  // FLAG_WINDOW_UNDECORATED;
+							  // FLAG_WINDOW_UNDECORATED |
+							  FLAG_BORDERLESS_WINDOWED_MODE;
 	SetConfigFlags(configFlags);
 	gameState.player.playerPosition = (Vector2){options.screenWidth / 2.0f, options.screenHeight / 2.0f};
 

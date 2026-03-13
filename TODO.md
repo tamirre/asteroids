@@ -1,12 +1,13 @@
 # TODO list: 
 
-- [ ] add particle effects
-- [ ] hot code reloading
 - [ ] savestates
+- [ ] hot code reloading
+- [ ] add script to generate audio header file with all sounds
+- [ ] add particle effects
 - [ ] add enemies that do more interesting actions, e.g. chase player while dodging bullets/asteroids
-- [ ] rework sprite system to use arbitrary animation frame position in texture atlas (non-continuous animation sprite sheets in atlas)
 - [ ] make score and leaderboard system
 - [ ] make it fun
+- [ ] rework sprite system to use arbitrary animation frame position in texture atlas (non-continuous animation sprite sheets in atlas)
 - [x] add collectable upgrades for boosts, e.g. shields
 - [x] localisation with different languages
 - [x] try out rayGUI 
