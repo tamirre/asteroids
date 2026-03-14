@@ -23,52 +23,25 @@ Follow the [installation guide](https://github.com/raysan5/raylib#installation) 
 git clone https://github.com/tamirre/asteroids.git
 cd asteroids
 ```
-### Building the Game (Windows)
-You need to have the windows msvc compiler installed. Edit the path to your 'vcvarsall.bat' in the build.bat and run:
+### Building the Game (Linux)
 ```bash
-./build.bat
+./src/tools/build.sh
 ```
 ### Running the Game (Windows)
 ```bash
-./run.bat
+./src/tools/run.sh
 ```
-<!-- ## Building the Game -->
+## Building the Game
 
-<!-- ### On Linux/MacOS
-
-1. Compile the source code:
-   ```bash
-   gcc -o asteroid_game asteroid_game.c -lraylib -lm -ldl -pthread
-   ```
-2. Run the game:
-   ```bash
-   ./asteroid_game
-   ```
-
-### On Windows
-
-1. Open a terminal and navigate to the project directory.
-2. Compile the source code:
-   ```bash
-   gcc -o asteroid_game asteroid_game.c -lraylib
-   ```
-3. Run the game:
-   ```bash
-   asteroid_game.exe
-   ``` -->
+### On Linux/MacOS
 
 ## How to Play
 
 - Use the **WASD** to move the rocket.
 - Press the **spacebar** to shoot bullets.
+- Press P to pause the game.
 - Avoid or destroy asteroids to keep playing.
-- The game ends if the player loses all three hearts.
-
-## Code Structure
-
-- `asteroids.c`: Main game logic, including initialization, game loop, and rendering.
-- `assets/`: Directory for optional assets like images or sounds.
-- `third_party/`: raylib include files and libs
+- The game ends if the player loses all hearts.
 
 All assets are created using [Aseprite](https://www.aseprite.org/).
 

@@ -1,1 +1,1 @@
-~/asteroids/bin/asteroids
+$(dirname $0)/../../bin/asteroids

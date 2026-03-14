@@ -22,8 +22,8 @@ while getopts ":p:a:l:s" opt; do
 done
 
 export GAME_NAME=asteroids
-export SRC_DIR=~/asteroids/src
-export BIN_DIR=~/asteroids/bin
+export SRC_DIR=$(dirname $0)/../
+export BIN_DIR=$(dirname $0)/../../bin
 if [ "$REGENERATE_LOCALIZATION" == "1" ]; then
 	python $SRC_DIR/tools/genLoc.py
 fi
