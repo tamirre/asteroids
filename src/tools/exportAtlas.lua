@@ -35,7 +35,7 @@ ensureDir(ATLAS_DIR)
 
 local ATLAS_IMAGE = app.fs.joinPath(ATLAS_DIR, "atlas.png")
 local TEMP_JSON   = app.fs.joinPath(ATLAS_DIR, "_temp.json")
-local H_FILE      = app.fs.joinPath(ATLAS_DIR, "../../assetsData.h")
+local H_FILE      = app.fs.joinPath(ATLAS_DIR, "../../src/assetsData.h")
 local SHAPE_PADDING = 1
 
 -- ------------------- collect .aseprite files -------------------

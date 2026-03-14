@@ -7,8 +7,8 @@
 - [ ] add particle effects
 - [ ] add enemies that do more interesting actions, e.g. chase player while dodging bullets/asteroids
 - [ ] make score and leaderboard system
-- [ ] make it fun
 - [ ] rework sprite system to use arbitrary animation frame position in texture atlas (non-continuous animation sprite sheets in atlas)
+- [ ] make it fun
 - [x] add collectable upgrades for boosts, e.g. shields
 - [x] localisation with different languages
 - [x] try out rayGUI 

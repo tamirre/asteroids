@@ -19,8 +19,8 @@
     #include <emscripten/emscripten.h>
 #endif
 
-#define MIN_SCREEN_WIDTH (1440.0f)
-#define MIN_SCREEN_HEIGHT (810.0f)
+#define MIN_SCREEN_WIDTH (400.0f)
+#define MIN_SCREEN_HEIGHT (300.0f)
 #define VIRTUAL_WIDTH (1440.0f)
 #define VIRTUAL_HEIGHT (810.0f)
 // #define MIN_SCREEN_WIDTH (940.0f)
@@ -902,7 +902,6 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 									}
 								}
 							} else {
-								currentCollision = (Rectangle){0,0,0,0};
 							}
 						}
 
@@ -948,7 +947,6 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 								}
 							}
 						} else {
-							currentCollision = (Rectangle){0,0,0,0};
 						}
 						// Check if asteroid is off-screen
 						if (asteroid->position.y > viewport.height + asteroid->sprite.coords.height * asteroid->size)
@@ -1036,7 +1034,6 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 								currentCollision = (Rectangle){0,0,0,0};
 							}
 						} else {
-							currentCollision = (Rectangle){0,0,0,0};
 						}
 					}
 				}
@@ -1194,6 +1191,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						DrawRectangleLinesEx(gameState->boosts[i].collider, 2.0, YELLOW);
 					}
 					DrawRectangleRec(currentCollision, RED);
+					currentCollision = (Rectangle){0,0,0,0};
 				}
 
 				BeginShaderMode(shader);
@@ -1804,11 +1802,11 @@ int main() {
 	litScene = LoadRenderTexture(options.screenWidth, options.screenHeight);
 
 #ifdef PLATFORM_WEB
-	shader = LoadShader(0, TextFormat("shaders/test_web.glsl", GLSL_VERSION));
-	lightShader = LoadShader(0, TextFormat("shaders/light_web.fs", GLSL_VERSION));
+	shader = LoadShader(0, TextFormat("./shaders/test_web.glsl", GLSL_VERSION));
+	lightShader = LoadShader(0, TextFormat("./shaders/light_web.fs", GLSL_VERSION));
 #else
-	shader = LoadShader(0, TextFormat("shaders/test.glsl", GLSL_VERSION));
-	lightShader = LoadShader(0, TextFormat("shaders/light.fs", GLSL_VERSION));
+	shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
+	lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
 #endif
 
 	options.previousWidth  = VIRTUAL_WIDTH;
