@@ -1,9 +1,9 @@
 import csv, os
 
+SRC_DIR = os.path.expanduser('~/asteroids/src')
+CSV_FILE = f"{SRC_DIR}/../localization/txt.csv"
+OUT_FILE = f"{SRC_DIR}/txt.h"
 LANGS = ["EN", "DE", "ZH"]
-CSV_FILE = "txt.csv"
-OUT_FILE = "txt.h"
-
 rows = list(csv.DictReader(open(CSV_FILE, encoding="utf-8")))
 
 out = []

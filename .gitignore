@@ -15,9 +15,10 @@ misc/
 #*.*#
 *.obj
 .vscode/*
+.vscode
 raylib/
 asteroids
 web/
 *.zip
-third_party/raygui/
+src/third_party/raygui/
 save.dat

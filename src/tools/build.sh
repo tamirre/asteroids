@@ -22,14 +22,16 @@ while getopts ":p:a:l:s" opt; do
 done
 
 export GAME_NAME=asteroids
+export SRC_DIR=~/asteroids/src
+export BIN_DIR=~/asteroids/bin
 if [ "$REGENERATE_LOCALIZATION" == "1" ]; then
-	python genLoc.py
+	python $SRC_DIR/tools/genLoc.py
 fi
 if [ "$REGENERATE_AUDIO" == "1" ]; then
-	python genAudio.py
+	python $SRC_DIR/tools/genAudio.py
 fi
 if [ "$REGENERATE_ATLAS" == "1" ]; then
-	aseprite -b -script ./assets/tools/exportAtlas.lua	
+	aseprite -b -script $SRC_DIR/tools/exportAtlas.lua	
 	echo "Regenerated atlas"
 fi
 if [ "$PLATFORM" == "web" ]; then
@@ -52,9 +54,9 @@ if [ "$PLATFORM" == "web" ]; then
 
 export RAYLIB_PATH=~/raylib/src/
 export EMSDK_QUIET=1
-mkdir -p web
+mkdir -p $SRC_DIR/../web
 source ~/raylib/emsdk/emsdk_env.sh 
-emcc -o web/index.html asteroids.c \
+emcc -o $SRC_DIR/../web/index.html $SRC_DIR/asteroids.c \
 	-Wall -std=c99 -D_DEFAULT_SOURCE \
 	-Wno-missing-braces -Wunused-result -Os \
 	-I. -I $RAYLIB_PATH \
@@ -73,8 +75,7 @@ emcc -o web/index.html asteroids.c \
 	# --shell-file $RAYLIB_PATH/shell.html $RAYLIB_PATH/web/libraylib.web.a \
 zip -r ${GAME_NAME}_web.zip web/
 else 
-	# gcc asteroids.c -Wall -o $GAME_NAME -Ithird_party/include -lraylib -lm -ldl -lpthread -lGL -fsanitize=address -g 
-	gcc asteroids.c -Wall -o $GAME_NAME -Ithird_party/include -lraylib -lm -ldl -lpthread -lGL
+	gcc $SRC_DIR/asteroids.c -Wall -o $BIN_DIR/$GAME_NAME -I$SRC_DIR/third_party/include -lraylib -lm -ldl -lpthread -lGL
 fi
 
 seconds=$SECONDS

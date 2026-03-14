@@ -2,9 +2,8 @@
 import os
 from pathlib import Path
 
-AUDIO_DIR = "audio"
-OUTPUT = "audio.h"
-
+AUDIO_DIR = f"{os.getcwd()}/audio"
+OUTPUT = f"{os.getcwd()}/../audio.h"
 
 def normalize(name: str) -> str:
     name = os.path.splitext(name)[0]

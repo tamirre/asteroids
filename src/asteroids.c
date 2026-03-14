@@ -856,6 +856,16 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
 						{
 							Bullet* bullet = &gameState->bullets[bulletIndex];
+							const int texture_x = bullet->position.x - bullet->sprite.coords.width * bullet->size / getSprite(SPRITE_BULLET).numFrames / 2.0;
+							const int texture_y = bullet->position.y - bullet->sprite.coords.height * bullet->size / 2.0;
+							const float width = bullet->sprite.coords.width / getSprite(SPRITE_BULLET).numFrames * bullet->size;
+							const float height = bullet->sprite.coords.height * bullet->size;
+							bullet->collider = (Rectangle) {
+								.width = width,
+								.height = height,
+								.x = texture_x,
+								.y = texture_y,
+							};
 							if(CheckCollisionRecs(asteroid->collider, bullet->collider))
 							{
 								Rectangle collisionRec = GetCollisionRec(asteroid->collider, bullet->collider);
@@ -891,6 +901,8 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 										}
 									}
 								}
+							} else {
+								currentCollision = (Rectangle){0,0,0,0};
 							}
 						}
 
@@ -935,6 +947,8 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 									gameState->state = STATE_GAME_OVER;
 								}
 							}
+						} else {
+							currentCollision = (Rectangle){0,0,0,0};
 						}
 						// Check if asteroid is off-screen
 						if (asteroid->position.y > viewport.height + asteroid->sprite.coords.height * asteroid->size)
@@ -1021,6 +1035,8 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 								PlaySound(audio->sounds[SOUND_SHIELD]);
 								currentCollision = (Rectangle){0,0,0,0};
 							}
+						} else {
+							currentCollision = (Rectangle){0,0,0,0};
 						}
 					}
 				}
@@ -1178,7 +1194,6 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						DrawRectangleLinesEx(gameState->boosts[i].collider, 2.0, YELLOW);
 					}
 					DrawRectangleRec(currentCollision, RED);
-					currentCollision = (Rectangle){0,0,0,0};
 				}
 
 				BeginShaderMode(shader);
@@ -1197,30 +1212,16 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_STAR1).coords, (Vector2) {texture_x, texture_y}, starColor);
 					}
 				}
-
-				// if(!options->disableShaders) 
 				// Draw Bullets
 				{
 					for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
 					{
 						Bullet* bullet = &gameState->bullets[bulletIndex];
-						const int texture_x = bullet->position.x - bullet->sprite.coords.width * bullet->size / getSprite(SPRITE_BULLET).numFrames / 2.0;
-						const int texture_y = bullet->position.y - bullet->sprite.coords.height * bullet->size / 2.0;
-						const float width = bullet->sprite.coords.width / getSprite(SPRITE_BULLET).numFrames * bullet->size;
-						const float height = bullet->sprite.coords.height * bullet->size;
-						Rectangle bulletRec = {
-							.width = width,
-							.height = height,
-							.x = texture_x,
-							.y = texture_y,
-						};
-						bullet->collider = bulletRec;
-						Vector2 texSize = { bulletRec.width, bulletRec.height };
+						Vector2 texSize = { bullet->collider.width, bullet->collider.height };
 						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						// Change the frame per second speed of animation
 						// atlas->animations[SpriteToAnimation[SPRITE_BULLET]].framesPerSecond = 14;
-						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_BULLET]], bulletRec, (Vector2){0, 0}, bullet->rotation, WHITE, shader);
-						// DrawRectangleLines(bulletRec.x, bulletRec.y, bulletRec.width, bulletRec.height, RED);
+						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_BULLET]], bullet->collider, (Vector2){0, 0}, bullet->rotation, WHITE, shader);
 					}
 				}
 				// Draw asteroids
