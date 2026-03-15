@@ -537,6 +537,7 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 			{
 				float viewportScale = viewport.width / VIRTUAL_WIDTH;
 				if (!IsMusicStreamPlaying(audio->music[currentSongtrackID])) ResumeMusicStream(audio->music[currentSongtrackID]);
+				ResumeSound(audio->sounds[SOUND_SHIELD]);
 				// Step debugging mode
 				if (IsKeyPressed(KEY_J)) stepMode = !stepMode;
 				if (IsKeyPressed(KEY_K)) stepOnce = true;
@@ -1112,7 +1113,6 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 						gameState->player.fireRate += 0.5f;
 					}
 					gameState->state = STATE_RUNNING;
-					ResumeSound(audio->sounds[SOUND_SHIELD]);
 				}
 				break;
 			}
@@ -1167,7 +1167,6 @@ void UpdateGame(GameState* gameState, Options* options, TextureAtlas* atlas, Spr
 				if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) 
 				{
 					gameState->state = gameState->lastState;
-					ResumeSound(audio->sounds[SOUND_SHIELD]);
 				}
 				break;
 			}

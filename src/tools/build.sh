@@ -24,6 +24,7 @@ done
 export GAME_NAME=asteroids
 export SRC_DIR=$(dirname $0)/../
 export BIN_DIR=$(dirname $0)/../../bin
+mkdir -p $BIN_DIR
 if [ "$REGENERATE_LOCALIZATION" == "1" ]; then
 	python $SRC_DIR/tools/genLoc.py
 fi
