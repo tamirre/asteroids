@@ -39,7 +39,7 @@ cd asteroids
 
 - Use the **WASD** to move the rocket.
 - Press the **spacebar** to shoot bullets.
-- Press P to pause the game.
+- Press **P** to pause the game.
 - Avoid or destroy asteroids to keep playing.
 - The game ends if the player loses all hearts.
 
