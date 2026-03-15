@@ -1696,6 +1696,13 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 	}
 }
 
+void DrawFPSInViewport(Rectangle viewport)
+{
+    float offsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
+    float offsetY = (GetRenderHeight() - viewport.height) / 2.0f;
+
+    DrawFPS(offsetX + 15, offsetY + 50);
+}
 void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader shader)
 {
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
@@ -1780,9 +1787,7 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader 
 			}
 	}
 
-	float letterBoxOffsetX = (GetRenderWidth()  - VIRTUAL_WIDTH)  / 2.0f;
-	float letterBoxOffsetY = (GetRenderHeight() - VIRTUAL_HEIGHT) / 2.0f;
-	DrawFPS(letterBoxOffsetX + 10.0f, letterBoxOffsetY + 40.0f);
+	DrawFPSInViewport(viewport);
 }
 
 void DrawComposite(RenderTexture2D* scene, Options* options, RenderTexture2D* litScene, GameState* gameState, Shader lightShader)
