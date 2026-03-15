@@ -1397,6 +1397,12 @@ void DrawLightmap(GameState* gameState, Options* options, RenderTexture2D* litSc
 		lights[lc].y = 1.0f - gameState->bullets[i].position.y / VIRTUAL_HEIGHT;
 		lc++;
 	}
+	for (int i = 0; i < gameState->boostCount; i++) {
+		// convert pixel -> normalized UV (0–1)
+		lights[lc].x = gameState->boosts[i].position.x / VIRTUAL_WIDTH;
+		lights[lc].y = 1.0f - gameState->boosts[i].position.y / VIRTUAL_HEIGHT;
+		lc++;
+	}
 
 	lights[lc].x = gameState->player.playerPosition.x / VIRTUAL_WIDTH;
 	lights[lc].y = 1.0f - gameState->player.playerPosition.y / VIRTUAL_HEIGHT;
@@ -1803,22 +1809,26 @@ void DrawComposite(RenderTexture2D* scene, Options* options, RenderTexture2D* li
     if (!options->disableShaders) EndShaderMode();
 }
 
+void DrawGame(GameState* gameState, Options* options, TextureAtlas* atlas, RenderTexture2D* scene, Shader* shader, Shader lightShader)
+{
+	DrawLightmap(gameState, options, &litScene, lightShader);
+	DrawScene(gameState, options, atlas, scene, *shader);
+
+	BeginDrawing();
+	{
+		ClearBackground(BLACK);
+		DrawComposite(scene, options, &litScene, gameState, lightShader);
+		DrawUI(gameState, options, atlas, *shader);
+	}
+	EndDrawing();
+}
 void UpdateDrawFrame()
 {
 	gameState.dt = GetFrameTime() * gameState.timeScale;
 	gameState.time += gameState.dt;
 	HandleResize(&options);
 	UpdateGame(&gameState, &options, &atlas, spriteMasks, &audio, gameState.dt);
-	DrawLightmap(&gameState, &options, &litScene, lightShader);
-	DrawScene(&gameState, &options, &atlas, &scene, shader);
-
-	BeginDrawing();
-	{
-		ClearBackground(BLACK);
-		DrawComposite(&scene, &options, &litScene, &gameState, lightShader);
-		DrawUI(&gameState, &options, &atlas, shader);
-	}
-	EndDrawing();
+	DrawGame(&gameState, &options, &atlas, &scene, &shader, lightShader);
 }
 
 int main() {
