@@ -136,20 +136,12 @@ int main()
 	RenderTexture2D scene = {0};
 	RenderTexture2D litScene = {0};
 
-	Shader shader = {0};
-	Shader lightShader = {0};
+	Shader shader;
+	Shader lightShader;
 
 	Rectangle currentCollision = {0};
 	bool shouldExit = false;
 
-#ifdef PLATFORM_WEB
-	shader = LoadShader(0, TextFormat("./shaders/test_web.glsl", GLSL_VERSION));
-	lightShader = LoadShader(0, TextFormat("./shaders/light_web.fs", GLSL_VERSION));
-#else
-	// TODO: THIS IS STILL BUGGED
-	// shader = LoadShader(0, TextFormat("./shaders/test.glsl", GLSL_VERSION));
-	// lightShader = LoadShader(0, TextFormat("./shaders/light.fs", GLSL_VERSION));
-#endif
 
 	static GameMemory gameMemory = {0};
 	gameMemory.gameState = &gameState;
@@ -164,6 +156,14 @@ int main()
 
 	GameCode game = LoadGameCode();
 	if (game.Init) game.Init(&gameMemory);
+#ifdef PLATFORM_WEB
+	shader = LoadShader(0, TextFormat("./shaders/test_web.glsl", GLSL_VERSION));
+	lightShader = LoadShader(0, TextFormat("./shaders/light_web.fs", GLSL_VERSION));
+#else
+	// TODO: THIS IS STILL BUGGED
+	shader = LoadShader(0, TextFormat("./shaders/test.glsl", GLSL_VERSION));
+	lightShader = LoadShader(0, TextFormat("./shaders/light.fs", GLSL_VERSION));
+#endif
 #if defined(PLATFORM_WEB)
 	emscripten_set_main_loop(game.Update, TARGET_FPS, 1);
 #else
@@ -174,14 +174,14 @@ int main()
 		{
 			printf("Hot reloading game...\n");
 
-#ifdef PLATFORM_WEB
-			shader = LoadShader(0, TextFormat("./shaders/test_web.glsl", GLSL_VERSION));
-			lightShader = LoadShader(0, TextFormat("./shaders/light_web.fs", GLSL_VERSION));
-#else
-			shader = LoadShader(0, TextFormat("./shaders/test.glsl", GLSL_VERSION));
-			lightShader = LoadShader(0, TextFormat("./shaders/light.fs", GLSL_VERSION));
-#endif
-
+// #ifdef PLATFORM_WEB
+// 			shader = LoadShader(0, TextFormat("./shaders/test_web.glsl", GLSL_VERSION));
+// 			lightShader = LoadShader(0, TextFormat("./shaders/light_web.fs", GLSL_VERSION));
+// #else
+// 			shader = LoadShader(0, TextFormat("./shaders/test.glsl", GLSL_VERSION));
+// 			lightShader = LoadShader(0, TextFormat("./shaders/light.fs", GLSL_VERSION));
+// #endif
+//
 			if (game.Init) game.Init(&gameMemory);
 			UnloadGameCode(&game);
 			game = LoadGameCode();

@@ -986,6 +986,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 		case STATE_RUNNING:
 			{
 				Color backgroundColor = ColorFromHSV(258, 1, 0.07);
+				printf("Running\n");
 				ClearBackground(backgroundColor);
 				// Draw Colliders (outside of shader mode for corect color)
 				if (options->showColliders)
@@ -1170,19 +1171,19 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 	EndTextureMode(); // scene
 }
 
-void DrawLightmap(GameState* gameState, Options* options, RenderTexture2D* litScene, Shader lightShader)
+void DrawLightmap(GameState* gameState, Options* options, RenderTexture2D* litScene, Shader* lightShader)
 {
 	const Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
-	int uLightPos = GetShaderLocation(lightShader, "lightPos");
-	int uLightRadius = GetShaderLocation(lightShader, "lightRadius");
-	int uAspect = GetShaderLocation(lightShader, "aspect");
+	int uLightPos = GetShaderLocation(*lightShader, "lightPos");
+	int uLightRadius = GetShaderLocation(*lightShader, "lightRadius");
+	int uAspect = GetShaderLocation(*lightShader, "aspect");
 	float lightRadius = 0.1f;  // normalized radius
 	float aspect = (float)viewport.width / (float)viewport.height;
-	SetShaderValueTexture(lightShader, GetShaderLocation(lightShader, "lightTexture"), litScene->texture);
-	SetShaderValue(lightShader, uLightRadius, &lightRadius, SHADER_UNIFORM_FLOAT);
-	SetShaderValue(lightShader, uAspect, &aspect, SHADER_UNIFORM_FLOAT);
+	SetShaderValueTexture(*lightShader, GetShaderLocation(*lightShader, "lightTexture"), litScene->texture);
+	SetShaderValue(*lightShader, uLightRadius, &lightRadius, SHADER_UNIFORM_FLOAT);
+	SetShaderValue(*lightShader, uAspect, &aspect, SHADER_UNIFORM_FLOAT);
 	// --- Build lightmap ---
-	int uLightCount = GetShaderLocation(lightShader, "lightCount");
+	int uLightCount = GetShaderLocation(*lightShader, "lightCount");
 	BeginTextureMode(*litScene);
 	ClearBackground(BLACK);
 	BeginBlendMode(BLEND_ADDITIVE);
@@ -1207,8 +1208,8 @@ void DrawLightmap(GameState* gameState, Options* options, RenderTexture2D* litSc
 	lights[lc].y = 1.0f - gameState->player.playerPosition.y / VIRTUAL_HEIGHT;
 	lc++;
 	// Upload array
-	SetShaderValue(lightShader, uLightCount, &lc, SHADER_UNIFORM_INT);
-	SetShaderValueV(lightShader, uLightPos, lights, SHADER_UNIFORM_VEC2, lc);
+	SetShaderValue(*lightShader, uLightCount, &lc, SHADER_UNIFORM_INT);
+	SetShaderValueV(*lightShader, uLightPos, lights, SHADER_UNIFORM_VEC2, lc);
 
 	EndBlendMode();
 	EndTextureMode();
@@ -1619,7 +1620,7 @@ void DrawGame(GameMemory* gameMemory)
 	Shader shader = *gameMemory->shader;
 	Shader lightShader = *gameMemory->lightShader;
 
-	DrawLightmap(gameState, options, litScene, lightShader);
+	DrawLightmap(gameState, options, litScene, &lightShader);
 	DrawScene(gameState, options, atlas, scene, shader);
 
 	BeginDrawing();
@@ -1635,9 +1636,12 @@ void UpdateDrawFrame(GameMemory* gameMemory)
 	gameMemory->gameState->dt = GetFrameTime() * gameMemory->gameState->timeScale;
 	gameMemory->gameState->time += gameMemory->gameState->dt;
 	HandleResize(gameMemory->options);
+	// printf("HandleResize\n");
 	UpdateGame(gameMemory);
+	printf("UpdateGame Done\n");
 	// DrawGame(&gameState, &options, &atlas, &scene, &shader, lightShader);
 	DrawGame(gameMemory);
+	printf("DrawGame Done\n");
 }
 
 void InitGame(GameMemory* gameMemory)
