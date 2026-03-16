@@ -318,9 +318,9 @@ void UpdateGame(GameMemory* gameMemory)
 	// SpriteMask spriteMasks[SPRITE_COUNT] = gameMemory->spriteMasks;
 	Audio* audio = gameMemory->audio;
 
-	static bool cursorHidden = true;
-	static bool stepMode = false;
-	static bool stepOnce = false;
+	// static bool cursorHidden = true;
+	// static bool stepMode = false;
+	// static bool stepOnce = false;
 	const Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 
 	switch (gameState->state) 
@@ -338,8 +338,8 @@ void UpdateGame(GameMemory* gameMemory)
 				if (!IsMusicStreamPlaying(audio->music[audio->currentSongtrackID])) ResumeMusicStream(audio->music[audio->currentSongtrackID]);
 				ResumeSound(audio->sounds[SOUND_SHIELD]);
 				// Step debugging mode
-				if (IsKeyPressed(KEY_J)) stepMode = !stepMode;
-				if (IsKeyPressed(KEY_K)) stepOnce = true;
+				// if (IsKeyPressed(KEY_J)) stepMode = !stepMode;
+				// if (IsKeyPressed(KEY_K)) stepOnce = true;
 				if (IsKeyPressed(KEY_O)) options->disableShaders = !options->disableShaders;
 #ifndef PLATFORM_WEB
 				if (IsKeyPressed(KEY_F)) 
@@ -364,8 +364,8 @@ void UpdateGame(GameMemory* gameMemory)
 					}
 				}
 
-				if (stepMode && !stepOnce) return;
-				stepOnce = false;
+				// if (stepMode && !stepOnce) return;
+				// stepOnce = false;
 
 				const Rectangle screenRect = {
 					.height = VIRTUAL_HEIGHT,
@@ -390,9 +390,9 @@ void UpdateGame(GameMemory* gameMemory)
 				}
 				if (IsKeyPressed(KEY_TAB)) // press Tab to toggle cursor
 				{
-					if (cursorHidden) EnableCursor();
-					else DisableCursor();
-					cursorHidden = !cursorHidden;
+					// if (cursorHidden) EnableCursor();
+					// else DisableCursor();
+					// cursorHidden = !cursorHidden;
 				}
 
 				UpdateMusicStream(audio->music[audio->currentSongtrackID]);
@@ -1674,7 +1674,7 @@ void InitGame(GameMemory* gameMemory)
 	initializeGameState(&gameState);
 	initializeAudio(&audio, &options);
 
-	SpriteMask spriteMasks[SPRITE_COUNT] = {0};
+	SpriteMask spriteMasks[SPRITE_COUNT];
     TextureAtlas atlas = initTextureAtlas(spriteMasks);
 	*gameMemory->scene = LoadRenderTexture(options.screenWidth, options.screenHeight);
 	*gameMemory->litScene = LoadRenderTexture(options.screenWidth, options.screenHeight);

@@ -136,8 +136,8 @@ int main()
 	RenderTexture2D scene = {0};
 	RenderTexture2D litScene = {0};
 
-	Shader shader;
-	Shader lightShader;
+	Shader shader = {0};
+	Shader lightShader = {0};
 
 	Rectangle currentCollision = {0};
 	bool shouldExit = false;
@@ -182,9 +182,9 @@ int main()
 // 			lightShader = LoadShader(0, TextFormat("./shaders/light.fs", GLSL_VERSION));
 // #endif
 //
-			if (game.Init) game.Init(&gameMemory);
 			UnloadGameCode(&game);
 			game = LoadGameCode();
+			if (game.Init) game.Init(&gameMemory);
 		}
 		options.previousWidth  = VIRTUAL_WIDTH;
 		options.previousHeight = VIRTUAL_HEIGHT;
