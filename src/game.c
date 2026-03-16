@@ -1684,30 +1684,3 @@ void InitGame(GameMemory* gameMemory)
 	gameMemory->spriteMasks = spriteMasks;
 }
 
-// int main() {
-// #ifdef PLATFORM_WEB
-// 	shader = LoadShader(0, TextFormat("./shaders/test_web.glsl", GLSL_VERSION));
-// 	lightShader = LoadShader(0, TextFormat("./shaders/light_web.fs", GLSL_VERSION));
-// #else
-// 	shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
-// 	lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
-// #endif
-//
-// 	options.previousWidth  = VIRTUAL_WIDTH;
-// 	options.previousHeight = VIRTUAL_HEIGHT;
-// #if defined(PLATFORM_WEB)
-// 	emscripten_set_main_loop(UpdateDrawFrame, TARGET_FPS, 1);
-// #else
-//     while (!WindowShouldClose() && !shouldExit)
-//     { 
-// 		UpdateDrawFrame();
-//     }
-// #endif
-// 	// UnloadShader(shader);
-// 	// UnloadShader(lightShader);
-// 	Cleanup(atlas, options, audio, spriteMasks);
-//
-//     CloseWindow();
-//     return 0;
-// }
-

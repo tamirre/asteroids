@@ -159,8 +159,8 @@ int main()
 	shader = LoadShader(0, TextFormat("./shaders/test_web.glsl", GLSL_VERSION));
 	lightShader = LoadShader(0, TextFormat("./shaders/light_web.fs", GLSL_VERSION));
 #else
-	shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
-	lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
+	shader = LoadShader(0, TextFormat("./shaders/test.glsl", GLSL_VERSION));
+	lightShader = LoadShader(0, TextFormat("./shaders/light.fs", GLSL_VERSION));
 #endif
 	if (game.Init) game.Init(&gameMemory);
 #if defined(PLATFORM_WEB)
@@ -177,8 +177,8 @@ int main()
 			shader = LoadShader(0, TextFormat("./shaders/test_web.glsl", GLSL_VERSION));
 			lightShader = LoadShader(0, TextFormat("./shaders/light_web.fs", GLSL_VERSION));
 #else
-			shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
-			lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
+			shader = LoadShader(0, TextFormat("./shaders/test.glsl", GLSL_VERSION));
+			lightShader = LoadShader(0, TextFormat("./shaders/light.fs", GLSL_VERSION));
 #endif
 
 			if (game.Init) game.Init(&gameMemory);
