@@ -26,17 +26,17 @@ typedef struct Audio {
 } Audio;
 
 static const char *sound_files[] = {
-    "audio/sound_america.mp3",
-    "audio/sound_bingchilling.mp3",
-    "audio/sound_cardSelect.mp3",
-    "audio/sound_erika.mp3",
-    "audio/sound_explosionBlast.wav",
-    "audio/sound_gun.wav",
-    "audio/sound_hit.wav",
-    "audio/sound_shield.wav",
+    "../audio/sound_america.mp3",
+    "../audio/sound_bingchilling.mp3",
+    "../audio/sound_cardSelect.mp3",
+    "../audio/sound_erika.mp3",
+    "../audio/sound_explosionBlast.wav",
+    "../audio/sound_gun.wav",
+    "../audio/sound_hit.wav",
+    "../audio/sound_shield.wav",
 };
 
 static const char *music_files[] = {
-    "audio/music_soundtrack.mp3",
+    "../audio/music_soundtrack.mp3",
 };
 
