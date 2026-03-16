@@ -22,6 +22,7 @@ typedef enum MusicId {
 typedef struct Audio {
     Sound sounds[SOUND_COUNT];
     Music music[MUSIC_COUNT];
+    int currentSongtrackID;
 } Audio;
 
 static const char *sound_files[] = {

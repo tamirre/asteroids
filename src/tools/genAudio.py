@@ -54,6 +54,7 @@ def main():
         f.write("typedef struct Audio {\n")
         f.write("    Sound sounds[SOUND_COUNT];\n")
         f.write("    Music music[MUSIC_COUNT];\n")
+        f.write("    int currentSongtrackID\n")
         f.write("} Audio;\n\n")
 
         # ---- file path tables ----

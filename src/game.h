@@ -190,7 +190,10 @@ typedef struct GameState {
 	float dt;
 	float time;
 	UpgradeCard upgradeCards[UPGRADE_COUNT];
+    bool shouldExit;
+    Rectangle currentCollision;
 } GameState;
+
 typedef struct GameMemory
 {
     GameState* gameState;
@@ -198,18 +201,12 @@ typedef struct GameMemory
     Audio* audio;
     TextureAtlas* atlas;
     SpriteMask* spriteMasks;
-
     RenderTexture2D* scene;
     RenderTexture2D* litScene;
-
     Shader* shader;
     Shader* lightShader;
-
-    int* currentSongtrackID;
-    Rectangle* currentCollision;
-    bool* shouldExit;
-
 } GameMemory;
 
-typedef void (*GameUpdateFn)(GameMemory*, float);
-typedef void (*GameDrawFn)(GameMemory*);
+typedef void (*GameUpdateFn)(GameMemory*);
+typedef void (*GameInitFn)(GameMemory*);
+typedef void (*GameCleanupFn)(GameMemory*);
