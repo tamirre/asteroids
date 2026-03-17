@@ -27,7 +27,7 @@
 
 #endif
 
-static char lastLoadedFile[256] = {0};
+// static char lastLoadedFile[256] = {0};
 
 typedef struct GameCode {
     LIB_HANDLE handle;
@@ -60,82 +60,65 @@ void CopyFile(const char *src, const char *dst)
 //source: https://stackoverflow.com/questions/2180079/how-can-i-copy-a-file-on-unix-using-c
 int CopyFile(const char *from, const char *to)
 {
-    int fd_to, fd_from;
-    char buf[4096];
-    ssize_t nread;
-    int saved_errno;
+	int fd_to, fd_from;
+	char buf[4096];
+	ssize_t nread;
+	int saved_errno;
 
-    fd_from = open(from, O_RDONLY);
-    if (fd_from < 0)
-        return -1;
+	fd_from = open(from, O_RDONLY);
+	if (fd_from < 0)
+		return -1;
 
-    fd_to = open(to, O_WRONLY | O_CREAT | O_EXCL, 0666);
-    if (fd_to < 0)
-        goto out_error;
+	fd_to = open(to, O_WRONLY | O_CREAT | O_EXCL, 0666);
+	if (fd_to < 0)
+		goto out_error;
 
-    while (nread = read(fd_from, buf, sizeof buf), nread > 0)
-    {
-        char *out_ptr = buf;
-        ssize_t nwritten;
+	while (nread = read(fd_from, buf, sizeof buf), nread > 0)
+	{
+		char *out_ptr = buf;
+		ssize_t nwritten;
 
-        do {
-            nwritten = write(fd_to, out_ptr, nread);
+		do {
+			nwritten = write(fd_to, out_ptr, nread);
 
-            if (nwritten >= 0)
-            {
-                nread -= nwritten;
-                out_ptr += nwritten;
-            }
-            else if (errno != EINTR)
-            {
-                goto out_error;
-            }
-        } while (nread > 0);
-    }
+			if (nwritten >= 0)
+			{
+				nread -= nwritten;
+				out_ptr += nwritten;
+			}
+			else if (errno != EINTR)
+			{
+				goto out_error;
+			}
+		} while (nread > 0);
+	}
 
-    if (nread == 0)
-    {
-        if (close(fd_to) < 0)
-        {
-            fd_to = -1;
-            goto out_error;
-        }
-        close(fd_from);
+	if (nread == 0)
+	{
+		if (close(fd_to) < 0)
+		{
+			fd_to = -1;
+			goto out_error;
+		}
+		close(fd_from);
 
-        /* Success! */
-        return 0;
-    }
+		/* Success! */
+		return 0;
+	}
 
-  out_error:
-    saved_errno = errno;
+out_error:
+	saved_errno = errno;
 
-    close(fd_from);
-    if (fd_to >= 0)
-        close(fd_to);
+	close(fd_from);
+	if (fd_to >= 0)
+		close(fd_to);
 
-    errno = saved_errno;
-    return -1;
+	errno = saved_errno;
+	return -1;
 }
 
 
 #endif
-
-off_t GetFileSize(const char* path)
-{
-    struct stat st;
-    if (stat(path, &st) == 0)
-        return st.st_size;
-    return -1;
-}
-
-bool WaitForStableFile(const char* path)
-{
-    off_t size1 = GetFileSize(path);
-    usleep(50000);
-    off_t size2 = GetFileSize(path);
-
-    return (size1 == size2 && size1 > 0);
-}
 
 GameCode LoadGameCode()
 {
@@ -152,7 +135,7 @@ GameCode LoadGameCode()
 	char tmp[256];
 	snprintf(tmp, sizeof(tmp), "./src/game_%ld.so", time(NULL));
 	CopyFile(src, tmp);
-	usleep(10000000);
+	// usleep(100000);
 
     game.handle = LoadLib(tmp);
 
@@ -184,10 +167,10 @@ GameCode LoadGameCode()
     printf("Game loaded\n");
 	
 	// remove previous file if there was one
-    if (lastLoadedFile[0]) {
-        unlink(lastLoadedFile);
-    }
-    strncpy(lastLoadedFile, tmp, sizeof(lastLoadedFile));
+    // if (lastLoadedFile[0]) {
+	unlink(tmp);
+    // }
+    // strncpy(lastLoadedFile, tmp, sizeof(lastLoadedFile));
 
     return game;
 }
@@ -197,7 +180,7 @@ void UnloadGameCode(GameCode* game)
 	if (game->handle)
 	{
 		CloseLib(game->handle);
-		game->handle = NULL;
+		// game->handle = NULL;
 	}
 }
 
@@ -244,15 +227,15 @@ int main()
 			shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
 			lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
 #endif
-			CloseAudioDevice();
+			// CloseAudioDevice();
+			// usleep(500000);
 			UnloadGameCode(&game);
-			usleep(10000000);
+			// usleep(100000);
 			GameCode newGame = LoadGameCode();
-			// usleep(10000000);
 			if (newGame.handle)
 			{
 				game = newGame; // swap function pointers only
-				InitAudioDevice();
+				// InitAudioDevice();
 				// game.InitAudio(gameMemory.audio, gameMemory.options); 
 			}
 		}
