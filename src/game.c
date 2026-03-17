@@ -1019,7 +1019,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					}
 					for (int i = 0; i < gameState->asteroidCount; i++)
 					{
-						DrawRectangleLinesEx(gameState->asteroids[i].collider, 2.0, RED);
+						DrawRectangleLinesEx(gameState->asteroids[i].collider, 2.0, BLUE);
 					}
 					for (int i = 0; i < gameState->boostCount; i++)
 					{

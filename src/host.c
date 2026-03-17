@@ -57,23 +57,7 @@ void CopyFile(const char *src, const char *dst)
 
 #else
 
-// void CopyFile(const char *src, const char *dst)
-// {
-//     int in = open(src, O_RDONLY);
-//     int out = open(dst, O_WRONLY | O_CREAT | O_TRUNC, 0755);
-//
-//     if (in < 0 || out < 0) return;
-//
-//     char buf[8192];
-//     ssize_t n;
-//
-//     while ((n = read(in, buf, sizeof(buf))) > 0)
-//         write(out, buf, n);
-//
-//     close(in);
-//     close(out);
-// }
-
+//source: https://stackoverflow.com/questions/2180079/how-can-i-copy-a-file-on-unix-using-c
 int CopyFile(const char *from, const char *to)
 {
     int fd_to, fd_from;
@@ -168,7 +152,7 @@ GameCode LoadGameCode()
 	char tmp[256];
 	snprintf(tmp, sizeof(tmp), "./src/game_%ld.so", time(NULL));
 	CopyFile(src, tmp);
-	usleep(500000);
+	usleep(10000000);
 
     game.handle = LoadLib(tmp);
 
@@ -253,25 +237,24 @@ int main()
 
 			printf("Hot reloading game...\n");
 
-// #ifdef PLATFORM_WEB
-// 			shader = LoadShader(0, TextFormat("./src/shaders/test_web.glsl", GLSL_VERSION));
-// 			lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
-// #else
-// 			shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
-// 			lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
-// #endif
+#ifdef PLATFORM_WEB
+			shader = LoadShader(0, TextFormat("./src/shaders/test_web.glsl", GLSL_VERSION));
+			lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
+#else
+			shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
+			lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
+#endif
+			CloseAudioDevice();
 			UnloadGameCode(&game);
-			usleep(5000000);
-			// game = LoadGameCode();
+			usleep(10000000);
 			GameCode newGame = LoadGameCode();
-
+			// usleep(10000000);
 			if (newGame.handle)
 			{
-				CloseAudioDevice();
 				game = newGame; // swap function pointers only
+				InitAudioDevice();
 				// game.InitAudio(gameMemory.audio, gameMemory.options); 
 			}
-			// if (game.Init) game.Init(&gameMemory);
 		}
 
 		if (game.Update) game.Update(&gameMemory);
@@ -279,6 +262,6 @@ int main()
 #endif
 
 	if (game.Cleanup) game.Cleanup(&gameMemory);
-	// UnloadGameCode(&game);
+	UnloadGameCode(&game);
 	CloseWindow();
 }
