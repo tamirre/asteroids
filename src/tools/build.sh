@@ -76,11 +76,11 @@ emcc -o $SRC_DIR/../web/index.html $SRC_DIR/asteroids.c \
 	# --shell-file $RAYLIB_PATH/shell.html $RAYLIB_PATH/web/libraylib.web.a \
 zip -r ${GAME_NAME}_web.zip web/
 else 
-	gcc -g -shared -fPIC $SRC_DIR/game.c -o $SRC_DIR/game.so \
+	gcc -g -g3 -shared -fPIC $SRC_DIR/game.c -o $SRC_DIR/game.so \
 		-I$SRC_DIR/third_party/include \
 		-lraylib -lm -ldl -lpthread -lGL
 
-	gcc -g $SRC_DIR/host.c -o $BIN_DIR/$GAME_NAME \
+	gcc -g -g3 $SRC_DIR/host.c -o $BIN_DIR/$GAME_NAME \
 		-I$SRC_DIR/third_party/include \
 		-lraylib -lm -ldl -lpthread -lGL \
 		-rdynamic

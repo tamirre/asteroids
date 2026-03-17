@@ -33,7 +33,7 @@
 #ifdef PLATFORM_WEB
 	#define TARGET_FPS (60)
 #else
-	#define TARGET_FPS (300)
+	#define TARGET_FPS (30)
 #endif
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
@@ -192,6 +192,7 @@ typedef struct GameState {
 	UpgradeCard upgradeCards[UPGRADE_COUNT];
     bool shouldExit;
     Rectangle currentCollision;
+	bool stateChanged;
 } GameState;
 
 typedef struct GameMemory
@@ -210,3 +211,4 @@ typedef struct GameMemory
 typedef void (*GameUpdateFn)(GameMemory*);
 typedef void (*GameInitFn)(GameMemory*);
 typedef void (*GameCleanupFn)(GameMemory*);
+typedef void (*GameInitAudioFn)(Audio*, Options*);

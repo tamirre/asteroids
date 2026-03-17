@@ -2,6 +2,8 @@
 #include <dlfcn.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
+#include <errno.h>
 
 #include "game.h"
 
@@ -25,6 +27,8 @@
 
 #endif
 
+static char lastLoadedFile[256] = {0};
+
 typedef struct GameCode {
     LIB_HANDLE handle;
     time_t lastWriteTime;
@@ -32,6 +36,7 @@ typedef struct GameCode {
     GameInitFn Init;
     GameUpdateFn Update;
     GameCleanupFn Cleanup;
+	GameInitAudioFn InitAudio;
 } GameCode;
 
 time_t GetLastWriteTime(const char* path)
@@ -52,37 +57,118 @@ void CopyFile(const char *src, const char *dst)
 
 #else
 
-void CopyFile(const char *src, const char *dst)
+// void CopyFile(const char *src, const char *dst)
+// {
+//     int in = open(src, O_RDONLY);
+//     int out = open(dst, O_WRONLY | O_CREAT | O_TRUNC, 0755);
+//
+//     if (in < 0 || out < 0) return;
+//
+//     char buf[8192];
+//     ssize_t n;
+//
+//     while ((n = read(in, buf, sizeof(buf))) > 0)
+//         write(out, buf, n);
+//
+//     close(in);
+//     close(out);
+// }
+
+int CopyFile(const char *from, const char *to)
 {
-    int in = open(src, O_RDONLY);
-    int out = open(dst, O_WRONLY | O_CREAT | O_TRUNC, 0755);
+    int fd_to, fd_from;
+    char buf[4096];
+    ssize_t nread;
+    int saved_errno;
 
-    if (in < 0 || out < 0) return;
+    fd_from = open(from, O_RDONLY);
+    if (fd_from < 0)
+        return -1;
 
-    char buf[8192];
-    ssize_t n;
+    fd_to = open(to, O_WRONLY | O_CREAT | O_EXCL, 0666);
+    if (fd_to < 0)
+        goto out_error;
 
-    while ((n = read(in, buf, sizeof(buf))) > 0)
-        write(out, buf, n);
+    while (nread = read(fd_from, buf, sizeof buf), nread > 0)
+    {
+        char *out_ptr = buf;
+        ssize_t nwritten;
 
-    close(in);
-    close(out);
+        do {
+            nwritten = write(fd_to, out_ptr, nread);
+
+            if (nwritten >= 0)
+            {
+                nread -= nwritten;
+                out_ptr += nwritten;
+            }
+            else if (errno != EINTR)
+            {
+                goto out_error;
+            }
+        } while (nread > 0);
+    }
+
+    if (nread == 0)
+    {
+        if (close(fd_to) < 0)
+        {
+            fd_to = -1;
+            goto out_error;
+        }
+        close(fd_from);
+
+        /* Success! */
+        return 0;
+    }
+
+  out_error:
+    saved_errno = errno;
+
+    close(fd_from);
+    if (fd_to >= 0)
+        close(fd_to);
+
+    errno = saved_errno;
+    return -1;
 }
 
+
 #endif
+
+off_t GetFileSize(const char* path)
+{
+    struct stat st;
+    if (stat(path, &st) == 0)
+        return st.st_size;
+    return -1;
+}
+
+bool WaitForStableFile(const char* path)
+{
+    off_t size1 = GetFileSize(path);
+    usleep(50000);
+    off_t size2 = GetFileSize(path);
+
+    return (size1 == size2 && size1 > 0);
+}
+
 GameCode LoadGameCode()
 {
     GameCode game = {0};
 
 #if defined(_WIN32)
-    const char *src = "game.dll";
-    const char *tmp = "game_loaded.dll";
+    const char *src = "./src/game.dll";
+    const char *tmp = "./src/game_loaded.dll";
 #else
     const char *src = "./src/game.so";
-    const char *tmp = "./src/game_loaded.so";
+    // const char *tmp = "./src/game_loaded.so";
 #endif
 
-    CopyFile(src, tmp);
+	char tmp[256];
+	snprintf(tmp, sizeof(tmp), "./src/game_%ld.so", time(NULL));
+	CopyFile(src, tmp);
+	usleep(500000);
 
     game.handle = LoadLib(tmp);
 
@@ -99,6 +185,7 @@ GameCode LoadGameCode()
     game.Init   = (GameInitFn)GetSym(game.handle, "InitGame");
     game.Update = (GameUpdateFn)GetSym(game.handle, "UpdateDrawFrame");
     game.Cleanup = (GameCleanupFn)GetSym(game.handle, "Cleanup");
+    game.InitAudio = (GameInitAudioFn)GetSym(game.handle, "InitAudio");
     // game.Draw   = (GameDrawFn)GetSym(game.handle, "DrawGame");
 
     if (!game.Update || !game.Init)
@@ -111,6 +198,12 @@ GameCode LoadGameCode()
     game.lastWriteTime = GetLastWriteTime(src);
 
     printf("Game loaded\n");
+	
+	// remove previous file if there was one
+    if (lastLoadedFile[0]) {
+        unlink(lastLoadedFile);
+    }
+    strncpy(lastLoadedFile, tmp, sizeof(lastLoadedFile));
 
     return game;
 }
@@ -129,21 +222,14 @@ int main()
 	GameState gameState = {0};
 	Options options = {0};
 	Audio audio = {0};
-
 	TextureAtlas atlas = {0};
 	SpriteMask spriteMasks[] = {0};
-
 	RenderTexture2D scene = {0};
 	RenderTexture2D litScene = {0};
-
 	Shader shader = {0};
 	Shader lightShader = {0};
 
-	Rectangle currentCollision = {0};
-	bool shouldExit = false;
-
-
-	static GameMemory gameMemory = {0};
+	GameMemory gameMemory = {0};
 	gameMemory.gameState = &gameState;
 	gameMemory.options = &options;
 	gameMemory.audio = &audio;
@@ -156,45 +242,43 @@ int main()
 
 	GameCode game = LoadGameCode();
 	if (game.Init) game.Init(&gameMemory);
-	printf("GameMemory->gameState->boostCount: %d\n", gameMemory.gameState->boostCount);
-#ifdef PLATFORM_WEB
-	shader = LoadShader(0, TextFormat("./src/shaders/test_web.glsl", GLSL_VERSION));
-	lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
-#else
-	// TODO: THIS IS STILL BUGGED
-	shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
-	lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
-#endif
 #if defined(PLATFORM_WEB)
 	emscripten_set_main_loop(game.Update, TARGET_FPS, 1);
 #else
-	while (!WindowShouldClose() && !shouldExit)
+	while (!WindowShouldClose() && !gameMemory.gameState->shouldExit)
 	{
 		time_t newWriteTime = GetLastWriteTime("./src/game.so");
 		if (newWriteTime != game.lastWriteTime)
 		{
+
 			printf("Hot reloading game...\n");
 
 // #ifdef PLATFORM_WEB
 // 			shader = LoadShader(0, TextFormat("./src/shaders/test_web.glsl", GLSL_VERSION));
 // 			lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
 // #else
-			// shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
-			// lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
+// 			shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
+// 			lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
 // #endif
-//
 			UnloadGameCode(&game);
-			game = LoadGameCode();
-			if (game.Init) game.Init(&gameMemory);
+			usleep(5000000);
+			// game = LoadGameCode();
+			GameCode newGame = LoadGameCode();
+
+			if (newGame.handle)
+			{
+				CloseAudioDevice();
+				game = newGame; // swap function pointers only
+				// game.InitAudio(gameMemory.audio, gameMemory.options); 
+			}
+			// if (game.Init) game.Init(&gameMemory);
 		}
-		options.previousWidth  = VIRTUAL_WIDTH;
-		options.previousHeight = VIRTUAL_HEIGHT;
 
 		if (game.Update) game.Update(&gameMemory);
 	}
 #endif
 
 	if (game.Cleanup) game.Cleanup(&gameMemory);
-	UnloadGameCode(&game);
+	// UnloadGameCode(&game);
 	CloseWindow();
 }
