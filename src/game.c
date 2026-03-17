@@ -104,7 +104,7 @@ void initializeOptions(Options* options) {
 		.screenWidth = (float)VIRTUAL_WIDTH,
 		.screenHeight = (float)VIRTUAL_HEIGHT,
 		.disableShaders = true,
-		.font = LoadLanguageFont("../fonts/UnifontExMono.ttf", maxFontSize, LANG_EN), 
+		.font = LoadLanguageFont("./fonts/UnifontExMono.ttf", maxFontSize, LANG_EN), 
 		.fontSpacing = 1.0f,
 		.maxFontSize = maxFontSize,
 		.language = LANG_EN,
@@ -973,9 +973,9 @@ void UpdateGame(GameMemory* gameMemory)
 }
 
 
-void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, RenderTexture2D* scene, Shader shader)
+void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, RenderTexture2D* scene, Shader* shader)
 {
-	int texSizeLoc = GetShaderLocation(shader, "textureSize");
+	int texSizeLoc = GetShaderLocation(*shader, "textureSize");
 	BeginTextureMode(*scene);
 
 	switch (gameState->state) {
@@ -1008,7 +1008,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					gameState->currentCollision = (Rectangle){0,0,0,0};
 				}
 
-				BeginShaderMode(shader);
+				BeginShaderMode(*shader);
 
 				// Draw Stars
 				{
@@ -1019,7 +1019,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						const int texture_x = star->position.x - star->sprite.coords.width / 2.0 * star->size;
 						const int texture_y = star->position.y - star->sprite.coords.height / 2.0 * star->size;
 						Vector2 texSize = { star->sprite.coords.width / star->sprite.numFrames, star->sprite.coords.height };
-						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						Color starColor = ColorAlpha(WHITE, star->alpha);
 						DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_STAR1).coords, (Vector2) {texture_x, texture_y}, starColor);
 					}
@@ -1030,10 +1030,10 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					{
 						Bullet* bullet = &gameState->bullets[bulletIndex];
 						Vector2 texSize = { bullet->collider.width, bullet->collider.height };
-						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						// Change the frame per second speed of animation
 						// atlas->animations[SpriteToAnimation[SPRITE_BULLET]].framesPerSecond = 14;
-						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_BULLET]], bullet->collider, (Vector2){0, 0}, bullet->rotation, WHITE, shader);
+						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_BULLET]], bullet->collider, (Vector2){0, 0}, bullet->rotation, WHITE, *shader);
 					}
 				}
 				// Draw asteroids
@@ -1051,7 +1051,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						};
 
 						Vector2 texSize = { width, height };
-						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
 								(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
 
@@ -1074,9 +1074,9 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						};
 						Vector2 texSize = { boost->collider.width, boost->collider.height };
 						Vector2 pivot = { boost->collider.width / 2.0f, boost->collider.height / 2.0f };
-						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						// Rectangle destination = {texture_x, texture_y, width, height}; // origin in coordinates and scale
-						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_SCRAPMETAL]], boostDrawRect, pivot, boost->rotation, WHITE, shader);
+						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_SCRAPMETAL]], boostDrawRect, pivot, boost->rotation, WHITE, *shader);
 						// DrawRectangleLines(boostDrawRect.x, boostDrawRect.y, boostDrawRect.width, boostDrawRect.height, RED);
 						// DrawRectangleLines(boost->collider.x, boost->collider.y, boost->collider.width, boost->collider.height, GREEN);
 					}
@@ -1106,7 +1106,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						};
 
 						Vector2 texSize = { width, height };
-						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						bool finished = DrawSpriteAnimationOnce(
 								atlas->textureAtlas,
 								atlas->animations[SpriteToAnimation[SPRITE_EXPLOSION]],
@@ -1114,7 +1114,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 								(Vector2){0, 0},
 								0.0f,
 								WHITE,
-								shader,
+								*shader,
 								explosion->startTime
 								);
 
@@ -1131,12 +1131,12 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						gameState->player.sprite.coords.height * gameState->player.size}; // origin in coordinates and scale
 					Vector2 origin = {0, 0}; // so it draws from top left of image
 					Vector2 texSize = { playerDestination.width, playerDestination.height };
-					SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+					SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 					if (gameState->player.invulTime <= 0.0f) {
-						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, shader);
+						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, *shader);
 					} else {
 						if (((int)(gameState->player.invulTime * 10)) % 2 == 0) {
-							DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, shader);
+							DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, *shader);
 						}
 					}
 					// DrawCircleV(gameState->player.playerPosition, 8.0f, GREEN);
@@ -1148,8 +1148,8 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						atlas->animations[SpriteToAnimation[SPRITE_SHIELD]].framesPerSecond = 14;
 						Vector2 texSize = { getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.width / getSprite(SpriteToAnimation[SPRITE_SHIELD]).numFrames,
 											getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.height };
-						SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
-						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_SHIELD]], playerDestination, origin, 0, WHITE, shader);
+						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_SHIELD]], playerDestination, origin, 0, WHITE, *shader);
 					}
 				}
 				EndShaderMode();
@@ -1191,18 +1191,20 @@ void DrawLightmap(GameState* gameState, Options* options, RenderTexture2D* litSc
 	Vector2 lights[128];
 	int lc = 0;
 
-	for (int i = 0; i < gameState->bulletCount; i++) {
-		// convert pixel -> normalized UV (0–1)
-		lights[lc].x = gameState->bullets[i].position.x / VIRTUAL_WIDTH;
-		lights[lc].y = 1.0f - gameState->bullets[i].position.y / VIRTUAL_HEIGHT;
-		lc++;
-	}
-	for (int i = 0; i < gameState->boostCount; i++) {
-		// convert pixel -> normalized UV (0–1)
-		lights[lc].x = gameState->boosts[i].position.x / VIRTUAL_WIDTH;
-		lights[lc].y = 1.0f - gameState->boosts[i].position.y / VIRTUAL_HEIGHT;
-		lc++;
-	}
+	// for (int i = 0; i < gameState->bulletCount; i++) {
+	// 	// convert pixel -> normalized UV (0–1)
+	// 	lights[lc].x = gameState->bullets[i].position.x / VIRTUAL_WIDTH;
+	// 	lights[lc].y = 1.0f - gameState->bullets[i].position.y / VIRTUAL_HEIGHT;
+	// 	lc++;
+	// }
+	// if (gameState->boostCount > 0) {
+	// 	for (int i = 0; i < gameState->boostCount; i++) {
+	// 		// convert pixel -> normalized UV (0–1)
+	// 		lights[lc].x = gameState->boosts[i].position.x / VIRTUAL_WIDTH;
+	// 		lights[lc].y = 1.0f - gameState->boosts[i].position.y / VIRTUAL_HEIGHT;
+	// 		lc++;
+	// 	}
+	// }
 
 	lights[lc].x = gameState->player.playerPosition.x / VIRTUAL_WIDTH;
 	lights[lc].y = 1.0f - gameState->player.playerPosition.y / VIRTUAL_HEIGHT;
@@ -1613,6 +1615,7 @@ void DrawComposite(RenderTexture2D* scene, Options* options, RenderTexture2D* li
 void DrawGame(GameMemory* gameMemory)
 {
 	GameState* gameState = gameMemory->gameState;
+	printf("GameMemory->gameState->boostCount: %d\n", gameMemory->gameState->boostCount);
 	Options* options = gameMemory->options;
 	TextureAtlas* atlas = gameMemory->atlas;
 	RenderTexture2D* scene = gameMemory->scene;
@@ -1620,8 +1623,8 @@ void DrawGame(GameMemory* gameMemory)
 	Shader shader = *gameMemory->shader;
 	Shader lightShader = *gameMemory->lightShader;
 
-	DrawLightmap(gameState, options, litScene, &lightShader);
-	DrawScene(gameState, options, atlas, scene, shader);
+	// DrawLightmap(gameState, options, litScene, &lightShader);
+	DrawScene(gameState, options, atlas, scene, &shader);
 
 	BeginDrawing();
 	{
@@ -1682,6 +1685,7 @@ void InitGame(GameMemory* gameMemory)
 
 	// Write the initialized state to gameMemory
 	gameMemory->gameState = &gameState;
+	printf("GameState->boostCount: %d\n", gameMemory->gameState->boostCount);
 	gameMemory->options = &options;
 	gameMemory->audio = &audio;
 	gameMemory->atlas = &atlas;

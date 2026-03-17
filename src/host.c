@@ -78,8 +78,8 @@ GameCode LoadGameCode()
     const char *src = "game.dll";
     const char *tmp = "game_loaded.dll";
 #else
-    const char *src = "./game.so";
-    const char *tmp = "./game_loaded.so";
+    const char *src = "./src/game.so";
+    const char *tmp = "./src/game_loaded.so";
 #endif
 
     CopyFile(src, tmp);
@@ -131,7 +131,7 @@ int main()
 	Audio audio = {0};
 
 	TextureAtlas atlas = {0};
-	SpriteMask spriteMasks[128] = {0};
+	SpriteMask spriteMasks[] = {0};
 
 	RenderTexture2D scene = {0};
 	RenderTexture2D litScene = {0};
@@ -156,30 +156,31 @@ int main()
 
 	GameCode game = LoadGameCode();
 	if (game.Init) game.Init(&gameMemory);
+	printf("GameMemory->gameState->boostCount: %d\n", gameMemory.gameState->boostCount);
 #ifdef PLATFORM_WEB
-	shader = LoadShader(0, TextFormat("./shaders/test_web.glsl", GLSL_VERSION));
-	lightShader = LoadShader(0, TextFormat("./shaders/light_web.fs", GLSL_VERSION));
+	shader = LoadShader(0, TextFormat("./src/shaders/test_web.glsl", GLSL_VERSION));
+	lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
 #else
 	// TODO: THIS IS STILL BUGGED
-	shader = LoadShader(0, TextFormat("./shaders/test.glsl", GLSL_VERSION));
-	lightShader = LoadShader(0, TextFormat("./shaders/light.fs", GLSL_VERSION));
+	shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
+	lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
 #endif
 #if defined(PLATFORM_WEB)
 	emscripten_set_main_loop(game.Update, TARGET_FPS, 1);
 #else
 	while (!WindowShouldClose() && !shouldExit)
 	{
-		time_t newWriteTime = GetLastWriteTime("./game.so");
+		time_t newWriteTime = GetLastWriteTime("./src/game.so");
 		if (newWriteTime != game.lastWriteTime)
 		{
 			printf("Hot reloading game...\n");
 
 // #ifdef PLATFORM_WEB
-// 			shader = LoadShader(0, TextFormat("./shaders/test_web.glsl", GLSL_VERSION));
-// 			lightShader = LoadShader(0, TextFormat("./shaders/light_web.fs", GLSL_VERSION));
+// 			shader = LoadShader(0, TextFormat("./src/shaders/test_web.glsl", GLSL_VERSION));
+// 			lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
 // #else
-// 			shader = LoadShader(0, TextFormat("./shaders/test.glsl", GLSL_VERSION));
-// 			lightShader = LoadShader(0, TextFormat("./shaders/light.fs", GLSL_VERSION));
+			// shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
+			// lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
 // #endif
 //
 			UnloadGameCode(&game);
