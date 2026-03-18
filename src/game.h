@@ -18,8 +18,15 @@
 
 #define MIN_SCREEN_WIDTH (400.0f)
 #define MIN_SCREEN_HEIGHT (225.0f)
+
+#if defined(PLATFORM_WEB)
+#define VIRTUAL_WIDTH (1040.0f)
+#define VIRTUAL_HEIGHT (585.0f)
+#else
 #define VIRTUAL_WIDTH (1440.0f)
 #define VIRTUAL_HEIGHT (810.0f)
+#endif
+
 // #define MIN_SCREEN_WIDTH (940.0f)
 // #define MIN_SCREEN_HEIGHT (540.0f)
 // #define VIRTUAL_WIDTH (940.0f)
@@ -33,7 +40,7 @@
 #ifdef PLATFORM_WEB
 	#define TARGET_FPS (60)
 #else
-	#define TARGET_FPS (30)
+	#define TARGET_FPS (300)
 #endif
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))

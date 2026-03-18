@@ -119,6 +119,27 @@ out_error:
 
 
 #endif
+GameCode LoadGameCodeWeb()
+{
+    GameCode game = {0};
+
+    const char *src = "./game.wasm";
+    game.handle = LoadLib(src);
+
+    if (!game.handle)
+    {
+        printf("LoadLibrary failed\n");
+        return game;
+    } 
+
+    game.Init   = (GameInitFn)GetSym(game.handle, "InitGame");
+    game.Update = (GameUpdateFn)GetSym(game.handle, "UpdateDrawFrame");
+    game.Cleanup = (GameCleanupFn)GetSym(game.handle, "Cleanup");
+    game.InitAudio = (GameInitAudioFn)GetSym(game.handle, "InitAudio");
+    printf("Game loaded\n");
+
+    return game;
+}
 
 GameCode LoadGameCode()
 {
@@ -128,12 +149,20 @@ GameCode LoadGameCode()
     const char *src = "./src/game.dll";
     const char *tmp = "./src/game_loaded.dll";
 #else
+#ifdef __EMSCRIPTEN__
+    const char *src = "./game.wasm";
+#else
     const char *src = "./src/game.so";
+#endif
     // const char *tmp = "./src/game_loaded.so";
 #endif
 
 	char tmp[256];
+#ifdef __EMSCRIPTEN__
+	snprintf(tmp, sizeof(tmp), "./game_%lld.wasm", time(NULL));
+#else
 	snprintf(tmp, sizeof(tmp), "./src/game_%ld.so", time(NULL));
+#endif
 	CopyFile(src, tmp);
 	// usleep(100000);
 
@@ -144,7 +173,7 @@ GameCode LoadGameCode()
 #ifndef _WIN32
         printf("dlopen error: %s\n", dlerror());
 #else
-        printf("LoadLibrary failed\n");
+        printf("LoadLibrary failed\n");host
 #endif
         return game;
     } 
@@ -184,6 +213,15 @@ void UnloadGameCode(GameCode* game)
 	}
 }
 
+#if defined(PLATFORM_WEB)
+static GameCode *g_game;
+static GameMemory* g_memory;
+void WebWrapper()
+{
+	if (g_game->Update) g_game->Update(g_memory);
+}
+#endif
+
 int main()
 {
 	GameState gameState = {0};
@@ -196,7 +234,7 @@ int main()
 	Shader shader = {0};
 	Shader lightShader = {0};
 
-	GameMemory gameMemory = {0};
+	GameMemory gameMemory = {0}; 
 	gameMemory.gameState = &gameState;
 	gameMemory.options = &options;
 	gameMemory.audio = &audio;
@@ -207,11 +245,17 @@ int main()
 	gameMemory.shader = &shader;
 	gameMemory.lightShader = &lightShader;
 
+#if defined(PLATFORM_WEB)
+	GameCode game = LoadGameCodeWeb();
+	if (game.Init) game.Init(&gameMemory);
+	g_game = &game;
+	g_memory = &gameMemory;
+	*g_memory->shader = LoadShader(0, TextFormat("./src/shaders/test_web.glsl", GLSL_VERSION));
+	*g_memory->lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
+	emscripten_set_main_loop(WebWrapper, TARGET_FPS, 1);
+#else
 	GameCode game = LoadGameCode();
 	if (game.Init) game.Init(&gameMemory);
-#if defined(PLATFORM_WEB)
-	emscripten_set_main_loop(game.Update, TARGET_FPS, 1);
-#else
 	while (!WindowShouldClose() && !gameMemory.gameState->shouldExit)
 	{
 		time_t newWriteTime = GetLastWriteTime("./src/game.so");
@@ -220,13 +264,8 @@ int main()
 
 			printf("Hot reloading game...\n");
 
-#ifdef PLATFORM_WEB
-			shader = LoadShader(0, TextFormat("./src/shaders/test_web.glsl", GLSL_VERSION));
-			lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
-#else
 			shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
 			lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
-#endif
 			// CloseAudioDevice();
 			// usleep(500000);
 			UnloadGameCode(&game);

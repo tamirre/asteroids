@@ -4,12 +4,13 @@ PLATFORM=""
 REGENERATE_ATLAS=0
 REGENERATE_LOCALIZATION=0
 REGENERATE_AUDIO=0
-while getopts ":p:a:l:s" opt; do
+while getopts ":p:a:l:s:d" opt; do
     case "$opt" in
         p) PLATFORM="$OPTARG" ;;
         a) REGENERATE_ATLAS=1 ;;
         l) REGENERATE_LOCALIZATION=1 ;;
         s) REGENERATE_AUDIO=1 ;;
+		d) DEBUG=1 ;;
         :)
             echo "Option -$OPTARG requires a value"
             exit 1
@@ -36,59 +37,107 @@ if [ "$REGENERATE_ATLAS" == "1" ]; then
 	echo "Regenerated atlas"
 fi
 if [ "$PLATFORM" == "web" ]; then
-# WEB PLATFORM GUIDE:
-# # clone emsdk into raylib/emsdk
-# git clone https://github.com/emscripten-core/emsdk.git
-# # Enter that directory
-# cd emsdk
-# # Download and install the latest SDK tools.
-# ./emsdk install latest
-# # Make the "latest" SDK "active" for the current user. (writes .emscripten file)
-# ./emsdk activate latest --permanent
-# # Activate PATH and other environment variables in the current terminal
-# source ./emsdk_env.sh
-# # Update make file of raylib with emsdk paths and PLATFORM=PLATFORM_WEB
-# # Then in raylib/src/ run:
-# make -e PLATFORM=PLATFORM_WEB -B
-# # Python web server:
-# python -m http.server 
+	# WEB PLATFORM GUIDE:
+	# # clone emsdk into raylib/emsdk
+	# git clone https://github.com/emscripten-core/emsdk.git
+	# # Enter that directory
+	# cd emsdk
+	# # Download and install the latest SDK tools.
+	# ./emsdk install latest
+	# # Make the "latest" SDK "active" for the current user. (writes .emscripten file)
+	# ./emsdk activate latest --permanent
+	# # Activate PATH and other environment variables in the current terminal
+	# source ./emsdk_env.sh
+	# # Update make file of raylib with emsdk paths and PLATFORM=PLATFORM_WEB
+	# # Then in raylib/src/ run:
+	# make -e PLATFORM=PLATFORM_WEB -B
+	# # Python web server:
+	# python -m http.server 
 
-export RAYLIB_PATH=~/raylib/src/
-export EMSDK_QUIET=1
-mkdir -p $SRC_DIR/../web
-source ~/raylib/emsdk/emsdk_env.sh 
-emcc -o $SRC_DIR/../web/index.html $SRC_DIR/asteroids.c \
-	-Wall -std=c99 -D_DEFAULT_SOURCE \
-	-Wno-missing-braces -Wunused-result -Os \
-	-I. -I $RAYLIB_PATH \
-	-I $RAYLIB_PATH/external \
-	-L. -L $RAYLIB_PATH \
-	-s STACK_SIZE=256MB \
-	-s INITIAL_MEMORY=256MB \
-	-s USE_GLFW=3 -s ASYNCIFY -s TOTAL_MEMORY=512MB -s FORCE_FILESYSTEM=1 \
-	--shell-file $RAYLIB_PATH/minshell.html $RAYLIB_PATH/web/libraylib.web.a \
-	-DPLATFORM_WEB -s 'EXPORTED_FUNCTIONS=["_free","_malloc","_main"]' -s EXPORTED_RUNTIME_METHODS=ccall \
-	--preload-file assets/atlas \
-	--preload-file audio \
-	--preload-file fonts \
-	--preload-file shaders 
-	# -s ASSERTIONS=2 -g
-	# --shell-file $RAYLIB_PATH/shell.html $RAYLIB_PATH/web/libraylib.web.a \
-zip -r ${GAME_NAME}_web.zip web/
-else 
-	gcc -g -g3 -shared -fPIC $SRC_DIR/game.c -o $SRC_DIR/game_tmp.so \
-		-I$SRC_DIR/third_party/include \
-		-lraylib -lm -ldl -lpthread -lGL
+	export RAYLIB_PATH=~/raylib/src/
+	export EMSDK_QUIET=1
+	mkdir -p $SRC_DIR/../web
+	source ~/raylib/emsdk/emsdk_env.sh 
+
+	WEB_DIR=$SRC_DIR/../web
+	mkdir -p $WEB_DIR
+
+	# TODO:
+	if [ "$DEBUG" == "1" ]; then
+		DEBUG_FLAGS="-g -s ASSERTIONS=2 -s STACK_OVERFLOW_CHECK=2 -s SAFE_HEAP=1 -gsource-map"
+	else
+		DEBUG_FLAGS=""
+	fi
+	INCLUDE_FLAGS="-I. -I $RAYLIB_PATH -I $RAYLIB_PATH/external -I$SRC_DIR/third_party/include"
+	LINK_FLAGS="-L. -L $RAYLIB_PATH"
+
+	# DEBUG_FLAGS = 
+	# ---------------------------
+	# build SIDE MODULE (game)
+	# ---------------------------
+	emcc $SRC_DIR/game.c \
+		-o $WEB_DIR/game.wasm \
+		-s SIDE_MODULE=1 \
+		$INCLUDE_FLAGS \
+		$LINK_FLAGS \
+		$DEBUG_FLAGS \
+		-DPLATFORM_WEB \
+		-s EXPORT_ALL=1 
+
+	# ---------------------------
+	# build MAIN MODULE (host)
+	# ---------------------------
+	emcc $SRC_DIR/host.c \
+		-o $WEB_DIR/index.html \
+		-Wall -std=c99 -D_DEFAULT_SOURCE \
+		-Wno-missing-braces -Wunused-result -Os \
+		-s MAIN_MODULE=1 \
+		$INCLUDE_FLAGS \
+		$LINK_FLAGS \
+		-s EXPORTED_RUNTIME_METHODS=ccall \
+		-s USE_GLFW=3 \
+		-s ASYNCIFY \
+		-s STACK_SIZE=256MB \
+		-s INITIAL_MEMORY=256MB \
+		-s TOTAL_MEMORY=512MB \
+		-s FORCE_FILESYSTEM=1 \
+		-s EXPORTED_RUNTIME_METHODS=ccall \
+		--shell-file $RAYLIB_PATH/minshell.html $RAYLIB_PATH/web/libraylib.web.a \
+		-DPLATFORM_WEB \
+		--preload-file assets/atlas \
+		--preload-file audio \
+		--preload-file fonts \
+		--preload-file src/shaders \
+		-s EXPORT_ALL=1 
+
+	# ZIP FOR ITCH.IO
+	zip -r ${GAME_NAME}_web.zip web/
+
+else
+	if [ "$DEBUG" == "1" ]; then
+		DEBUG_FLAGS="-g -g3"
+	else 
+		DEBUG_FLAGS=""
+	fi
+	INCLUDE_FLAGS="-I$SRC_DIR/third_party/include"
+	LINK_FLAGS="-lraylib -lm -ldl -lpthread -lGL"
+		
+	# Write to game_tmp.so instead of game.so. 
+	# We need to do this because otherwise host.c will
+	# try to load the .so before it is fully written, since we only
+	# check the timestamp
+	gcc $DEBUG_FLAGS -shared -fPIC $SRC_DIR/game.c -o $SRC_DIR/game_tmp.so \
+		$INCLUDE_FLAGS \
+		$LINK_FLAGS
+
 	# This is needed so the game.so is only finished when gcc is done
+	# game.so is then copied by host.c to load into the game
 	mv $SRC_DIR/game_tmp.so $SRC_DIR/game.so
 
-	gcc -g -g3 $SRC_DIR/host.c -o $BIN_DIR/$GAME_NAME \
-		-I$SRC_DIR/third_party/include \
-		-lraylib -lm -ldl -lpthread -lGL \
+	gcc $DEBUG_FLAGS $SRC_DIR/host.c -o $BIN_DIR/$GAME_NAME \
+		$INCLUDE_FLAGS \
+		$LINK_FLAGS \
 		-rdynamic
-
-	# gcc $SRC_DIR/asteroids.c -Wall -o $BIN_DIR/$GAME_NAME -I$SRC_DIR/third_party/include \ 
-	# -lraylib -lm -ldl -lpthread -lGL
 fi
 
 seconds=$SECONDS

@@ -1655,6 +1655,7 @@ void DrawGame(GameMemory* gameMemory)
 	}
 	EndDrawing();
 }
+
 void UpdateDrawFrame(GameMemory* gameMemory)
 {
 	gameMemory->gameState->dt = GetFrameTime() * gameMemory->gameState->timeScale;
@@ -1707,14 +1708,11 @@ void InitGame(GameMemory* gameMemory)
 	gameMemory->options->previousWidth  = VIRTUAL_WIDTH;
 	gameMemory->options->previousHeight = VIRTUAL_HEIGHT;
 #ifdef PLATFORM_WEB
-	gameMemory->shader = LoadShader(0, TextFormat("./src/shaders/test_web.glsl", GLSL_VERSION));
-	gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
+	*gameMemory->shader = LoadShader(0, TextFormat("./src/shaders/test_web.glsl", GLSL_VERSION));
+	*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
 #else
-	// TODO: THIS IS STILL BUGGED
-	Shader shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
-	Shader lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
-	gameMemory->shader = &shader;
-	gameMemory->lightShader = &lightShader;
+	*gameMemory->shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
+	*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
 #endif
 }
 
