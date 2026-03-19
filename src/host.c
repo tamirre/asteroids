@@ -1,14 +1,8 @@
-#include <sys/stat.h>
-#include <dlfcn.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <time.h>
-#include <errno.h>
-
-#include "game.h"
-
 #if defined(_WIN32)
 
+#define WIN32_LEAN_AND_MEAN
+#define NOGDI
+#define NOUSER
 #include <windows.h>
 
 #define LIB_HANDLE HMODULE
@@ -26,6 +20,15 @@
 #define CloseLib(lib) dlclose(lib)
 
 #endif
+
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <time.h>
+#include <errno.h>
+
+#include "game.h"
+
 
 // static char lastLoadedFile[256] = {0};
 
@@ -48,17 +51,8 @@ time_t GetLastWriteTime(const char* path)
 	return 0;
 }
 
-#if defined(_WIN32)
-
-void CopyFile(const char *src, const char *dst)
-{
-    CopyFileA(src, dst, FALSE);
-}
-
-#else
-
 //source: https://stackoverflow.com/questions/2180079/how-can-i-copy-a-file-on-unix-using-c
-int CopyFile(const char *from, const char *to)
+int CopyFileCustom(const char *from, const char *to)
 {
 	int fd_to, fd_from;
 	char buf[4096];
@@ -117,8 +111,6 @@ out_error:
 	return -1;
 }
 
-
-#endif
 GameCode LoadGameCodeWeb()
 {
     GameCode game = {0};
@@ -147,7 +139,6 @@ GameCode LoadGameCode()
 
 #if defined(_WIN32)
     const char *src = "./src/game.dll";
-    const char *tmp = "./src/game_loaded.dll";
 #else
 #ifdef __EMSCRIPTEN__
     const char *src = "./game.wasm";
@@ -163,7 +154,7 @@ GameCode LoadGameCode()
 #else
 	snprintf(tmp, sizeof(tmp), "./src/game_%ld.so", time(NULL));
 #endif
-	CopyFile(src, tmp);
+	CopyFileCustom(src, tmp);
 	// usleep(100000);
 
     game.handle = LoadLib(tmp);
@@ -173,7 +164,7 @@ GameCode LoadGameCode()
 #ifndef _WIN32
         printf("dlopen error: %s\n", dlerror());
 #else
-        printf("LoadLibrary failed\n");host
+        printf("LoadLibrary failed\n");
 #endif
         return game;
     } 

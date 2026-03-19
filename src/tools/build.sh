@@ -62,7 +62,6 @@ if [ "$PLATFORM" == "web" ]; then
 	WEB_DIR=$SRC_DIR/../web
 	mkdir -p $WEB_DIR
 
-	# TODO:
 	if [ "$DEBUG" == "1" ]; then
 		DEBUG_FLAGS="-g -s ASSERTIONS=2 -s STACK_OVERFLOW_CHECK=2 -s SAFE_HEAP=1 -gsource-map"
 	else
@@ -71,11 +70,11 @@ if [ "$PLATFORM" == "web" ]; then
 	INCLUDE_FLAGS="-I. -I $RAYLIB_PATH -I $RAYLIB_PATH/external -I$SRC_DIR/third_party/include"
 	LINK_FLAGS="-L. -L $RAYLIB_PATH"
 
-	# DEBUG_FLAGS = 
+	CC=emcc
 	# ---------------------------
 	# build SIDE MODULE (game)
 	# ---------------------------
-	emcc $SRC_DIR/game.c \
+	$CC $SRC_DIR/game.c \
 		-o $WEB_DIR/game.wasm \
 		-s SIDE_MODULE=1 \
 		$INCLUDE_FLAGS \
@@ -87,13 +86,14 @@ if [ "$PLATFORM" == "web" ]; then
 	# ---------------------------
 	# build MAIN MODULE (host)
 	# ---------------------------
-	emcc $SRC_DIR/host.c \
+	$CC $SRC_DIR/host.c \
 		-o $WEB_DIR/index.html \
 		-Wall -std=c99 -D_DEFAULT_SOURCE \
 		-Wno-missing-braces -Wunused-result -Os \
 		-s MAIN_MODULE=1 \
 		$INCLUDE_FLAGS \
 		$LINK_FLAGS \
+		$DEBUG_FLAGS \
 		-s EXPORTED_RUNTIME_METHODS=ccall \
 		-s USE_GLFW=3 \
 		-s ASYNCIFY \
@@ -112,7 +112,51 @@ if [ "$PLATFORM" == "web" ]; then
 
 	# ZIP FOR ITCH.IO
 	zip -r ${GAME_NAME}_web.zip web/
+elif [ "$PLATFORM" == "windows" ]; then
+	CC=x86_64-w64-mingw32-gcc
 
+	if [ "$DEBUG" == "1" ]; then
+		DEBUG_FLAGS="-g -g3"
+	# else 
+		# DEBUG_FLAGS="-O2"
+	fi
+
+	INCLUDE_FLAGS="-I$SRC_DIR/third_party/include"
+	LIB_DIR="$SRC_DIR/third_party/lib"
+
+	# Windows raylib + system libs
+	LINK_FLAGS="-L$LIB_DIR -lraylib -lopengl32 -lgdi32 -lwinmm"
+
+	mkdir -p $BIN_DIR
+
+	# ---------------------------
+	# build DLL (game)
+	# ---------------------------
+	$CC $SRC_DIR/game.c \
+		-shared -o $SRC_DIR/game_tmp.dll \
+		$DEBUG_FLAGS \
+		$INCLUDE_FLAGS \
+		$LINK_FLAGS \
+		-Wl,--out-implib,$SRC_DIR/libgame.dll.a
+
+	# ensure atomic replace (same as your .so logic)
+	mv $SRC_DIR/game_tmp.dll $SRC_DIR/game.dll
+
+	echo "Built game.dll"
+
+	# ---------------------------
+	# build EXE (host)
+	# ---------------------------
+	OUT_EXE="$BIN_DIR/${GAME_NAME}.exe"
+
+	$CC $SRC_DIR/host.c \
+		-o $OUT_EXE \
+		$DEBUG_FLAGS \
+		$INCLUDE_FLAGS \
+		$LINK_FLAGS \
+		-Wl,--export-all-symbols
+
+	echo "Built Windows executable: $OUT_EXE"
 else
 	if [ "$DEBUG" == "1" ]; then
 		DEBUG_FLAGS="-g -g3"
