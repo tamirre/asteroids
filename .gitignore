@@ -23,3 +23,5 @@ web/
 src/third_party/raygui/
 save.dat
 *.so
+*.dll
+*.dll.a
