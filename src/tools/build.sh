@@ -98,7 +98,7 @@ if [ "$PLATFORM" == "web" ]; then
 		$LINK_FLAGS \
 		$DEBUG_FLAGS \
 		$DEFINES \
-		$SRC_DIR/third_party/lib/libraylib.web.a \
+		$RAYLIB_PATH/web/libraylib.web.a \
 		-s USE_GLFW=3 \
 		-s ASYNCIFY \
 		-s STACK_SIZE=256MB \
@@ -136,7 +136,6 @@ elif [ "$PLATFORM" == "windows" ]; then
 
 	mkdir -p $BIN_DIR
 
-	rm $SRC_DIR/game.dll 2> /dev/null
 	rm $SRC_DIR/game_*.dll 2> /dev/null
 
 	# ---------------------------
@@ -174,26 +173,26 @@ else
 	fi
 	INCLUDE_FLAGS="-I$SRC_DIR/third_party/include"
 	LINK_FLAGS="-lraylib -lm -ldl -lpthread -lGL"
+	CC=gcc
 
-	rm $SRC_DIR/game.so 2> /dev/null
 	rm $SRC_DIR/game_*.so 2> /dev/null
 	# Write to game_tmp.so instead of game.so. 
 	# We need to do this because otherwise host.c will
 	# try to load the .so before it is fully written, since we only
 	# check the timestamp
-	gcc $DEBUG_FLAGS -shared -fPIC $SRC_DIR/game.c -o $SRC_DIR/game_tmp.so \
+	$CC $DEBUG_FLAGS -shared -fPIC $SRC_DIR/game.c -o $SRC_DIR/game_tmp.so \
 		$INCLUDE_FLAGS \
 		$LINK_FLAGS
-
-
-	gcc $DEBUG_FLAGS $SRC_DIR/host.c -o $BIN_DIR/$GAME_NAME \
-		$INCLUDE_FLAGS \
-		$LINK_FLAGS \
-		-rdynamic
 
 	# This is needed so the game.so is only finished when gcc is done
 	# game.so is then copied by host.c to load into the game
 	mv $SRC_DIR/game_tmp.so $SRC_DIR/game.so
+
+	$CC $DEBUG_FLAGS $SRC_DIR/host.c -o $BIN_DIR/$GAME_NAME \
+		$INCLUDE_FLAGS \
+		$LINK_FLAGS \
+		-rdynamic
+
 fi
 
 seconds=$SECONDS

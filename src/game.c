@@ -1019,7 +1019,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					}
 					for (int i = 0; i < gameState->asteroidCount; i++)
 					{
-						DrawRectangleLinesEx(gameState->asteroids[i].collider, 2.0, BLUE);
+						DrawRectangleLinesEx(gameState->asteroids[i].collider, 2.0, RED);
 					}
 					for (int i = 0; i < gameState->boostCount; i++)
 					{
@@ -1707,10 +1707,7 @@ void InitGame(GameMemory* gameMemory)
 	gameMemory->spriteMasks = spriteMasks;
 	gameMemory->options->previousWidth  = VIRTUAL_WIDTH;
 	gameMemory->options->previousHeight = VIRTUAL_HEIGHT;
-#ifdef PLATFORM_WEB
-	*gameMemory->shader = LoadShader(0, TextFormat("./src/shaders/test_web.glsl", GLSL_VERSION));
-	*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
-#else
+#ifndef PLATFORM_WEB
 	*gameMemory->shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
 	*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
 #endif

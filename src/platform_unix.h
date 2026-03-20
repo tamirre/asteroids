@@ -76,18 +76,16 @@ static inline GameCode LoadGameCode()
 {
     GameCode game = {0};
 
-
 	char tmp[256];
 	snprintf(tmp, sizeof(tmp), "./src/game_%ld.so", time(NULL));
 	printf("Copying game from %s to %s\n", dll, tmp);
 	if(CopyFileCustom(dll, tmp) == -1)
 	{
-		printf("Copying game from %s to %s failed\n", dll, tmp);
+		printf("Copying failed\n");
 	}
 
 	printf("Loading game from %s\n", tmp);
     game.handle = LoadLib(tmp);
-
     if (!game.handle)
     {
         printf("LoadLibrary failed\n");
@@ -121,11 +119,11 @@ static inline void UnloadGameCode(GameCode* game)
 			else
 				printf("dlclose failed: unknown error\n");
 		}
-		// game->handle = NULL;
-		// game->Init = NULL;
-		// game->Update = NULL;
-		// game->Cleanup = NULL;
-		// game->InitAudio = NULL;
+		game->handle = NULL;
+		game->Init = NULL;
+		game->Update = NULL;
+		game->Cleanup = NULL;
+		game->InitAudio = NULL;
 	}
 }
 

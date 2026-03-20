@@ -59,15 +59,15 @@ int main()
 	g_memory = &gameMemory;
 	*g_memory->shader = LoadShader(0, TextFormat("./src/shaders/test_web.glsl", GLSL_VERSION));
 	*g_memory->lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
-	emscripten_set_main_loop(WebWrapper, TARGET_FPS, 1);
+	emscripten_set_main_loop(WebWrapper, 0, 1);
 #else
 	GameCode game = LoadGameCode();
 	if (game.Init) game.Init(&gameMemory);
 	// printf("WindowShouldClose: %d\n", WindowShouldClose());
 	// printf("shouldExit: %d\n", gameMemory.gameState->shouldExit);
 	// TODO: WHY DOES WINDOWSHOULDCLOSE() NOT WORK ON WINDOWS?
-	// while (!WindowShouldClose() && !gameMemory.gameState->shouldExit)
-	while (!gameMemory.gameState->shouldExit)
+	while (!WindowShouldClose() && !gameMemory.gameState->shouldExit)
+	// while (!gameMemory.gameState->shouldExit)
 	{
 		time_t newWriteTime = GetLastWriteTime(dll);
 		if (newWriteTime != game.lastWriteTime)
