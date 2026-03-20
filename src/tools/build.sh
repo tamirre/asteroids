@@ -67,8 +67,9 @@ if [ "$PLATFORM" == "web" ]; then
 	else
 		DEBUG_FLAGS=""
 	fi
-	INCLUDE_FLAGS="-I. -I $RAYLIB_PATH -I $RAYLIB_PATH/external -I$SRC_DIR/third_party/include"
-	LINK_FLAGS="-L. -L $RAYLIB_PATH"
+	INCLUDE_FLAGS="-I. -I$RAYLIB_PATH -I$RAYLIB_PATH/external -I$SRC_DIR/third_party/include"
+	LINK_FLAGS="-L. -L$RAYLIB_PATH -L$RAYLIB_PATH/web"
+	DEFINES="-DPLATFORM_WEB"
 
 	CC=emcc
 	# ---------------------------
@@ -80,8 +81,10 @@ if [ "$PLATFORM" == "web" ]; then
 		$INCLUDE_FLAGS \
 		$LINK_FLAGS \
 		$DEBUG_FLAGS \
-		-DPLATFORM_WEB \
+		$DEFINES \
 		-s EXPORT_ALL=1 
+
+	echo "Built game.wasm"
 
 	# ---------------------------
 	# build MAIN MODULE (host)
@@ -89,11 +92,12 @@ if [ "$PLATFORM" == "web" ]; then
 	$CC $SRC_DIR/host.c \
 		-o $WEB_DIR/index.html \
 		-Wall -std=c99 -D_DEFAULT_SOURCE \
-		-Wno-missing-braces -Wunused-result -Os \
+		-Wno-missing-braces -Wunused-result \
 		-s MAIN_MODULE=1 \
 		$INCLUDE_FLAGS \
 		$LINK_FLAGS \
 		$DEBUG_FLAGS \
+		$DEFINES \
 		-s EXPORTED_RUNTIME_METHODS=ccall \
 		-s USE_GLFW=3 \
 		-s ASYNCIFY \
@@ -101,17 +105,18 @@ if [ "$PLATFORM" == "web" ]; then
 		-s INITIAL_MEMORY=256MB \
 		-s TOTAL_MEMORY=512MB \
 		-s FORCE_FILESYSTEM=1 \
-		-s EXPORTED_RUNTIME_METHODS=ccall \
-		--shell-file $RAYLIB_PATH/minshell.html $RAYLIB_PATH/web/libraylib.web.a \
-		-DPLATFORM_WEB \
+		--shell-file $RAYLIB_PATH/minshell.html \
 		--preload-file assets/atlas \
 		--preload-file audio \
 		--preload-file fonts \
 		--preload-file src/shaders \
+		-Wl,--whole-archive $SRC_DIR/third_party/lib/libraylib.web.a \
 		-s EXPORT_ALL=1 
 
+	echo "Built index.html"
+
 	# ZIP FOR ITCH.IO
-	zip -r ${GAME_NAME}_web.zip web/
+	# zip -r ${GAME_NAME}_web.zip web/
 elif [ "$PLATFORM" == "windows" ]; then
 	CC=x86_64-w64-mingw32-gcc
 
@@ -121,8 +126,6 @@ elif [ "$PLATFORM" == "windows" ]; then
 		# DEBUG_FLAGS="-O2"
 	fi
 
-	rm $SRC_DIR/game.dll 2> /dev/null
-	rm $SRC_DIR/game_*.dll 2> /dev/null
 
 	DEFINES="-DPLATFORM_WINDOWS=1"
 	INCLUDE_FLAGS="-I$SRC_DIR/third_party/include"
@@ -134,6 +137,9 @@ elif [ "$PLATFORM" == "windows" ]; then
 
 	mkdir -p $BIN_DIR
 
+	rm $SRC_DIR/game.dll 2> /dev/null
+	rm $SRC_DIR/game_*.dll 2> /dev/null
+
 	# ---------------------------
 	# build DLL (game)
 	# ---------------------------
@@ -143,7 +149,6 @@ elif [ "$PLATFORM" == "windows" ]; then
 		$DEBUG_FLAGS \
 		$INCLUDE_FLAGS \
 		$LINK_FLAGS 
-
 
 	# ---------------------------
 	# build EXE (host)

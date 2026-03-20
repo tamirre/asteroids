@@ -13,7 +13,7 @@
 #include "third_party/include/style_dark.h"
 
 #if defined(PLATFORM_WEB)
-    #include <emscripten/emscripten.h>
+#include <emscripten/emscripten.h>
 #endif
 
 #define MIN_SCREEN_WIDTH (400.0f)
@@ -219,3 +219,4 @@ typedef void (*GameUpdateFn)(GameMemory*);
 typedef void (*GameInitFn)(GameMemory*);
 typedef void (*GameCleanupFn)(GameMemory*);
 typedef void (*GameInitAudioFn)(Audio*, Options*);
+
