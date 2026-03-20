@@ -92,13 +92,13 @@ if [ "$PLATFORM" == "web" ]; then
 	$CC $SRC_DIR/host.c \
 		-o $WEB_DIR/index.html \
 		-Wall -std=c99 -D_DEFAULT_SOURCE \
-		-Wno-missing-braces -Wunused-result \
+		-Wno-missing-braces \
 		-s MAIN_MODULE=1 \
 		$INCLUDE_FLAGS \
 		$LINK_FLAGS \
 		$DEBUG_FLAGS \
 		$DEFINES \
-		-s EXPORTED_RUNTIME_METHODS=ccall \
+		$SRC_DIR/third_party/lib/libraylib.web.a \
 		-s USE_GLFW=3 \
 		-s ASYNCIFY \
 		-s STACK_SIZE=256MB \
@@ -110,7 +110,6 @@ if [ "$PLATFORM" == "web" ]; then
 		--preload-file audio \
 		--preload-file fonts \
 		--preload-file src/shaders \
-		-Wl,--whole-archive $SRC_DIR/third_party/lib/libraylib.web.a \
 		-s EXPORT_ALL=1 
 
 	echo "Built index.html"

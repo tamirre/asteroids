@@ -30,13 +30,14 @@ static inline GameCode LoadGameCode()
     {
         printf("LoadLibrary failed\n");
         return game;
-    } 
+    } else {
+		printf("Successfully loaded %s\n", dll);
+	}
 
     game.Init   = (GameInitFn)GetSym(game.handle, "InitGame");
     game.Update = (GameUpdateFn)GetSym(game.handle, "UpdateDrawFrame");
     game.Cleanup = (GameCleanupFn)GetSym(game.handle, "Cleanup");
-    game.InitAudio = (GameInitAudioFn)GetSym(game.handle, "InitAudio");
-	if (!game.Init || !game.Update || !game.Cleanup || !game.InitAudio)
+	if (!game.Init || !game.Update || !game.Cleanup)
 	{
 		printf("dlsym error\n");
 	}
