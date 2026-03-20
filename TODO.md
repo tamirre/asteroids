@@ -1,14 +1,16 @@
 # TODO list: 
 
+- [ ] make it fun
 - [x] savestates
-- [ ] hot code reloading
+- [x] hot code reloading
+- [ ] native windows build
+- [x] mingw-w64 cross compile build
 - [ ] fix collision
 - [x] add script to generate audio header file with all sounds
 - [ ] add particle effects
 - [ ] add enemies that do more interesting actions, e.g. chase player while dodging bullets/asteroids
 - [ ] make score and leaderboard system
 - [ ] rework sprite system to use arbitrary animation frame position in texture atlas (non-continuous animation sprite sheets in atlas)
-- [ ] make it fun
 - [x] add collectable upgrades for boosts, e.g. shields
 - [x] localisation with different languages
 - [x] try out rayGUI 

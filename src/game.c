@@ -1145,6 +1145,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 				}
 				// Draw Player
 				{
+					atlas->animations[SpriteToAnimation[SPRITE_PLAYER]].framesPerSecond = 14;
 					const int texture_x = gameState->player.playerPosition.x - gameState->player.sprite.coords.width * gameState->player.size / gameState->player.animationFrames / 2.0;
 					const int texture_y = gameState->player.playerPosition.y - gameState->player.sprite.coords.height * gameState->player.size / 2.0;
 					Rectangle playerDestination = {texture_x, texture_y, 
