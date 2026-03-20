@@ -40,7 +40,7 @@
 #ifdef PLATFORM_WEB
 	#define TARGET_FPS (60)
 #else
-	#define TARGET_FPS (300)
+	#define TARGET_FPS (60)
 #endif
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))

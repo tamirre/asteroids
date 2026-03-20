@@ -121,10 +121,15 @@ elif [ "$PLATFORM" == "windows" ]; then
 		# DEBUG_FLAGS="-O2"
 	fi
 
+	rm $SRC_DIR/game.dll
+	rm $SRC_DIR/game_*.dll
+
+	DEFINES="-DPLATFORM_WINDOWS=1"
 	INCLUDE_FLAGS="-I$SRC_DIR/third_party/include"
 	LIB_DIR="$SRC_DIR/third_party/lib"
 
 	# Windows raylib + system libs
+	# LINK_FLAGS="-L$LIB_DIR -lraylib -lopengl32 -lgdi32 -lwinmm"
 	LINK_FLAGS="-L$LIB_DIR -lraylib -lopengl32 -lgdi32 -lwinmm"
 
 	mkdir -p $BIN_DIR
@@ -134,10 +139,10 @@ elif [ "$PLATFORM" == "windows" ]; then
 	# ---------------------------
 	$CC $SRC_DIR/game.c \
 		-shared -o $SRC_DIR/game_tmp.dll \
+		$DEFINES \
 		$DEBUG_FLAGS \
 		$INCLUDE_FLAGS \
-		$LINK_FLAGS \
-		-Wl,--out-implib,$SRC_DIR/libgame.dll.a
+		$LINK_FLAGS 
 
 	# ensure atomic replace (same as your .so logic)
 	mv $SRC_DIR/game_tmp.dll $SRC_DIR/game.dll
@@ -151,6 +156,7 @@ elif [ "$PLATFORM" == "windows" ]; then
 
 	$CC $SRC_DIR/host.c \
 		-o $OUT_EXE \
+		$DEFINES \
 		$DEBUG_FLAGS \
 		$INCLUDE_FLAGS \
 		$LINK_FLAGS \
@@ -165,7 +171,9 @@ else
 	fi
 	INCLUDE_FLAGS="-I$SRC_DIR/third_party/include"
 	LINK_FLAGS="-lraylib -lm -ldl -lpthread -lGL"
-		
+
+	rm $SRC_DIR/game.so
+	rm $SRC_DIR/game_*.so
 	# Write to game_tmp.so instead of game.so. 
 	# We need to do this because otherwise host.c will
 	# try to load the .so before it is fully written, since we only

@@ -1,4 +1,4 @@
-#if defined(_WIN32)
+#ifdef PLATFORM_WINDOWS
 
 #define WIN32_LEAN_AND_MEAN
 #define NOGDI
@@ -42,6 +42,37 @@ typedef struct GameCode {
 	GameInitAudioFn InitAudio;
 } GameCode;
 
+#ifdef PLATFORM_WINDOWS
+void PrintLastError(const char* prefix)
+{
+    DWORD errorCode = GetLastError();
+
+    if (errorCode == 0)
+    {
+        printf("%s: no error\n", prefix);
+        return;
+    }
+
+    LPSTR messageBuffer = NULL;
+
+    size_t size = FormatMessageA(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        errorCode,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPSTR)&messageBuffer,
+        0,
+        NULL
+    );
+
+    printf("%s: (%lu) %s\n", prefix, errorCode, messageBuffer);
+
+    LocalFree(messageBuffer);
+}
+#endif
+
 time_t GetLastWriteTime(const char* path)
 {
 	struct stat attr;
@@ -50,6 +81,19 @@ time_t GetLastWriteTime(const char* path)
 
 	return 0;
 }
+
+#ifdef PLATFORM_WINDOWS
+
+int CopyFileCustom(const char *from, const char *to)
+{
+    if (!CopyFileA(from, to, FALSE)) {
+        PrintLastError("CopyFile failed");
+        return -1;
+    }
+    return 0;
+}
+
+#else
 
 //source: https://stackoverflow.com/questions/2180079/how-can-i-copy-a-file-on-unix-using-c
 int CopyFileCustom(const char *from, const char *to)
@@ -111,6 +155,8 @@ out_error:
 	return -1;
 }
 
+#endif
+
 GameCode LoadGameCodeWeb()
 {
     GameCode game = {0};
@@ -137,32 +183,34 @@ GameCode LoadGameCode()
 {
     GameCode game = {0};
 
-#if defined(_WIN32)
+#if __EMSCRIPTEN__
+	const char *src = "./game.wasm";
+#elif defined(PLATFORM_WINDOWS)
     const char *src = "./src/game.dll";
 #else
-#ifdef __EMSCRIPTEN__
-    const char *src = "./game.wasm";
-#else
     const char *src = "./src/game.so";
-#endif
-    // const char *tmp = "./src/game_loaded.so";
 #endif
 
 	char tmp[256];
 #ifdef __EMSCRIPTEN__
 	snprintf(tmp, sizeof(tmp), "./game_%lld.wasm", time(NULL));
+#elif defined(PLATFORM_WINDOWS)
+	snprintf(tmp, sizeof(tmp), "./src/game_%ld.dll", time(NULL));
 #else
 	snprintf(tmp, sizeof(tmp), "./src/game_%ld.so", time(NULL));
 #endif
+	printf("Copying game from %s to %s\n", src, tmp);
 	CopyFileCustom(src, tmp);
 	// usleep(100000);
 
+	printf("Loading game from %s\n", tmp);
     game.handle = LoadLib(tmp);
 
     if (!game.handle)
     {
-#ifndef _WIN32
-        printf("dlopen error: %s\n", dlerror());
+#ifdef PLATFORM_WINDOWS
+        // printf("dlopen error: %s\n", GetLastError());
+		PrintLastError("dlopen error");
 #else
         printf("LoadLibrary failed\n");
 #endif
@@ -177,8 +225,8 @@ GameCode LoadGameCode()
 
     if (!game.Update || !game.Init)
     {
-#ifndef _WIN32
-        printf("dlsym error: %s\n", dlerror());
+#ifdef PLATFORM_WINDOWS
+		PrintLastError("dlsym error");
 #endif
     }
 
@@ -188,7 +236,9 @@ GameCode LoadGameCode()
 	
 	// remove previous file if there was one
     // if (lastLoadedFile[0]) {
+#ifndef PLATFORM_WINDOWS
 	unlink(tmp);
+#endif
     // }
     // strncpy(lastLoadedFile, tmp, sizeof(lastLoadedFile));
 
@@ -247,9 +297,18 @@ int main()
 #else
 	GameCode game = LoadGameCode();
 	if (game.Init) game.Init(&gameMemory);
-	while (!WindowShouldClose() && !gameMemory.gameState->shouldExit)
+	printf("WindowShouldClose: %d\n", WindowShouldClose());
+	printf("shouldExit: %d\n", gameMemory.gameState->shouldExit);
+	// TODO: WHY DOES WINDOWSHOULDCLOSE() NOT WORK ON WINDOWS?
+	// while (!WindowShouldClose() && !gameMemory.gameState->shouldExit)
+	while (!gameMemory.gameState->shouldExit)
 	{
-		time_t newWriteTime = GetLastWriteTime("./src/game.so");
+#ifdef PLATFORM_WINDOWS
+		char dll[256] = "./src/game.dll";
+#else
+		char dll[256] = "./src/game.so";
+#endif
+		time_t newWriteTime = GetLastWriteTime(dll);
 		if (newWriteTime != game.lastWriteTime)
 		{
 

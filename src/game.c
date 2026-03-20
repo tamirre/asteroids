@@ -1714,5 +1714,6 @@ void InitGame(GameMemory* gameMemory)
 	*gameMemory->shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
 	*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
 #endif
+	printf("InitGame done!\n");
 }
 
