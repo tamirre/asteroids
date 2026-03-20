@@ -232,8 +232,6 @@ GameCode LoadGameCode()
 
     game.lastWriteTime = GetLastWriteTime(src);
 
-    printf("Game loaded\n");
-	
 	// remove previous file if there was one
     // if (lastLoadedFile[0]) {
 #ifndef PLATFORM_WINDOWS
@@ -249,8 +247,23 @@ void UnloadGameCode(GameCode* game)
 {
 	if (game->handle)
 	{
+#ifdef PLATFORM_WINDOWS
+		if(!CloseLib(game->handle))
+		{
+            PrintLastError("FreeLibrary failed");
+		}
+        else
+        {
+            printf("DLL unloaded successfully\n");
+        }
+#else
 		CloseLib(game->handle);
+#endif
 		// game->handle = NULL;
+		// game->Init = NULL;
+		// game->Update = NULL;
+		// game->Cleanup = NULL;
+		// game->InitAudio = NULL;
 	}
 }
 
@@ -316,10 +329,11 @@ int main()
 
 			shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
 			lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
+
 			// CloseAudioDevice();
-			// usleep(500000);
 			UnloadGameCode(&game);
 			// usleep(100000);
+			// printf("Reloading game...\n");
 			GameCode newGame = LoadGameCode();
 			if (newGame.handle)
 			{
@@ -327,6 +341,7 @@ int main()
 				// InitAudioDevice();
 				// game.InitAudio(gameMemory.audio, gameMemory.options); 
 			}
+			// printf("Reload done!\n");
 		}
 
 		if (game.Update) game.Update(&gameMemory);

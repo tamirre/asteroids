@@ -121,8 +121,8 @@ elif [ "$PLATFORM" == "windows" ]; then
 		# DEBUG_FLAGS="-O2"
 	fi
 
-	rm $SRC_DIR/game.dll
-	rm $SRC_DIR/game_*.dll
+	rm $SRC_DIR/game.dll 2> /dev/null
+	rm $SRC_DIR/game_*.dll 2> /dev/null
 
 	DEFINES="-DPLATFORM_WINDOWS=1"
 	INCLUDE_FLAGS="-I$SRC_DIR/third_party/include"
@@ -144,10 +144,6 @@ elif [ "$PLATFORM" == "windows" ]; then
 		$INCLUDE_FLAGS \
 		$LINK_FLAGS 
 
-	# ensure atomic replace (same as your .so logic)
-	mv $SRC_DIR/game_tmp.dll $SRC_DIR/game.dll
-
-	echo "Built game.dll"
 
 	# ---------------------------
 	# build EXE (host)
@@ -159,9 +155,12 @@ elif [ "$PLATFORM" == "windows" ]; then
 		$DEFINES \
 		$DEBUG_FLAGS \
 		$INCLUDE_FLAGS \
-		$LINK_FLAGS \
-		-Wl,--export-all-symbols
+		$LINK_FLAGS 
 
+	# ensure replace
+	mv $SRC_DIR/game_tmp.dll $SRC_DIR/game.dll
+
+	echo "Built game.dll"
 	echo "Built Windows executable: $OUT_EXE"
 else
 	if [ "$DEBUG" == "1" ]; then
@@ -172,8 +171,8 @@ else
 	INCLUDE_FLAGS="-I$SRC_DIR/third_party/include"
 	LINK_FLAGS="-lraylib -lm -ldl -lpthread -lGL"
 
-	rm $SRC_DIR/game.so
-	rm $SRC_DIR/game_*.so
+	rm $SRC_DIR/game.so 2> /dev/null
+	rm $SRC_DIR/game_*.so 2> /dev/null
 	# Write to game_tmp.so instead of game.so. 
 	# We need to do this because otherwise host.c will
 	# try to load the .so before it is fully written, since we only
@@ -182,14 +181,15 @@ else
 		$INCLUDE_FLAGS \
 		$LINK_FLAGS
 
-	# This is needed so the game.so is only finished when gcc is done
-	# game.so is then copied by host.c to load into the game
-	mv $SRC_DIR/game_tmp.so $SRC_DIR/game.so
 
 	gcc $DEBUG_FLAGS $SRC_DIR/host.c -o $BIN_DIR/$GAME_NAME \
 		$INCLUDE_FLAGS \
 		$LINK_FLAGS \
 		-rdynamic
+
+	# This is needed so the game.so is only finished when gcc is done
+	# game.so is then copied by host.c to load into the game
+	mv $SRC_DIR/game_tmp.so $SRC_DIR/game.so
 fi
 
 seconds=$SECONDS
