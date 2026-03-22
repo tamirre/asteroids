@@ -161,7 +161,7 @@ typedef struct Options {
 	float fxVolume;
 	bool musicVolumeChanged;
 	bool fxVolumeChanged;
-	bool showColliders;
+	bool showDebugInfo;
 } Options;
 
 typedef struct GameState {

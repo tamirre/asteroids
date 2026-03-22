@@ -50,7 +50,7 @@ void initializeAudio(Audio* audio, Options* options) {
 
 void initializeGameState(GameState* gameState) {
     *gameState = (GameState) {
-		.experience = 0,
+		.experience = 999,
 		.score = 0,
         .state = STATE_MAIN_MENU,
 		.lastState = STATE_MAIN_MENU,
@@ -129,7 +129,7 @@ void initializeOptions(Options* options) {
 		.fxVolume = 0.25f,
 		.musicVolumeChanged = false,
 		.fxVolumeChanged = false,
-		.showColliders = false,
+		.showDebugInfo = false,
 	};
 	GuiSetStyle(DEFAULT, TEXT_SIZE, 24);
 	GuiSetStyle(DEFAULT, TEXT_SPACING, 2);
@@ -678,7 +678,11 @@ void UpdateGame(GameMemory* gameMemory)
 							.width  = width,
 							.height = height, 
 						};
+					}
 
+					for (int asteroidIndex = 0; asteroidIndex < gameState->asteroidCount; asteroidIndex++)
+					{
+						Asteroid* asteroid = &gameState->asteroids[asteroidIndex];
 						for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
 						{
 							Bullet* bullet = &gameState->bullets[bulletIndex];
@@ -740,17 +744,17 @@ void UpdateGame(GameMemory* gameMemory)
 							.y = gameState->player.playerPosition.y - playerHeight/2.0f,
 						};
 						 
-						Rectangle screenRectExtended = {
-							.width = VIRTUAL_WIDTH,
-							.height = VIRTUAL_HEIGHT,
-							.x = 0.0,
-							.y = asteroid->position.y, // to make them scroll into screen smoothly
-						};
-						if(!CheckCollisionPointRec(asteroid->position, screenRectExtended))
-						{
-							// Replace with last asteroid
-							*asteroid = gameState->asteroids[--gameState->asteroidCount];
-						}
+						// Rectangle screenRectExtended = {
+						// 	.width = VIRTUAL_WIDTH,
+						// 	.height = VIRTUAL_HEIGHT + asteroid->sprite.coords.height * asteroid->size,
+						// 	.x = 0.0,
+						// 	.y = asteroid->position.y, // to make them scroll into screen smoothly
+						// };
+						// if(!CheckCollisionPointRec(asteroid->position, screenRectExtended))
+						// {
+						// 	// Replace with last asteroid
+						// 	*asteroid = gameState->asteroids[--gameState->asteroidCount];
+						// }
 						if(CheckCollisionRecs(asteroid->collider, gameState->player.collider) && 
 								gameState->player.invulTime <= 0.0f &&
 								gameState->player.shieldEnabled == false)
@@ -897,7 +901,7 @@ void UpdateGame(GameMemory* gameMemory)
 					PlaySound(audio->sounds[SOUND_CARDSELECT]);
 					gameState->pickedUpgrade = (Upgrade)((gameState->pickedUpgrade + 1) % UPGRADE_COUNT);
 				}
-				if (mousePos.x == options->lastMousePos.x || mousePos.y == options->lastMousePos.y)
+				if (mousePos.x == options->lastMousePos.x && mousePos.y == options->lastMousePos.y)
 				{
 					options->disableCursor = true;
 				} 
@@ -906,22 +910,30 @@ void UpdateGame(GameMemory* gameMemory)
 					options->disableCursor = false;
 				}
 				options->lastMousePos = mousePos;
+				int mouseOverUpgrade = 0;
 				for (int i = 0; i < UPGRADE_COUNT; i++) 
 				{
-					if (CheckCollisionPointRec(mousePos, gameState->upgradeCards[i].rect) && !options->disableCursor)
+					if (CheckCollisionPointRec(mousePos, gameState->upgradeCards[i].rect))
 					{
-						gameState->pickedUpgrade = i; 
-						if (lastUpgrade != gameState->pickedUpgrade) 
-						{
-							PlaySound(audio->sounds[SOUND_CARDSELECT]);
-						}
-						if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) 
-						{
-							clickedUpgrade = true;
+						mouseOverUpgrade = i;
+						if (!options->disableCursor) {
+							gameState->pickedUpgrade = i; 
+							if (lastUpgrade != gameState->pickedUpgrade) 
+							{
+								PlaySound(audio->sounds[SOUND_CARDSELECT]);
+							}
 						}
 						break;
 					}
 				}
+				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && mouseOverUpgrade > 0)
+				{
+					gameState->pickedUpgrade = mouseOverUpgrade;
+					clickedUpgrade = true;
+					// printf("clickedUpgrade: %d\n", clickedUpgrade);
+					// printf("selectedUpgrade: %d\n", gameState->pickedUpgrade);
+				}
+				// printf("clickedUpgrade: %d\n", clickedUpgrade);
 				if (IsKeyPressed(KEY_ENTER) || clickedUpgrade) {
 					if (gameState->pickedUpgrade == UPGRADE_MULTISHOT) {
 						gameState->player.playerMultishot = true;
@@ -937,12 +949,12 @@ void UpdateGame(GameMemory* gameMemory)
 			}
 		case STATE_GAME_OVER:
 			{
-				if (IsKeyPressed(KEY_ENTER)) {
+				// if (IsKeyPressed(KEY_ENTER)) {
 					initializeGameState(gameState);
 					initializeOptions(options);
 					gameState->state = STATE_RUNNING;
 					gameState->stateChanged = true;
-				}
+				// }
 				break;
 			}
 		case STATE_PAUSED:
@@ -1010,7 +1022,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 				Color backgroundColor = ColorFromHSV(258, 1, 0.07);
 				ClearBackground(backgroundColor);
 				// Draw Colliders (outside of shader mode for corect color)
-				if (options->showColliders)
+				if (options->showDebugInfo)
 				{
 					DrawRectangleLinesEx(gameState->player.collider, 2.0, GREEN);
 					for (int i = 0; i < gameState->bulletCount; i++)
@@ -1481,7 +1493,7 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 	}
 	GuiCheckBox((Rectangle){ boxPosX-labelWidth/2-boxWidth/6, 
 							 boxPosY-sliderHeight/2-boxHeight/6+3*boxHeight/12, 
-							 checkboxWidth, checkboxHeight }, T(TXT_SHOW_COLLIDERS), &options->showColliders);
+							 checkboxWidth, checkboxHeight }, T(TXT_SHOW_DEBUG_INFO), &options->showDebugInfo);
 
 	if (GuiButton((Rectangle){ boxPosX-boxWidth/4-buttonWidth/2+checkboxWidth, 
 							   boxPosY-buttonHeight/4+boxHeight/6+checkboxHeight, 
@@ -1617,7 +1629,10 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader*
 			}
 	}
 
-	DrawFPSInViewport(viewport);
+	if(options->showDebugInfo)
+	{
+		DrawFPSInViewport(viewport);
+	}
 }
 
 void DrawComposite(RenderTexture2D* scene, Options* options, RenderTexture2D* litScene, GameState* gameState, Shader* lightShader)
