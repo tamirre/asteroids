@@ -115,7 +115,7 @@ if [ "$PLATFORM" == "web" ]; then
 	echo "Built index.html"
 
 	# ZIP FOR ITCH.IO
-	# zip -r ${GAME_NAME}_web.zip web/
+	zip -r ${GAME_NAME}_web.zip web/
 elif [ "$PLATFORM" == "windows" ]; then
 	CC=x86_64-w64-mingw32-gcc
 

@@ -50,7 +50,7 @@ void initializeAudio(Audio* audio, Options* options) {
 
 void initializeGameState(GameState* gameState) {
     *gameState = (GameState) {
-		.experience = 999,
+		.experience = 0,
 		.score = 0,
         .state = STATE_MAIN_MENU,
 		.lastState = STATE_MAIN_MENU,
@@ -66,7 +66,7 @@ void initializeGameState(GameState* gameState) {
         .asteroidSpawnRate = 0.2f,
         .boostCount = 0,
         .boostSpawnTime = 0.0f,
-        .boostSpawnRate = 1.0f,
+        .boostSpawnRate = 10.0f,
 		.stars = {0},
         .starCount = 0,
         .starTime = 0,
@@ -125,8 +125,8 @@ void initializeOptions(Options* options) {
 		.languageChanged = false,
 		.disableCursor = false,
 		.lastMousePos = (Vector2){0,0},
-		.musicVolume = 0.05f,
-		.fxVolume = 0.25f,
+		.musicVolume = 0.15f,
+		.fxVolume = 0.15f,
 		.musicVolumeChanged = false,
 		.fxVolumeChanged = false,
 		.showDebugInfo = false,
@@ -332,8 +332,8 @@ void UpdateGame(GameMemory* gameMemory)
 	Audio* audio = gameMemory->audio;
 
 	// static bool cursorHidden = true;
-	// static bool stepMode = false;
-	// static bool stepOnce = false;
+	static bool stepMode = false;
+	static bool stepOnce = false;
 	const Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 
 	// gameState->stateChanged = false;
@@ -353,8 +353,8 @@ void UpdateGame(GameMemory* gameMemory)
 				if (!IsMusicStreamPlaying(audio->music[audio->currentSongtrackID])) ResumeMusicStream(audio->music[audio->currentSongtrackID]);
 				ResumeSound(audio->sounds[SOUND_SHIELD]);
 				// Step debugging mode
-				// if (IsKeyPressed(KEY_J)) stepMode = !stepMode;
-				// if (IsKeyPressed(KEY_K)) stepOnce = true;
+				if (IsKeyPressed(KEY_J)) stepMode = !stepMode;
+				if (IsKeyPressed(KEY_K)) stepOnce = true;
 				if (IsKeyPressed(KEY_O)) options->disableShaders = !options->disableShaders;
 #ifndef PLATFORM_WEB
 				if (IsKeyPressed(KEY_F)) 
@@ -379,8 +379,8 @@ void UpdateGame(GameMemory* gameMemory)
 					}
 				}
 
-				// if (stepMode && !stepOnce) return;
-				// stepOnce = false;
+				if (stepMode && !stepOnce) return;
+				stepOnce = false;
 
 				const Rectangle screenRect = {
 					.height = VIRTUAL_HEIGHT,
@@ -798,7 +798,10 @@ void UpdateGame(GameMemory* gameMemory)
 
 				// Spawn boosts
 				{
-					gameState->boostSpawnTime += gameState->dt;
+					if (gameState->boostCount < MAX_BOOSTS)
+					{
+						gameState->boostSpawnTime += gameState->dt;
+					}
 					if (gameState->boostSpawnTime > gameState->boostSpawnRate && gameState->boostCount < MAX_BOOSTS)
 					{
 						// int size = (int)GetRandomValue(1, 3);
@@ -842,6 +845,7 @@ void UpdateGame(GameMemory* gameMemory)
 						if (boost->position.y > VIRTUAL_HEIGHT + boost->sprite.coords.height * boost->size)
 						{
 							*boost = gameState->boosts[--gameState->boostCount];
+							gameState->boostSpawnTime = 0.0f;
 						}
 						if(CheckCollisionRecs(boost->collider, gameState->player.collider))
 						{
@@ -910,7 +914,7 @@ void UpdateGame(GameMemory* gameMemory)
 					options->disableCursor = false;
 				}
 				options->lastMousePos = mousePos;
-				int mouseOverUpgrade = 0;
+				int mouseOverUpgrade = -1;
 				for (int i = 0; i < UPGRADE_COUNT; i++) 
 				{
 					if (CheckCollisionPointRec(mousePos, gameState->upgradeCards[i].rect))
@@ -923,10 +927,10 @@ void UpdateGame(GameMemory* gameMemory)
 								PlaySound(audio->sounds[SOUND_CARDSELECT]);
 							}
 						}
-						break;
+						// break;
 					}
 				}
-				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && mouseOverUpgrade > 0)
+				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && mouseOverUpgrade != -1)
 				{
 					gameState->pickedUpgrade = mouseOverUpgrade;
 					clickedUpgrade = true;
@@ -949,12 +953,12 @@ void UpdateGame(GameMemory* gameMemory)
 			}
 		case STATE_GAME_OVER:
 			{
-				// if (IsKeyPressed(KEY_ENTER)) {
+				if (IsKeyPressed(KEY_ENTER)) {
 					initializeGameState(gameState);
 					initializeOptions(options);
 					gameState->state = STATE_RUNNING;
 					gameState->stateChanged = true;
-				// }
+				}
 				break;
 			}
 		case STATE_PAUSED:
@@ -1225,20 +1229,20 @@ void DrawLightmap(GameState* gameState, Options* options, RenderTexture2D* litSc
 	Vector2 lights[128];
 	int lc = 0;
 
-	// for (int i = 0; i < gameState->bulletCount; i++) {
-	// 	// convert pixel -> normalized UV (0–1)
-	// 	lights[lc].x = gameState->bullets[i].position.x / VIRTUAL_WIDTH;
-	// 	lights[lc].y = 1.0f - gameState->bullets[i].position.y / VIRTUAL_HEIGHT;
-	// 	lc++;
-	// }
-	// if (gameState->boostCount > 0) {
-	// 	for (int i = 0; i < gameState->boostCount; i++) {
-	// 		// convert pixel -> normalized UV (0–1)
-	// 		lights[lc].x = gameState->boosts[i].position.x / VIRTUAL_WIDTH;
-	// 		lights[lc].y = 1.0f - gameState->boosts[i].position.y / VIRTUAL_HEIGHT;
-	// 		lc++;
-	// 	}
-	// }
+	for (int i = 0; i < gameState->bulletCount; i++) {
+		// convert pixel -> normalized UV (0–1)
+		lights[lc].x = gameState->bullets[i].position.x / VIRTUAL_WIDTH;
+		lights[lc].y = 1.0f - gameState->bullets[i].position.y / VIRTUAL_HEIGHT;
+		lc++;
+	}
+	if (gameState->boostCount > 0) {
+		for (int i = 0; i < gameState->boostCount; i++) {
+			// convert pixel -> normalized UV (0–1)
+			lights[lc].x = gameState->boosts[i].position.x / VIRTUAL_WIDTH;
+			lights[lc].y = 1.0f - gameState->boosts[i].position.y / VIRTUAL_HEIGHT;
+			lc++;
+		}
+	}
 
 	lights[lc].x = gameState->player.playerPosition.x / VIRTUAL_WIDTH;
 	lights[lc].y = 1.0f - gameState->player.playerPosition.y / VIRTUAL_HEIGHT;
@@ -1601,8 +1605,7 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader*
 				ClearBackground(backgroundColor);
 				draw_text_centered(options->font, T(TXT_GAME_OVER), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f}, 40, WHITE);
 				char scoreText[100] = {0};
-				sprintf(scoreText, "Final score: %d", gameState->score);
-				draw_text_centered(options->font, scoreText, (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 30.0f}, 20.0f, WHITE);
+				draw_text_centered(options->font, TF(TXT_SCORE, gameState->score), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 30.0f}, 20.0f, WHITE);
 				draw_text_centered(options->font, T(TXT_TRY_AGAIN), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 60.0f}, 20.0f, WHITE);
 				break;
 			}
@@ -1649,7 +1652,6 @@ void DrawComposite(RenderTexture2D* scene, Options* options, RenderTexture2D* li
     if (!options->disableShaders) EndShaderMode();
 }
 
-// void DrawGame(GameState* gameState, Options* options, TextureAtlas* atlas, RenderTexture2D* scene, Shader* shader, Shader lightShader)
 void DrawGame(GameMemory* gameMemory)
 {
 	GameState* gameState = gameMemory->gameState;
@@ -1660,7 +1662,7 @@ void DrawGame(GameMemory* gameMemory)
 	Shader* shader = gameMemory->shader;
 	Shader* lightShader = gameMemory->lightShader;
 
-	// DrawLightmap(gameState, options, litScene, &lightShader);
+	DrawLightmap(gameState, options, litScene, lightShader);
 	DrawScene(gameState, options, atlas, scene, shader);
 
 	BeginDrawing();

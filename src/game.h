@@ -20,8 +20,8 @@
 #define MIN_SCREEN_HEIGHT (225.0f)
 
 #if defined(PLATFORM_WEB)
-#define VIRTUAL_WIDTH (1040.0f)
-#define VIRTUAL_HEIGHT (585.0f)
+#define VIRTUAL_WIDTH (1440.0f)
+#define VIRTUAL_HEIGHT (810.0f)
 #else
 #define VIRTUAL_WIDTH (1440.0f)
 #define VIRTUAL_HEIGHT (810.0f)
