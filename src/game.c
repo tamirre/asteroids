@@ -90,7 +90,7 @@ void initializeGameState(GameState* gameState) {
     gameState->player = (Player) {
         .playerVelocity = 200,
         .playerPosition = (Vector2){VIRTUAL_WIDTH / 2.0f, VIRTUAL_HEIGHT / 2.0f},
-        .playerHealth = 7,
+        .playerHealth = 3,
         .playerMultishot = false,
         .sprite = getSprite(SPRITE_PLAYER),
         .size = 2,
@@ -144,6 +144,54 @@ void initializeOptions(Options* options) {
 	GuiSetFont(options->font);
 }
 
+void InitGame(GameMemory* gameMemory)
+{
+    SetTargetFPS(TARGET_FPS);
+
+	// set default language
+	LocSetLanguage(LANG_EN);
+	// LocSetLanguage(LANG_DE);
+	// LocSetLanguage(LANG_ZH);
+
+	ConfigFlags configFlags = FLAG_WINDOW_RESIZABLE | 
+		                      FLAG_VSYNC_HINT | 
+							  // FLAG_WINDOW_TOPMOST | 
+							  // FLAG_FULLSCREEN_MODE |
+							  // FLAG_WINDOW_UNDECORATED |
+							  FLAG_BORDERLESS_WINDOWED_MODE;
+	SetConfigFlags(configFlags);
+
+	InitWindow(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_TITLE);
+	SetWindowMinSize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+	
+	// Disable Exit on ESC
+    SetExitKey(KEY_NULL);
+
+	// Options options = {0};
+	GameState gameState = {0};
+	Audio audio = {0};
+	initializeOptions(gameMemory->options);
+	initializeGameState(gameMemory->gameState);
+	initializeAudio(gameMemory->audio, gameMemory->options);
+	// gameMemory->options = &options;
+	RenderTexture2D scene = LoadRenderTexture(gameMemory->options->screenWidth, gameMemory->options->screenHeight);
+	RenderTexture2D litScene = LoadRenderTexture(gameMemory->options->screenWidth, gameMemory->options->screenHeight);
+	SpriteMask spriteMasks[SPRITE_COUNT];
+    TextureAtlas atlas = initTextureAtlas(spriteMasks);
+	gameMemory->scene = &scene;
+	gameMemory->litScene = &litScene;
+
+	// Write the initialized state to gameMemory
+	gameMemory->atlas = &atlas;
+	gameMemory->spriteMasks = spriteMasks;
+	gameMemory->options->previousWidth  = VIRTUAL_WIDTH;
+	gameMemory->options->previousHeight = VIRTUAL_HEIGHT;
+#ifndef PLATFORM_WEB
+	*gameMemory->shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
+	*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
+#endif
+	printf("InitGame done!\n");
+}
 
 void draw_text_centered(Font font, const char* text, Vector2 pos, int fontSize, Color color)
 {
@@ -954,10 +1002,35 @@ void UpdateGame(GameMemory* gameMemory)
 		case STATE_GAME_OVER:
 			{
 				if (IsKeyPressed(KEY_ENTER)) {
-					initializeGameState(gameState);
+#ifdef PLATFORM_WEB
+					GameState gameState = {0};
+					Audio audio = {0};
+					initializeOptions(gameMemory->options);
+					initializeGameState(gameMemory->gameState);
+					initializeAudio(gameMemory->audio, gameMemory->options);
+					// gameMemory->options = &options;
+					RenderTexture2D scene = LoadRenderTexture(gameMemory->options->screenWidth, gameMemory->options->screenHeight);
+					RenderTexture2D litScene = LoadRenderTexture(gameMemory->options->screenWidth, gameMemory->options->screenHeight);
+					SpriteMask spriteMasks[SPRITE_COUNT];
+					TextureAtlas atlas = initTextureAtlas(spriteMasks);
+					gameMemory->scene = &scene;
+					gameMemory->litScene = &litScene;
+
+					// Write the initialized state to gameMemory
+					gameMemory->atlas = &atlas;
+					gameMemory->spriteMasks = spriteMasks;
+					gameMemory->options->previousWidth  = VIRTUAL_WIDTH;
+					gameMemory->options->previousHeight = VIRTUAL_HEIGHT;
+					*gameMemory->shader = LoadShader(0, TextFormat("./src/shaders/test_web.glsl", GLSL_VERSION));
+					*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
+					gameMemory->gameState->state = STATE_RUNNING;
+					gameMemory->gameState->stateChanged = true;
+#else
 					initializeOptions(options);
+					initializeGameState(gameState);
 					gameState->state = STATE_RUNNING;
 					gameState->stateChanged = true;
+#endif
 				}
 				break;
 			}
@@ -1070,7 +1143,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						// Change the frame per second speed of animation
 						// atlas->animations[SpriteToAnimation[SPRITE_BULLET]].framesPerSecond = 14;
-						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_BULLET]], bullet->collider, (Vector2){0, 0}, bullet->rotation, WHITE, *shader);
+						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_BULLET]], bullet->collider, (Vector2){0, 0}, bullet->rotation, WHITE, *shader);
 					}
 				}
 				// Draw asteroids
@@ -1113,7 +1186,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						Vector2 pivot = { boost->collider.width / 2.0f, boost->collider.height / 2.0f };
 						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						// Rectangle destination = {texture_x, texture_y, width, height}; // origin in coordinates and scale
-						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_SCRAPMETAL]], boostDrawRect, pivot, boost->rotation, WHITE, *shader);
+						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_SCRAPMETAL]], boostDrawRect, pivot, boost->rotation, WHITE, *shader);
 						// DrawRectangleLines(boostDrawRect.x, boostDrawRect.y, boostDrawRect.width, boostDrawRect.height, RED);
 						// DrawRectangleLines(boost->collider.x, boost->collider.y, boost->collider.width, boost->collider.height, GREEN);
 					}
@@ -1171,10 +1244,10 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					Vector2 texSize = { playerDestination.width, playerDestination.height };
 					SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 					if (gameState->player.invulTime <= 0.0f) {
-						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, *shader);
+						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, *shader);
 					} else {
 						if (((int)(gameState->player.invulTime * 10)) % 2 == 0) {
-							DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, *shader);
+							DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, *shader);
 						}
 					}
 					// DrawCircleV(gameState->player.playerPosition, 8.0f, GREEN);
@@ -1187,7 +1260,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						Vector2 texSize = { getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.width / getSprite(SpriteToAnimation[SPRITE_SHIELD]).numFrames,
 											getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.height };
 						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
-						DrawSpriteAnimationPro(atlas->textureAtlas, atlas->animations[SpriteToAnimation[SPRITE_SHIELD]], playerDestination, origin, 0, WHITE, *shader);
+						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_SHIELD]], playerDestination, origin, 0, WHITE, *shader);
 					}
 				}
 				EndShaderMode();
@@ -1683,52 +1756,4 @@ void UpdateDrawFrame(GameMemory* gameMemory)
 	DrawGame(gameMemory);
 }
 
-void InitGame(GameMemory* gameMemory)
-{
-    SetTargetFPS(TARGET_FPS);
-
-	// set default language
-	LocSetLanguage(LANG_EN);
-	// LocSetLanguage(LANG_DE);
-	// LocSetLanguage(LANG_ZH);
-
-	ConfigFlags configFlags = FLAG_WINDOW_RESIZABLE | 
-		                      FLAG_VSYNC_HINT | 
-							  // FLAG_WINDOW_TOPMOST | 
-							  // FLAG_FULLSCREEN_MODE |
-							  // FLAG_WINDOW_UNDECORATED |
-							  FLAG_BORDERLESS_WINDOWED_MODE;
-	SetConfigFlags(configFlags);
-
-	InitWindow(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_TITLE);
-	SetWindowMinSize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
-	
-	// Disable Exit on ESC
-    SetExitKey(KEY_NULL);
-
-	// Options options = {0};
-	GameState gameState = {0};
-	Audio audio = {0};
-	initializeOptions(gameMemory->options);
-	initializeGameState(gameMemory->gameState);
-	initializeAudio(gameMemory->audio, gameMemory->options);
-	// gameMemory->options = &options;
-	RenderTexture2D scene = LoadRenderTexture(gameMemory->options->screenWidth, gameMemory->options->screenHeight);
-	RenderTexture2D litScene = LoadRenderTexture(gameMemory->options->screenWidth, gameMemory->options->screenHeight);
-	SpriteMask spriteMasks[SPRITE_COUNT];
-    TextureAtlas atlas = initTextureAtlas(spriteMasks);
-	gameMemory->scene = &scene;
-	gameMemory->litScene = &litScene;
-
-	// Write the initialized state to gameMemory
-	gameMemory->atlas = &atlas;
-	gameMemory->spriteMasks = spriteMasks;
-	gameMemory->options->previousWidth  = VIRTUAL_WIDTH;
-	gameMemory->options->previousHeight = VIRTUAL_HEIGHT;
-#ifndef PLATFORM_WEB
-	*gameMemory->shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
-	*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
-#endif
-	printf("InitGame done!\n");
-}
 
