@@ -142,6 +142,19 @@ typedef struct Player {
 	int level;
 } Player;
 
+typedef struct Enemy {
+    float velocity;
+    Vector2 position;
+    int health;
+    Sprite sprite;
+    int size;
+    int animationFrames;
+    float fireRate;
+    float shootTime;
+    float damageMulti;
+	Rectangle collider;
+} Enemy;
+
 typedef struct Options {
 	float screenWidth;
 	float screenHeight;

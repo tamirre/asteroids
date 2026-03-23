@@ -90,7 +90,7 @@ void initializeGameState(GameState* gameState) {
     gameState->player = (Player) {
         .playerVelocity = 200,
         .playerPosition = (Vector2){VIRTUAL_WIDTH / 2.0f, VIRTUAL_HEIGHT / 2.0f},
-        .playerHealth = 3,
+        .playerHealth = 7,
         .playerMultishot = false,
         .sprite = getSprite(SPRITE_PLAYER),
         .size = 2,
@@ -1001,7 +1001,7 @@ void UpdateGame(GameMemory* gameMemory)
 			}
 		case STATE_GAME_OVER:
 			{
-				if (IsKeyPressed(KEY_ENTER)) {
+				// if (IsKeyPressed(KEY_ENTER)) {
 #ifdef PLATFORM_WEB
 					GameState gameState = {0};
 					Audio audio = {0};
@@ -1031,7 +1031,7 @@ void UpdateGame(GameMemory* gameMemory)
 					gameState->state = STATE_RUNNING;
 					gameState->stateChanged = true;
 #endif
-				}
+				// }
 				break;
 			}
 		case STATE_PAUSED:
@@ -1143,7 +1143,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						// Change the frame per second speed of animation
 						// atlas->animations[SpriteToAnimation[SPRITE_BULLET]].framesPerSecond = 14;
-						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_BULLET]], bullet->collider, (Vector2){0, 0}, bullet->rotation, WHITE, *shader);
+						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_BULLET]], bullet->collider, (Vector2){0, 0}, bullet->rotation, WHITE, *shader, false, false);
 					}
 				}
 				// Draw asteroids
@@ -1186,7 +1186,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						Vector2 pivot = { boost->collider.width / 2.0f, boost->collider.height / 2.0f };
 						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						// Rectangle destination = {texture_x, texture_y, width, height}; // origin in coordinates and scale
-						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_SCRAPMETAL]], boostDrawRect, pivot, boost->rotation, WHITE, *shader);
+						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_SCRAPMETAL]], boostDrawRect, pivot, boost->rotation, WHITE, *shader, false, false);
 						// DrawRectangleLines(boostDrawRect.x, boostDrawRect.y, boostDrawRect.width, boostDrawRect.height, RED);
 						// DrawRectangleLines(boost->collider.x, boost->collider.y, boost->collider.width, boost->collider.height, GREEN);
 					}
@@ -1244,10 +1244,10 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					Vector2 texSize = { playerDestination.width, playerDestination.height };
 					SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 					if (gameState->player.invulTime <= 0.0f) {
-						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, *shader);
+						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, *shader, 0, 1);
 					} else {
 						if (((int)(gameState->player.invulTime * 10)) % 2 == 0) {
-							DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, *shader);
+							DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, *shader, 0, 1);
 						}
 					}
 					// DrawCircleV(gameState->player.playerPosition, 8.0f, GREEN);
@@ -1260,7 +1260,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						Vector2 texSize = { getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.width / getSprite(SpriteToAnimation[SPRITE_SHIELD]).numFrames,
 											getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.height };
 						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
-						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_SHIELD]], playerDestination, origin, 0, WHITE, *shader);
+						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_SHIELD]], playerDestination, origin, 0, WHITE, *shader, false, false);
 					}
 				}
 				EndShaderMode();

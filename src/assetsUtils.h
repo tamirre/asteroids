@@ -119,7 +119,7 @@ bool DrawSpriteAnimationOnce(Texture2D atlas,
     return false; // still playing
 }
 
-void DrawSpriteAnimationPro(Texture2D* atlas, SpriteAnimation* animation, Rectangle destination, Vector2 origin, float rotation, Color tint, Shader shader)
+void DrawSpriteAnimationPro(Texture2D* atlas, SpriteAnimation* animation, Rectangle destination, Vector2 origin, float rotation, Color tint, Shader shader, int flipX, int flipY)
 {
 	if (!atlas || !animation) return;
 	if (animation->framesPerSecond <= 0) return;
@@ -130,6 +130,12 @@ void DrawSpriteAnimationPro(Texture2D* atlas, SpriteAnimation* animation, Rectan
 	int texSizeLoc = GetShaderLocation(shader, "textureSize");
     int index = (int)(GetTime() * animation->framesPerSecond) % animation->rectanglesLength;
     Rectangle source = animation->rectangles[index];
+	if (flipX == 1) { 
+		// source.width = - source.width;
+	}
+	if (flipY == 1) {
+		// destination = (Rectangle){ destination.x, destination.y + destination.height, destination.width, -destination.height };
+	}
 	Vector2 texSize = { animation->rectangles->width, animation->rectangles->height };
 	SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
     DrawTexturePro(*atlas, source, destination, origin, rotation, tint);
