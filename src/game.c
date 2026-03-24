@@ -58,7 +58,7 @@ void initializeGameState(GameState* gameState) {
 		.player = {0},
 		.enemies = {0},
 		.enemyCount = 0,
-		.enemySpawnRate = 0.2f,
+		.enemySpawnRate = 2.0f,
 		.enemySpawnTime = 0.0f,
 		.bullets = {0},
         .bulletCount = 0,
@@ -832,12 +832,16 @@ void UpdateGame(GameMemory* gameMemory)
 					gameState->enemySpawnTime += gameState->dt;
 					if (gameState->enemySpawnTime > gameState->enemySpawnRate && gameState->enemyCount < MAX_ENEMIES) 
 					{
+						// printf("Spawning enemy\n");
 						float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
+						float enemyXPosition = GetRandomValue(0, VIRTUAL_WIDTH);
+						float velocity = 0.1f + (float)GetRandomValue(0, 10)/20.0f;
 						Enemy enemy =
 						{
-							.position = (Vector2){(VIRTUAL_WIDTH - getSprite(SPRITE_ENEMY).coords.width * 0.5) * 0.5 * (1.0 + sinf(gameState->time)) - getSprite(SPRITE_ENEMY).coords.width, 80},
+							// .position = (Vector2){(enemyXPosition - enemy.sprite.coords.width/2.0f) * 0.5 * (1.0 + sinf(gameState->time * enemy.velocity)) - enemy.sprite.coords.width/2.0f, 50},
+							.position = (Vector2){0, 50},
 							.health = 20,
-							.velocity = 0.5f,
+							.velocity = velocity,
 							.size = 20,
 							.sprite = getSprite(SPRITE_ENEMY),
 						};

@@ -37,7 +37,7 @@
 #define MAX_EXPLOSIONS (20)
 #define MAX_STARS (50)
 #define MAX_BOOSTS (1)
-#define MAX_ENEMIES (1)
+#define MAX_ENEMIES (3)
 
 #ifdef PLATFORM_WEB
 	#define TARGET_FPS (60)
