@@ -133,7 +133,7 @@ void initializeOptions(Options* options) {
 		.fxVolume = 0.15f,
 		.musicVolumeChanged = false,
 		.fxVolumeChanged = false,
-		.showDebugInfo = false,
+		.showDebugInfo = true,
 	};
 	GuiSetStyle(DEFAULT, TEXT_SIZE, 24);
 	GuiSetStyle(DEFAULT, TEXT_SPACING, 2);
@@ -835,13 +835,21 @@ void UpdateGame(GameMemory* gameMemory)
 						float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
 						Enemy enemy =
 						{
-							.position = (Vector2){(VIRTUAL_WIDTH - 50.0f) * 0.5 * (1.0 + sinf(gameState->time)) - 50.0f, 20},
+							.position = (Vector2){(VIRTUAL_WIDTH - getSprite(SPRITE_ENEMY).coords.width * 0.5) * 0.5 * (1.0 + sinf(gameState->time)) - getSprite(SPRITE_ENEMY).coords.width, 80},
 							.health = 20,
 							.velocity = 0.5f,
 							.size = 20,
+							.sprite = getSprite(SPRITE_ENEMY),
+						};
+						enemy.collider = (Rectangle){
+							.x = enemy.position.x - enemy.sprite.coords.width/2.0f,
+							.y = enemy.position.y - enemy.sprite.coords.height/2.0f,
+							.width = enemy.sprite.coords.width,
+							.height = enemy.sprite.coords.height,
 						};
 						gameState->enemies[gameState->enemyCount++] = enemy;
 						gameState->enemySpawnTime = 0.0f;
+
 					}
 				}
 				// Update enemies
@@ -849,7 +857,13 @@ void UpdateGame(GameMemory* gameMemory)
 					for (int enemyIndex = 0; enemyIndex < gameState->enemyCount; enemyIndex++)
 					{
 						Enemy* enemy = &gameState->enemies[enemyIndex];
-						enemy->position.x = (VIRTUAL_WIDTH - 50.0f)* 0.5 * (1.0 + sinf(gameState->time * enemy->velocity)) ;
+						enemy->position.x = 0.5 * enemy->sprite.coords.width + (VIRTUAL_WIDTH - enemy->sprite.coords.width) * 0.5 * (1.0 + sinf(gameState->time * enemy->velocity));
+						enemy->collider = (Rectangle){
+							.x = enemy->position.x - enemy->sprite.coords.width/2.0f,
+							.y = enemy->position.y - enemy->sprite.coords.height/2.0f,
+							.width = enemy->sprite.coords.width,
+							.height = enemy->sprite.coords.height,
+						};
 					}
 				}
 				// Update explosions
@@ -1132,31 +1146,14 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					{
 						DrawRectangleLinesEx(gameState->boosts[i].collider, 2.0, YELLOW);
 					}
+					for (int i = 0; i < gameState->enemyCount; i++)
+					{
+						DrawRectangleLinesEx(gameState->enemies[i].collider, 2.0, BLUE);
+					}
 					DrawRectangleRec(gameState->currentCollision, RED);
 					gameState->currentCollision = (Rectangle){0,0,0,0};
 				}
 
-				// Draw Enemies
-				{
-					for (int i = 0; i < gameState->enemyCount; i++)
-					{
-						Enemy* enemy = &gameState->enemies[i];
-						Rectangle enemyDest = {
-							// enemy->position.x - enemy->sprite.coords.width/2.0f,
-							// enemy->position.y - enemy->sprite.coords.height/2.0f,
-							// enemy->sprite.coords.width,
-							// enemy->sprite.coords.height,
-							enemy->position.x,
-							enemy->position.y,
-							50,
-							50,
-						};
-						// Vector2 texSize = { enemy->sprite.coords.width, enemy->sprite.coords.height };
-						// SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
-						// DrawRectangle(enemy->posi, int posY, int width, int height, Color color);
-						DrawRectanglePro(enemyDest, (Vector2){0,0}, 0, RED); 
-					}
-				}
 				BeginShaderMode(*shader);
 
 				// Draw Stars
@@ -1269,6 +1266,31 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 
 						if (finished)
 							explosion->active = false;
+					}
+				}
+				// Draw Enemies
+				{
+					for (int i = 0; i < gameState->enemyCount; i++)
+					{
+						Enemy* enemy = &gameState->enemies[i];
+						Rectangle enemyDest = {
+							enemy->position.x - enemy->sprite.coords.width/2.0f,
+							enemy->position.y - enemy->sprite.coords.height/2.0f,
+							enemy->sprite.coords.width,
+							enemy->sprite.coords.height,
+							// enemy->position.x,
+							// enemy->position.y,
+							// 50,
+							// 50,
+						};
+						// printf("Enemy: %f %f\n", enemy->position.x, enemy->position.y);
+						// printf("Enemy: %f %f\n", enemyDest.x, enemyDest.y);
+						// printf("Enemy: %f %f\n", enemyDest.width, enemyDest.height);
+						Vector2 texSize = { enemy->sprite.coords.width, enemy->sprite.coords.height };
+						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						// DrawRectangle(enemy->posi, int posY, int width, int height, Color color);
+						// DrawRectanglePro(enemyDest, (Vector2){0,0}, 0, RED); 
+						DrawTexturePro(atlas->textureAtlas, enemy->sprite.coords, enemyDest, (Vector2){0,0}, 0, WHITE);
 					}
 				}
 				// Draw Player

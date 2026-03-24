@@ -8,7 +8,7 @@ typedef enum SpriteID {
     SPRITE_ASTEROID2,
     SPRITE_ASTEROID3,
     SPRITE_BULLET,
-    SPRITE_DARKMATTER,
+    SPRITE_ENEMY,
     SPRITE_EXPLOSION,
     SPRITE_HEART,
     SPRITE_PLAYER,
@@ -32,7 +32,6 @@ typedef struct Sprite {
 
 typedef enum AnimationID {
     ANIM_BULLET,
-    ANIM_DARKMATTER,
     ANIM_EXPLOSION,
     ANIM_PLAYER,
     ANIM_SCRAPMETAL,
@@ -42,7 +41,6 @@ typedef enum AnimationID {
 
 static int SpriteToAnimation[SPRITE_COUNT] = {
     [SPRITE_BULLET] = ANIM_BULLET,
-    [SPRITE_DARKMATTER] = ANIM_DARKMATTER,
     [SPRITE_EXPLOSION] = ANIM_EXPLOSION,
     [SPRITE_PLAYER] = ANIM_PLAYER,
     [SPRITE_SCRAPMETAL] = ANIM_SCRAPMETAL,
@@ -52,21 +50,21 @@ static int SpriteToAnimation[SPRITE_COUNT] = {
 static inline Sprite getSprite(SpriteID spriteID) {
     Sprite s = {0};
     switch(spriteID) {
-        case SPRITE_ASTEROID1: { s.coords = (Rectangle){916, 97, 64, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_ASTEROID1; break; }
-        case SPRITE_ASTEROID2: { s.coords = (Rectangle){0, 0, 64, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_ASTEROID2; break; }
-        case SPRITE_ASTEROID3: { s.coords = (Rectangle){3998, 0, 96, 96}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_ASTEROID3; break; }
-        case SPRITE_BULLET: { s.coords = (Rectangle){3826, 97, 192, 48}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 6; s.spriteID = SPRITE_BULLET; break; }
-        case SPRITE_DARKMATTER: { s.coords = (Rectangle){104, 0, 3840, 96}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 40; s.spriteID = SPRITE_DARKMATTER; break; }
-        case SPRITE_EXPLOSION: { s.coords = (Rectangle){205, 97, 704, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 11; s.spriteID = SPRITE_EXPLOSION; break; }
-        case SPRITE_HEART: { s.coords = (Rectangle){3705, 97, 17, 17}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_HEART; break; }
-        case SPRITE_PLAYER: { s.coords = (Rectangle){4, 97, 190, 64}; s.pivotOffset = (Vector2){-1, -24}; s.numFrames = 5; s.spriteID = SPRITE_PLAYER; break; }
-        case SPRITE_SCRAPMETAL: { s.coords = (Rectangle){2936, 97, 768, 48}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 16; s.spriteID = SPRITE_SCRAPMETAL; break; }
-        case SPRITE_SHIELD: { s.coords = (Rectangle){1000, 97, 1920, 96}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 20; s.spriteID = SPRITE_SHIELD; break; }
-        case SPRITE_STAR1: { s.coords = (Rectangle){910, 97, 5, 5}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_STAR1; break; }
-        case SPRITE_STAR2: { s.coords = (Rectangle){3945, 0, 3, 3}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_STAR2; break; }
-        case SPRITE_UPGRADEDAMAGE: { s.coords = (Rectangle){3772, 97, 48, 67}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_UPGRADEDAMAGE; break; }
-        case SPRITE_UPGRADEFIRERATE: { s.coords = (Rectangle){3949, 0, 48, 67}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_UPGRADEFIRERATE; break; }
-        case SPRITE_UPGRADEMULTISHOT: { s.coords = (Rectangle){3723, 97, 48, 67}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_UPGRADEMULTISHOT; break; }
+        case SPRITE_ASTEROID1: { s.coords = (Rectangle){2142, 0, 64, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_ASTEROID1; break; }
+        case SPRITE_ASTEROID2: { s.coords = (Rectangle){2207, 0, 64, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_ASTEROID2; break; }
+        case SPRITE_ASTEROID3: { s.coords = (Rectangle){2272, 0, 96, 96}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_ASTEROID3; break; }
+        case SPRITE_BULLET: { s.coords = (Rectangle){5, 0, 192, 48}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 6; s.spriteID = SPRITE_BULLET; break; }
+        case SPRITE_ENEMY: { s.coords = (Rectangle){0, 97, 64, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_ENEMY; break; }
+        case SPRITE_EXPLOSION: { s.coords = (Rectangle){2550, 0, 704, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 11; s.spriteID = SPRITE_EXPLOSION; break; }
+        case SPRITE_HEART: { s.coords = (Rectangle){2369, 0, 17, 17}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_HEART; break; }
+        case SPRITE_PLAYER: { s.coords = (Rectangle){69, 97, 190, 64}; s.pivotOffset = (Vector2){-1, -24}; s.numFrames = 5; s.spriteID = SPRITE_PLAYER; break; }
+        case SPRITE_SCRAPMETAL: { s.coords = (Rectangle){3270, 0, 768, 48}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 16; s.spriteID = SPRITE_SCRAPMETAL; break; }
+        case SPRITE_SHIELD: { s.coords = (Rectangle){221, 0, 1920, 96}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 20; s.spriteID = SPRITE_SHIELD; break; }
+        case SPRITE_STAR1: { s.coords = (Rectangle){2436, 0, 5, 5}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_STAR1; break; }
+        case SPRITE_STAR2: { s.coords = (Rectangle){198, 0, 3, 3}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_STAR2; break; }
+        case SPRITE_UPGRADEDAMAGE: { s.coords = (Rectangle){2491, 0, 48, 67}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_UPGRADEDAMAGE; break; }
+        case SPRITE_UPGRADEFIRERATE: { s.coords = (Rectangle){2387, 0, 48, 67}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_UPGRADEFIRERATE; break; }
+        case SPRITE_UPGRADEMULTISHOT: { s.coords = (Rectangle){2442, 0, 48, 67}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_UPGRADEMULTISHOT; break; }
         default: break;
     }
     return s;
