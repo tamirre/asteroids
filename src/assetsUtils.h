@@ -131,10 +131,10 @@ void DrawSpriteAnimationPro(Texture2D* atlas, SpriteAnimation* animation, Rectan
     int index = (int)(GetTime() * animation->framesPerSecond) % animation->rectanglesLength;
     Rectangle source = animation->rectangles[index];
 	if (flipX == 1) { 
-		// source.width = - source.width;
+		source.width = -source.width;
 	}
 	if (flipY == 1) {
-		// destination = (Rectangle){ destination.x, destination.y + destination.height, destination.width, -destination.height };
+		source.height = -source.height;
 	}
 	Vector2 texSize = { animation->rectangles->width, animation->rectangles->height };
 	SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);

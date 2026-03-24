@@ -56,6 +56,10 @@ void initializeGameState(GameState* gameState) {
 		.lastState = STATE_MAIN_MENU,
 		.timeScale = 1.0f,
 		.player = {0},
+		.enemies = {0},
+		.enemyCount = 0,
+		.enemySpawnRate = 0.2f,
+		.enemySpawnTime = 0.0f,
 		.bullets = {0},
         .bulletCount = 0,
 		.explosions = {0},
@@ -675,18 +679,7 @@ void UpdateGame(GameMemory* gameMemory)
 					gameState->spawnTime += gameState->dt;
 					if (gameState->spawnTime > gameState->asteroidSpawnRate && gameState->asteroidCount < MAX_ASTEROIDS) 
 					{
-						// int size = (int)GetRandomValue(1, 3);
-						// float size = 1.0f;
 						float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
-						// float letterboxHeight = GetRenderHeight() - viewport.height;
-						// float letterboxWidth = GetRenderWidth() - viewport.width;
-						// printf("RenderWidth: %d\n", GetRenderWidth());
-						// printf("RenderHeight: %d\n", GetRenderHeight());
-						// printf("viewport.width: %f\n", viewport.width);
-						// printf("viewport.height: %f\n", viewport.height);
-						// printf("letterboxWidth: %f\n", letterboxWidth);
-						// printf("letterboxHeight: %f\n", letterboxHeight);
-						// Vector2 letterBox = (Vector2){letterboxWidth, letterboxHeight};
 						float asteroidXPosition = GetRandomValue(0, VIRTUAL_WIDTH);
 						Asteroid asteroid =
 						{
@@ -832,6 +825,31 @@ void UpdateGame(GameMemory* gameMemory)
 						{
 							*asteroid = gameState->asteroids[--gameState->asteroidCount];
 						}
+					}
+				}
+				// Spawn enemies
+				{
+					gameState->enemySpawnTime += gameState->dt;
+					if (gameState->enemySpawnTime > gameState->enemySpawnRate && gameState->enemyCount < MAX_ENEMIES) 
+					{
+						float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
+						Enemy enemy =
+						{
+							.position = (Vector2){(VIRTUAL_WIDTH - 50.0f) * 0.5 * (1.0 + sinf(gameState->time)) - 50.0f, 20},
+							.health = 20,
+							.velocity = 0.5f,
+							.size = 20,
+						};
+						gameState->enemies[gameState->enemyCount++] = enemy;
+						gameState->enemySpawnTime = 0.0f;
+					}
+				}
+				// Update enemies
+				{
+					for (int enemyIndex = 0; enemyIndex < gameState->enemyCount; enemyIndex++)
+					{
+						Enemy* enemy = &gameState->enemies[enemyIndex];
+						enemy->position.x = (VIRTUAL_WIDTH - 50.0f)* 0.5 * (1.0 + sinf(gameState->time * enemy->velocity)) ;
 					}
 				}
 				// Update explosions
@@ -1118,6 +1136,27 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					gameState->currentCollision = (Rectangle){0,0,0,0};
 				}
 
+				// Draw Enemies
+				{
+					for (int i = 0; i < gameState->enemyCount; i++)
+					{
+						Enemy* enemy = &gameState->enemies[i];
+						Rectangle enemyDest = {
+							// enemy->position.x - enemy->sprite.coords.width/2.0f,
+							// enemy->position.y - enemy->sprite.coords.height/2.0f,
+							// enemy->sprite.coords.width,
+							// enemy->sprite.coords.height,
+							enemy->position.x,
+							enemy->position.y,
+							50,
+							50,
+						};
+						// Vector2 texSize = { enemy->sprite.coords.width, enemy->sprite.coords.height };
+						// SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						// DrawRectangle(enemy->posi, int posY, int width, int height, Color color);
+						DrawRectanglePro(enemyDest, (Vector2){0,0}, 0, RED); 
+					}
+				}
 				BeginShaderMode(*shader);
 
 				// Draw Stars
@@ -1244,10 +1283,10 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					Vector2 texSize = { playerDestination.width, playerDestination.height };
 					SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 					if (gameState->player.invulTime <= 0.0f) {
-						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, *shader, 0, 1);
+						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, *shader, 0, 0);
 					} else {
 						if (((int)(gameState->player.invulTime * 10)) % 2 == 0) {
-							DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, *shader, 0, 1);
+							DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, *shader, 0, 0);
 						}
 					}
 					// DrawCircleV(gameState->player.playerPosition, 8.0f, GREEN);

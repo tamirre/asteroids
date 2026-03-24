@@ -37,6 +37,8 @@
 #define MAX_EXPLOSIONS (20)
 #define MAX_STARS (50)
 #define MAX_BOOSTS (1)
+#define MAX_ENEMIES (1)
+
 #ifdef PLATFORM_WEB
 	#define TARGET_FPS (60)
 #else
@@ -186,7 +188,11 @@ typedef struct GameState {
 	float timeScale;
     // Player
     Player player;
-    // Projectiles
+	Enemy enemies[MAX_ENEMIES];
+	int enemyCount;
+	float enemySpawnRate;
+	float enemySpawnTime;
+	// Projectiles
     Bullet bullets[MAX_BULLETS];
     int bulletCount;
 	Explosion explosions[MAX_EXPLOSIONS];
