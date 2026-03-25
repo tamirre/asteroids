@@ -25,3 +25,5 @@ save.dat
 *.so
 *.dll
 *.dll.a
+*.rdi
+

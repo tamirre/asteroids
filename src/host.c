@@ -95,6 +95,9 @@ int main()
 	}
 #endif
 	if (game.Cleanup) game.Cleanup(&gameMemory);
+	printf("Unloading game...\n");
 	UnloadGameCode(&game);
+#ifndef PLATFORM_WINDOWS
 	CloseWindow();
+#endif
 }

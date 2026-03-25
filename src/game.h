@@ -1,5 +1,10 @@
 #pragma once
 
+#ifdef _WIN32
+#define GAME_API __declspec(dllexport)
+#else
+#endif
+
 #include "assetsData.h"
 #include "txt.h"
 #include "audio.h"
@@ -234,6 +239,13 @@ typedef struct GameMemory
     Shader* lightShader;
 } GameMemory;
 
+#if defined(PLATFORM_WINDOWS)
+// Function declarations that are exported from the DLL
+GAME_API void InitGame(GameMemory* memory);
+GAME_API void UpdateDrawFrame(GameMemory* memory);
+GAME_API void Cleanup(GameMemory* memory);
+GAME_API void InitAudio(Audio* audio, Options* options);
+#endif
 typedef void (*GameUpdateFn)(GameMemory*);
 typedef void (*GameInitFn)(GameMemory*);
 typedef void (*GameCleanupFn)(GameMemory*);

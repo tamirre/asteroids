@@ -52,7 +52,7 @@ static inline GameCode LoadGameCode()
     GameCode game = {0};
 
 	char tmp[256];
-	snprintf(tmp, sizeof(tmp), "./src/game_%ld.dll", time(NULL));
+	snprintf(tmp, sizeof(tmp), "./src/game_%lld.dll", time(NULL));
 	printf("Copying game from %s to %s\n", dll, tmp);
 	if(CopyFileCustom(dll, tmp) == -1)
 	{
@@ -66,6 +66,10 @@ static inline GameCode LoadGameCode()
 		printf("LoadLibrary failed\n");
 		return game;
 	} else {
+		game.Init   = (GameInitFn)GetSym(result, "InitGame");
+		game.Update = (GameUpdateFn)GetSym(result, "UpdateDrawFrame");
+		game.Cleanup = (GameCleanupFn)GetSym(result, "Cleanup");
+		game.InitAudio = (GameInitAudioFn)GetSym(result, "InitAudio");
 		game.handle = result;
 	}
 
@@ -75,10 +79,6 @@ static inline GameCode LoadGameCode()
         return game;
     } 
 
-    game.Init   = (GameInitFn)GetSym(game.handle, "InitGame");
-    game.Update = (GameUpdateFn)GetSym(game.handle, "UpdateDrawFrame");
-    game.Cleanup = (GameCleanupFn)GetSym(game.handle, "Cleanup");
-    game.InitAudio = (GameInitAudioFn)GetSym(game.handle, "InitAudio");
 
     if (!game.Update || !game.Init)
     {
