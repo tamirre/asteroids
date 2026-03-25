@@ -52,7 +52,7 @@ static inline GameCode LoadGameCode()
     GameCode game = {0};
 
 	char tmp[256];
-	snprintf(tmp, sizeof(tmp), "./src/game_%ld.so", time(NULL));
+	snprintf(tmp, sizeof(tmp), "./src/game_%ld.dll", time(NULL));
 	printf("Copying game from %s to %s\n", dll, tmp);
 	if(CopyFileCustom(dll, tmp) == -1)
 	{

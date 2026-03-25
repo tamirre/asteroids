@@ -66,8 +66,11 @@ int main()
 	// printf("WindowShouldClose: %d\n", WindowShouldClose());
 	// printf("shouldExit: %d\n", gameMemory.gameState->shouldExit);
 	// TODO: WHY DOES WINDOWSHOULDCLOSE() NOT WORK ON WINDOWS?
+#if defined(PLATFORM_WINDOWS)
+	while (!gameMemory.gameState->shouldExit)
+#else
 	while (!WindowShouldClose() && !gameMemory.gameState->shouldExit)
-	// while (!gameMemory.gameState->shouldExit)
+#endif
 	{
 		time_t newWriteTime = GetLastWriteTime(dll);
 		if (newWriteTime != game.lastWriteTime)
