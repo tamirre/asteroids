@@ -50,7 +50,7 @@ void initializeAudio(Audio* audio, Options* options) {
 
 void initializeGameState(GameState* gameState) {
     *gameState = (GameState) {
-		.experience = 0,
+		.experience = 499,
 		.score = 0,
         .state = STATE_MAIN_MENU,
 		.lastState = STATE_MAIN_MENU,
@@ -77,6 +77,7 @@ void initializeGameState(GameState* gameState) {
         .starSpawnRate = 0.25f,
         .initStars = 0,
         .pickedUpgrade = UPGRADE_MULTISHOT,
+		.maxPlayerBullets = 7,
 		.dt = 0.0f,
 		.time = 0.0f,
 		.upgradeCards = {0},
@@ -195,6 +196,86 @@ void InitGame(GameMemory* gameMemory)
 	*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
 #endif
 	printf("InitGame done!\n");
+}
+
+Color GetRainbowColor(float time)
+{
+    float speed = 2.0f; // animation speed
+
+    float r = sinf(time * speed + 0.0f) * 0.5f + 0.5f;
+    float g = sinf(time * speed + 2.094f) * 0.5f + 0.5f; // +120°
+    float b = sinf(time * speed + 4.188f) * 0.5f + 0.5f; // +240°
+
+    return (Color){
+        (unsigned char)(r * 255),
+        (unsigned char)(g * 255),
+        (unsigned char)(b * 255),
+        255
+    };
+}
+
+void draw_text_wave(Font font, const char* text, Vector2 center, float fontSize, Color color, float time)
+{
+    float spacing = GetDefaultSpacing(fontSize);
+
+    // --- First pass: compute total width ---
+    float totalWidth = 0.0f;
+
+    int byteOffset = 0;
+    int codepoint = 0;
+
+    while (text[byteOffset] != '\0')
+    {
+        int next = 0;
+        codepoint = GetCodepointNext(&text[byteOffset], &next);
+
+        int glyphIndex = GetGlyphIndex(font, codepoint);
+        float advance = (font.glyphs[glyphIndex].advanceX > 0)
+            ? font.glyphs[glyphIndex].advanceX
+            : font.recs[glyphIndex].width;
+
+        totalWidth += advance * (fontSize / font.baseSize) + spacing;
+
+        byteOffset += next;
+    }
+
+    float x = center.x - totalWidth / 2.0f;
+
+    // --- Second pass: draw ---
+    byteOffset = 0;
+    int i = 0;
+
+    while (text[byteOffset] != '\0')
+    {
+        int next = 0;
+        codepoint = GetCodepointNext(&text[byteOffset], &next);
+
+        int glyphIndex = GetGlyphIndex(font, codepoint);
+
+        float advance = (font.glyphs[glyphIndex].advanceX > 0)
+            ? font.glyphs[glyphIndex].advanceX
+            : font.recs[glyphIndex].width;
+
+        float charWidth = advance * (fontSize / font.baseSize);
+
+		float amplitude = 7.0f;
+		float frequency = 3.0f;
+		float phase = i * 0.5f;
+        float yOffset = amplitude * sinf(time * frequency + phase);
+        Color rainbow = GetRainbowColor(time + i * 0.3f);
+
+        // Draw using codepoint version
+        DrawTextCodepoint(font,
+                          codepoint,
+                          (Vector2){x, center.y + yOffset},
+                          fontSize,
+                          rainbow);
+
+        x += charWidth + spacing;
+
+        byteOffset += next;
+        i++;
+    }
 }
 
 void draw_text_centered(Font font, const char* text, Vector2 pos, int fontSize, Color color)
@@ -1458,16 +1539,21 @@ float EaseOutBack(float t)
     float x = t - 1.0f;
     return 1.0f + c3 * x * x * x + c1 * x * x;
 }
-
 void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader)
 {
 	int texSizeLoc = GetShaderLocation(*shader, "textureSize");
-	BeginShaderMode(*shader);
+	// BeginShaderMode(*shader);
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-	draw_text_centered(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 80.0f}, 40, WHITE);
-	draw_text_centered(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 35.0f}, 40, WHITE);
+	// draw_text_centered(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 80.0f}, 40, WHITE);
+	Vector2 textSize = {MeasureTextEx(options->font, T(TXT_LEVEL_UP), 40, 0).x, 40};
+	SetShaderValue(*shader, texSizeLoc, &textSize, SHADER_UNIFORM_IVEC2);
+	// draw_text_centered(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 35.0f}, 40, WHITE);
+	draw_text_wave(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 100.0f}, 40, WHITE, gameState->time);
+	textSize = (Vector2){MeasureTextEx(options->font, T(TXT_CHOOSE_UPGRADE), 40, 0).x, 40};
+	SetShaderValue(*shader, texSizeLoc, &textSize, SHADER_UNIFORM_IVEC2);
+	draw_text_wave(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 55.0f}, 40, WHITE, gameState->time);
 	float scaling = 3.0f;
 	const float width  = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width;
 	const float height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height;
@@ -1561,7 +1647,7 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 						WHITE);
 
 	}
-	EndShaderMode();
+	// EndShaderMode();
 }
 
 void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)

@@ -207,6 +207,7 @@ typedef struct GameState {
     int asteroidCount;
 	float spawnTime;
 	float asteroidSpawnRate;
+	// Boosts
 	Boost boosts[MAX_BOOSTS];
 	int boostCount;
 	float boostSpawnTime;
@@ -218,6 +219,7 @@ typedef struct GameState {
     float starSpawnRate;
     int initStars;
     Upgrade pickedUpgrade;
+	int maxPlayerBullets;
 	float dt;
 	float time;
 	UpgradeCard upgradeCards[UPGRADE_COUNT];
