@@ -94,7 +94,7 @@ void initializeGameState(GameState* gameState) {
     gameState->player = (Player) {
         .playerVelocity = 200,
         .playerPosition = (Vector2){VIRTUAL_WIDTH / 2.0f, VIRTUAL_HEIGHT / 2.0f},
-        .playerHealth = 7,
+        .playerHealth = 5,
         .playerMultishot = false,
         .sprite = getSprite(SPRITE_PLAYER),
         .size = 2,
@@ -133,7 +133,7 @@ void initializeOptions(Options* options) {
 		.fxVolume = 0.15f,
 		.musicVolumeChanged = false,
 		.fxVolumeChanged = false,
-		.showDebugInfo = true,
+		.showDebugInfo = false,
 	};
 	GuiSetStyle(DEFAULT, TEXT_SIZE, 24);
 	GuiSetStyle(DEFAULT, TEXT_SPACING, 2);
@@ -441,11 +441,12 @@ void UpdateGame(GameMemory* gameMemory)
 					.y = 0
 				};
 				// Update score
-				if (gameState->experience > 1000.0 * gameState->player.level)
+				const float requiredExperience = 500.0;
+				if (gameState->experience > requiredExperience * gameState->player.level)
 				{
 					gameState->state = STATE_UPGRADE;
 					gameState->stateChanged = true;
-					gameState->experience -= 1000.0 * gameState->player.level;
+					gameState->experience -= requiredExperience * gameState->player.level;
 					gameState->player.level++;
 				}
 				if (IsKeyPressed(KEY_H))
@@ -1037,12 +1038,13 @@ void UpdateGame(GameMemory* gameMemory)
 			}
 		case STATE_GAME_OVER:
 			{
-				// if (IsKeyPressed(KEY_ENTER)) {
+				if (IsKeyPressed(KEY_ENTER)) {
 #ifdef PLATFORM_WEB
 					GameState gameState = {0};
 					Audio audio = {0};
 					initializeOptions(gameMemory->options);
 					initializeGameState(gameMemory->gameState);
+					CloseAudioDevice();
 					initializeAudio(gameMemory->audio, gameMemory->options);
 					// gameMemory->options = &options;
 					RenderTexture2D scene = LoadRenderTexture(gameMemory->options->screenWidth, gameMemory->options->screenHeight);
@@ -1067,7 +1069,7 @@ void UpdateGame(GameMemory* gameMemory)
 					gameState->state = STATE_RUNNING;
 					gameState->stateChanged = true;
 #endif
-				// }
+				}
 				break;
 			}
 		case STATE_PAUSED:
@@ -1453,7 +1455,7 @@ void DrawScore(GameState* gameState, Options* options, TextureAtlas* atlas)
 	float recPosX = letterBoxOffsetX + VIRTUAL_WIDTH * scale - recWidth - 10.0f;
 	float recPosY = letterBoxOffsetY + recHeight - 10.0f;
 
-	DrawRectangle(recPosX, recPosY, gameState->experience / (float)gameState->player.level / 10.0f, recHeight, ColorAlpha(BLUE, 0.5));
+	DrawRectangle(recPosX, recPosY, gameState->experience / (float)gameState->player.level / 5.0f, recHeight, ColorAlpha(BLUE, 0.5));
 	DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
 	Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), 20.0f, GetDefaultSpacing(20.0f));
 	DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
