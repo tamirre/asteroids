@@ -50,7 +50,7 @@ void initializeAudio(Audio* audio, Options* options) {
 
 void initializeGameState(GameState* gameState) {
     *gameState = (GameState) {
-		.experience = 499,
+		.experience = 0,
 		.score = 0,
         .state = STATE_MAIN_MENU,
 		.lastState = STATE_MAIN_MENU,
@@ -1334,31 +1334,32 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 							explosion->active = false;
 					}
 				}
+				// Uncommented for now 
 				// Draw Enemies
-				{
-					for (int i = 0; i < gameState->enemyCount; i++)
-					{
-						Enemy* enemy = &gameState->enemies[i];
-						Rectangle enemyDest = {
-							enemy->position.x - enemy->sprite.coords.width/2.0f,
-							enemy->position.y - enemy->sprite.coords.height/2.0f,
-							enemy->sprite.coords.width,
-							enemy->sprite.coords.height,
-							// enemy->position.x,
-							// enemy->position.y,
-							// 50,
-							// 50,
-						};
-						// printf("Enemy: %f %f\n", enemy->position.x, enemy->position.y);
-						// printf("Enemy: %f %f\n", enemyDest.x, enemyDest.y);
-						// printf("Enemy: %f %f\n", enemyDest.width, enemyDest.height);
-						Vector2 texSize = { enemy->sprite.coords.width, enemy->sprite.coords.height };
-						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
-						// DrawRectangle(enemy->posi, int posY, int width, int height, Color color);
-						// DrawRectanglePro(enemyDest, (Vector2){0,0}, 0, RED); 
-						DrawTexturePro(atlas->textureAtlas, enemy->sprite.coords, enemyDest, (Vector2){0,0}, 0, WHITE);
-					}
-				}
+				// {
+				// 	for (int i = 0; i < gameState->enemyCount; i++)
+				// 	{
+				// 		Enemy* enemy = &gameState->enemies[i];
+				// 		Rectangle enemyDest = {
+				// 			enemy->position.x - enemy->sprite.coords.width/2.0f,
+				// 			enemy->position.y - enemy->sprite.coords.height/2.0f,
+				// 			enemy->sprite.coords.width,
+				// 			enemy->sprite.coords.height,
+				// 			// enemy->position.x,
+				// 			// enemy->position.y,
+				// 			// 50,
+				// 			// 50,
+				// 		};
+				// 		// printf("Enemy: %f %f\n", enemy->position.x, enemy->position.y);
+				// 		// printf("Enemy: %f %f\n", enemyDest.x, enemyDest.y);
+				// 		// printf("Enemy: %f %f\n", enemyDest.width, enemyDest.height);
+				// 		Vector2 texSize = { enemy->sprite.coords.width, enemy->sprite.coords.height };
+				// 		SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+				// 		// DrawRectangle(enemy->posi, int posY, int width, int height, Color color);
+				// 		// DrawRectanglePro(enemyDest, (Vector2){0,0}, 0, RED); 
+				// 		DrawTexturePro(atlas->textureAtlas, enemy->sprite.coords, enemyDest, (Vector2){0,0}, 0, WHITE);
+				// 	}
+				// }
 				// Draw Player
 				{
 					atlas->animations[SpriteToAnimation[SPRITE_PLAYER]].framesPerSecond = 14;
@@ -1542,17 +1543,12 @@ float EaseOutBack(float t)
 void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader)
 {
 	int texSizeLoc = GetShaderLocation(*shader, "textureSize");
-	// BeginShaderMode(*shader);
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
 	// draw_text_centered(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 80.0f}, 40, WHITE);
-	Vector2 textSize = {MeasureTextEx(options->font, T(TXT_LEVEL_UP), 40, 0).x, 40};
-	SetShaderValue(*shader, texSizeLoc, &textSize, SHADER_UNIFORM_IVEC2);
 	// draw_text_centered(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 35.0f}, 40, WHITE);
 	draw_text_wave(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 100.0f}, 40, WHITE, gameState->time);
-	textSize = (Vector2){MeasureTextEx(options->font, T(TXT_CHOOSE_UPGRADE), 40, 0).x, 40};
-	SetShaderValue(*shader, texSizeLoc, &textSize, SHADER_UNIFORM_IVEC2);
 	draw_text_wave(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 55.0f}, 40, WHITE, gameState->time);
 	float scaling = 3.0f;
 	const float width  = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width;
@@ -1580,6 +1576,7 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 	float yOff = 0.0f;
 	float rotation = 0.0f;
 
+	BeginShaderMode(*shader);
 	for (int i = 0; i < UPGRADE_COUNT; i++) {
 		Rectangle upgradeRect = 
 		{
@@ -1647,7 +1644,7 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 						WHITE);
 
 	}
-	// EndShaderMode();
+	EndShaderMode();
 }
 
 void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
