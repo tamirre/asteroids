@@ -92,10 +92,10 @@ void initializeGameState(GameState* gameState) {
 	}
 
     gameState->player = (Player) {
-        .playerVelocity = 200,
-        .playerPosition = (Vector2){VIRTUAL_WIDTH / 2.0f, VIRTUAL_HEIGHT / 2.0f},
-        .playerHealth = 5,
-        .playerMultishot = false,
+        .velocity = 200,
+        .position = (Vector2){VIRTUAL_WIDTH / 2.0f, VIRTUAL_HEIGHT / 2.0f},
+        .health = 5,
+        .bulletCount = 1,
         .sprite = getSprite(SPRITE_PLAYER),
         .size = 2,
         .animationFrames = 5,
@@ -547,39 +547,39 @@ void UpdateGame(GameMemory* gameMemory)
 				// float screenWidth = VIRTUAL_WIDTH;
 				// float screenHeight = VIRTUAL_HEIGHT;
 				if (IsKeyDown(KEY_W)) {
-					if(!CheckCollisionPointLine((Vector2) {gameState->player.playerPosition.x * viewportScale, gameState->player.playerPosition.y * viewportScale},
+					if(!CheckCollisionPointLine((Vector2) {gameState->player.position.x * viewportScale, gameState->player.position.y * viewportScale},
 								                (Vector2) {0, 0}, 
 												(Vector2) {viewport.width, 0},
 												gameState->player.sprite.coords.height * viewportScale))
 					{
-						gameState->player.playerPosition.y -= gameState->player.playerVelocity * gameState->dt;
+						gameState->player.position.y -= gameState->player.velocity * gameState->dt;
 					}   
 				}
 				if (IsKeyDown(KEY_S)) {
-					if(!CheckCollisionPointLine((Vector2) {gameState->player.playerPosition.x * viewportScale, gameState->player.playerPosition.y * viewportScale},
+					if(!CheckCollisionPointLine((Vector2) {gameState->player.position.x * viewportScale, gameState->player.position.y * viewportScale},
 								                (Vector2) {0, viewport.height},
 												(Vector2) {viewport.width, viewport.height},
 												gameState->player.sprite.coords.height * viewportScale))
 					{
-						gameState->player.playerPosition.y += gameState->player.playerVelocity * gameState->dt;
+						gameState->player.position.y += gameState->player.velocity * gameState->dt;
 					}
 				}
 				if (IsKeyDown(KEY_A)) {
-					if(!CheckCollisionPointLine((Vector2) {gameState->player.playerPosition.x * viewportScale, gameState->player.playerPosition.y * viewportScale},
+					if(!CheckCollisionPointLine((Vector2) {gameState->player.position.x * viewportScale, gameState->player.position.y * viewportScale},
 								                (Vector2) {0, 0}, 
 												(Vector2) {0, viewport.height},
 												gameState->player.sprite.coords.width / gameState->player.animationFrames * viewportScale))
 					{
-						gameState->player.playerPosition.x -= gameState->player.playerVelocity * gameState->dt;
+						gameState->player.position.x -= gameState->player.velocity * gameState->dt;
 					}
 				}
 				if (IsKeyDown(KEY_D)) {
-					if(!CheckCollisionPointLine((Vector2) {gameState->player.playerPosition.x * viewportScale, gameState->player.playerPosition.y * viewportScale},
+					if(!CheckCollisionPointLine((Vector2) {gameState->player.position.x * viewportScale, gameState->player.position.y * viewportScale},
 												(Vector2) {viewport.width, 0},
 												(Vector2) {viewport.width, viewport.height},
 												gameState->player.sprite.coords.width / gameState->player.animationFrames * viewportScale))
 					{
-						gameState->player.playerPosition.x += gameState->player.playerVelocity * gameState->dt;
+						gameState->player.position.x += gameState->player.velocity * gameState->dt;
 					}
 				}
 				if (gameState->player.shootTime < 1.0f/gameState->player.fireRate)
@@ -603,62 +603,41 @@ void UpdateGame(GameMemory* gameMemory)
 
 					PlaySound(audio->sounds[SOUND_GUN]);
 					float bulletSize = 0.5f;
-					if (gameState->player.playerMultishot == true && gameState->bulletCount < MAX_BULLETS-3)
+					if (gameState->player.bulletCount > 0 && gameState->bulletCount < MAX_BULLETS - gameState->player.bulletCount)
 					{
-						float bulletOffset = 0.0f;
-						Bullet bullet1 = 
+						int count = gameState->player.bulletCount;
+						float spreadAngle = 30.0f; // total spread in degrees (adjust as needed)
+						float startAngle = -spreadAngle / 2.0f;
+						for (int i = 0; i < count; i++)
 						{
-							.position = gameState->player.playerPosition,
-							.velocity = (Vector2){0.0f, 500.0f},
-							.damage = 1.0*gameState->player.damageMulti,
-							.sprite = getSprite(SPRITE_BULLET),
-							.rotation = 0.0f,
-							.size = bulletSize,
-						};
-						// bullet1.position.x -= bullet1.sprite.coords.width * bullet1.size / bullet1.sprite.numFrames / 2.0f;
-						bullet1.position.y -= gameState->player.sprite.coords.height * gameState->player.size / 2.0 - bullet1.sprite.coords.height * bullet1.size / 2.0;
-						gameState->bullets[gameState->bulletCount++] = bullet1;
-						Bullet bullet2 = 
-						{
-							.position = (Vector2){gameState->player.playerPosition.x - bulletOffset, gameState->player.playerPosition.y + 0.0f},
-							.velocity = (Vector2){sqrt(pow(500.0f,2) - pow(450.0f,2)), 450.0f},
-							.damage = 1.0*gameState->player.damageMulti,
-							.sprite = getSprite(SPRITE_BULLET),
-							.rotation = -15.0f,
-							.size = bulletSize,
-						};
-						// bullet2.position.x -= bullet2.sprite.coords.width * bullet2.size / bullet2.sprite.numFrames / 2.0f;
-						bullet2.position.y -= gameState->player.sprite.coords.height * gameState->player.size / 2.0 - bullet2.sprite.coords.height * bullet2.size / 2.0;
-						gameState->bullets[gameState->bulletCount++] = bullet2;
-						Bullet bullet3 = 
-						{
-							.position = (Vector2){gameState->player.playerPosition.x + bulletOffset, gameState->player.playerPosition.y + 0.0f},
-							.velocity = (Vector2){-sqrt(pow(500.0f,2) - pow(450.0f,2)), 450.0f},
-							.damage = 1.0*gameState->player.damageMulti,
-							.sprite = getSprite(SPRITE_BULLET),
-							.rotation = 15.0f,
-							.size = bulletSize,
-						};
-						// bullet3.position.x -= bullet3.sprite.coords.width * bullet3.size / bullet3.sprite.numFrames / 2.0f;
-						bullet3.position.y -= gameState->player.sprite.coords.height * gameState->player.size / 2.0 - bullet3.sprite.coords.height * bullet3.size / 2.0;
-						gameState->bullets[gameState->bulletCount++] = bullet3;
+							float t = (count == 1) ? 0.5f : (float)i / (count - 1);
+							float angleDeg = startAngle + t * spreadAngle;
+							float angleRad = -angleDeg * DEG2RAD;
 
-						gameState->player.shootTime -= 1.0f/gameState->player.fireRate;
-					}
-					else
-					{
-						Bullet bullet =
-						{
-							.position = gameState->player.playerPosition,
-							.velocity = (Vector2){0.0f, 500.0f},
-							.damage = 1.0*gameState->player.damageMulti,
-							.sprite = getSprite(SPRITE_BULLET),
-							.rotation = 0.0f,
-							.size = bulletSize,
-						};
-						bullet.position.y -= gameState->player.sprite.coords.height * gameState->player.size / 2.0 - bullet.sprite.coords.height * bullet.size / 2.0;
-						gameState->bullets[gameState->bulletCount++] = bullet;
-						gameState->player.shootTime -= 1.0f/gameState->player.fireRate;
+							float speed = 500.0f;
+
+							Vector2 velocity = {
+								sinf(angleRad) * speed,
+								cosf(angleRad) * speed
+							};
+
+							Bullet bullet = {
+								.position = gameState->player.position,
+								.velocity = velocity,
+								.damage = 1.0f * gameState->player.damageMulti,
+								.sprite = getSprite(SPRITE_BULLET),
+								.rotation = angleDeg,
+								.size = bulletSize,
+							};
+
+							// Adjust Y so bullet spawns at top of player
+							bullet.position.y -= gameState->player.sprite.coords.height * gameState->player.size / 2.0f
+								- bullet.sprite.coords.height * bullet.size / 2.0f;
+
+							gameState->bullets[gameState->bulletCount++] = bullet;
+						}
+
+						gameState->player.shootTime -= 1.0f / gameState->player.fireRate;
 					}
 				}
 				// Update Bullets
@@ -782,8 +761,8 @@ void UpdateGame(GameMemory* gameMemory)
 						gameState->player.collider = (Rectangle) {
 							.width = playerWidth,
 							.height =  playerHeight,
-							.x = gameState->player.playerPosition.x - playerWidth/2.0f,
-							.y = gameState->player.playerPosition.y - playerHeight/2.0f,
+							.x = gameState->player.position.x - playerWidth/2.0f,
+							.y = gameState->player.position.y - playerHeight/2.0f,
 						};
 						 
 						// Rectangle screenRectExtended = {
@@ -813,7 +792,7 @@ void UpdateGame(GameMemory* gameMemory)
 								gameState->player.invulTime = gameState->player.invulDuration;
 								*asteroid = gameState->asteroids[--gameState->asteroidCount];
 								gameState->currentCollision = (Rectangle){0,0,0,0};
-								if(--gameState->player.playerHealth < 1) 
+								if(--gameState->player.health < 1) 
 								{
 									gameState->state = STATE_GAME_OVER;
 									gameState->stateChanged = true;
@@ -1025,7 +1004,7 @@ void UpdateGame(GameMemory* gameMemory)
 				// printf("clickedUpgrade: %d\n", clickedUpgrade);
 				if (IsKeyPressed(KEY_ENTER) || clickedUpgrade) {
 					if (gameState->pickedUpgrade == UPGRADE_MULTISHOT) {
-						gameState->player.playerMultishot = true;
+						gameState->player.bulletCount += 2;
 					} else if (gameState->pickedUpgrade == UPGRADE_DAMAGE) {
 						gameState->player.damageMulti += 0.2f;
 					} else if (gameState->pickedUpgrade == UPGRADE_FIRERATE) {
@@ -1302,8 +1281,8 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 				// Draw Player
 				{
 					atlas->animations[SpriteToAnimation[SPRITE_PLAYER]].framesPerSecond = 14;
-					const int texture_x = gameState->player.playerPosition.x - gameState->player.sprite.coords.width * gameState->player.size / gameState->player.animationFrames / 2.0;
-					const int texture_y = gameState->player.playerPosition.y - gameState->player.sprite.coords.height * gameState->player.size / 2.0;
+					const int texture_x = gameState->player.position.x - gameState->player.sprite.coords.width * gameState->player.size / gameState->player.animationFrames / 2.0;
+					const int texture_y = gameState->player.position.y - gameState->player.sprite.coords.height * gameState->player.size / 2.0;
 					Rectangle playerDestination = {texture_x, texture_y, 
 						gameState->player.sprite.coords.width / gameState->player.animationFrames * gameState->player.size, 
 						gameState->player.sprite.coords.height * gameState->player.size}; // origin in coordinates and scale
@@ -1317,7 +1296,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 							DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, *shader, 0, 0);
 						}
 					}
-					// DrawCircleV(gameState->player.playerPosition, 8.0f, GREEN);
+					// DrawCircleV(gameState->player.position, 8.0f, GREEN);
 					// DrawRectangleLines(playerDestination.x, playerDestination.y, playerDestination.width, playerDestination.height, BLUE);
 
 					// Draw shield
@@ -1384,8 +1363,8 @@ void DrawLightmap(GameState* gameState, Options* options, RenderTexture2D* litSc
 		}
 	}
 
-	lights[lc].x = gameState->player.playerPosition.x / VIRTUAL_WIDTH;
-	lights[lc].y = 1.0f - gameState->player.playerPosition.y / VIRTUAL_HEIGHT;
+	lights[lc].x = gameState->player.position.x / VIRTUAL_WIDTH;
+	lights[lc].y = 1.0f - gameState->player.position.y / VIRTUAL_HEIGHT;
 	lc++;
 	// Upload array
 	SetShaderValue(*lightShader, uLightCount, &lc, SHADER_UNIFORM_INT);
@@ -1406,7 +1385,7 @@ void DrawHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas, 
 	Vector2 texSize = { getSprite(SPRITE_HEART).coords.width / getSprite(SPRITE_HEART).numFrames,
 						getSprite(SPRITE_HEART).coords.height };
 	SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
-	for (int i = 1; i <= gameState->player.playerHealth; i++)
+	for (int i = 1; i <= gameState->player.health; i++)
 	{
 		const int texture_x = letterBoxOffsetX + i * 16;
 		const int texture_y = letterBoxOffsetY + getSprite(SPRITE_HEART).coords.height;
@@ -1421,10 +1400,10 @@ void DrawShieldText(GameState* gameState, Options* options, TextureAtlas* atlas,
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
 
-	// const int texture_x = (letterboxWidth + gameState->player.playerPosition.x) * scale;
-	// const int texture_y = (letterboxHeight + gameState->player.playerPosition.y - gameState->player.sprite.coords.height * gameState->player.size / 2.0) * scale;
-	const int texture_x = letterBoxOffsetX + gameState->player.playerPosition.x * scale;
-	const int texture_y = letterBoxOffsetY + (gameState->player.playerPosition.y - gameState->player.sprite.coords.height * gameState->player.size / 2.0) * scale;
+	// const int texture_x = (letterboxWidth + gameState->player.position.x) * scale;
+	// const int texture_y = (letterboxHeight + gameState->player.position.y - gameState->player.sprite.coords.height * gameState->player.size / 2.0) * scale;
+	const int texture_x = letterBoxOffsetX + gameState->player.position.x * scale;
+	const int texture_y = letterBoxOffsetY + (gameState->player.position.y - gameState->player.sprite.coords.height * gameState->player.size / 2.0) * scale;
 	char shieldText[100] = {0};
 	const float textSize = 18.0f;
 	sprintf(shieldText, "%.2f", gameState->player.shieldTime);
@@ -1698,7 +1677,7 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader*
 				DrawHealthBar(gameState, options, atlas, shader);
 				DrawScore(gameState, options, atlas);
 
-				// DrawCircleV(gameState->player.playerPosition, 5.0f, RED);
+				// DrawCircleV(gameState->player.position, 5.0f, RED);
 				// DrawCircleV((Vector2){texture_x, texture_y}, 5.0f, RED);
 				if (gameState->player.shieldEnabled)
 				{

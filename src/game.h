@@ -131,15 +131,15 @@ typedef struct Explosion {
 } Explosion;
 
 typedef struct Player {
-    float playerVelocity;
-    Vector2 playerPosition;
-    int playerHealth;
+    float velocity;
+    Vector2 position;
+    int health;
     Sprite sprite;
     int size;
     int animationFrames;
     float invulTime;
     float invulDuration;
-    bool playerMultishot;
+    int bulletCount;
     float fireRate;
     float shootTime;
     float damageMulti;
