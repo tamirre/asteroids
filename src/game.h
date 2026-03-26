@@ -121,6 +121,7 @@ typedef struct Bullet {
     float rotation;
 	float size;
 	Rectangle collider;
+	void* owner;
 } Bullet;
 
 typedef struct Explosion {
@@ -159,6 +160,7 @@ typedef struct Enemy {
     float fireRate;
     float shootTime;
     float damageMulti;
+	int bulletCount;
 	Rectangle collider;
 } Enemy;
 
