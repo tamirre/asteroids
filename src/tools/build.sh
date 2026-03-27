@@ -109,9 +109,9 @@ if [ "$PLATFORM" == "web" ]; then
 		-s TOTAL_MEMORY=512MB \
 		-s FORCE_FILESYSTEM=1 \
 		--shell-file $RAYLIB_PATH/minshell.html \
-		--preload-file assets/atlas \
-		--preload-file audio \
-		--preload-file fonts \
+		--preload-file assets/textures/atlas \
+		--preload-file assets/audio \
+		--preload-file assets/fonts \
 		--preload-file src/shaders \
 		-s EXPORT_ALL=1 
 

@@ -1,7 +1,7 @@
 import csv, os
 
 TOOLS_DIR = os.path.dirname(os.path.realpath(__file__))
-CSV_FILE = f"{TOOLS_DIR}/../../localization/txt.csv"
+CSV_FILE = f"{TOOLS_DIR}/../../assets/localization/txt.csv"
 OUT_FILE = f"{TOOLS_DIR}/../txt.h"
 LANGS = ["EN", "DE", "ZH"]
 rows = list(csv.DictReader(open(CSV_FILE, encoding="utf-8")))

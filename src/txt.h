@@ -1,6 +1,6 @@
 #pragma once
 // AUTO GENERATED - DO NOT EDIT
-// Generated from: /home/tamir/asteroids/src/tools/../../localization/txt.csv
+// Generated from: /home/tamir/asteroids/src/tools/../../assets/localization/txt.csv
 
 typedef enum {
 	TXT_EMPTY,

@@ -121,7 +121,7 @@ void InitializeOptions(Options* options) {
 		.previousWidth = (float)VIRTUAL_WIDTH,
 		.previousHeight = (float)VIRTUAL_HEIGHT,
 		.disableShaders = true,
-		.font = LoadLanguageFont("./fonts/UnifontExMono.ttf", maxFontSize, LANG_EN), 
+		.font = LoadLanguageFont("./assets/fonts/UnifontExMono.ttf", maxFontSize, LANG_EN), 
 		.fontSpacing = 1.0f,
 		.maxFontSize = maxFontSize,
 		.language = LANG_EN,
@@ -1826,7 +1826,7 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 			case LANG_ZH: LocSetLanguage(LANG_ZH); break;
 		}
 		UnloadFont(options->font);
-		options->font = LoadLanguageFont("./fonts/UnifontExMono.ttf", options->maxFontSize, options->language);
+		options->font = LoadLanguageFont("./assets/fonts/UnifontExMono.ttf", options->maxFontSize, options->language);
 		GuiSetFont(options->font);
 		options->lastLanguage = options->language;
 	}

@@ -149,7 +149,7 @@ void FreeSpriteAnimation(SpriteAnimation animation)
 TextureAtlas initTextureAtlas(SpriteMask spriteMasks[])
 {
     TextureAtlas atlas;
-    atlas.textureAtlas = LoadTexture("./assets/atlas/atlas.png");
+    atlas.textureAtlas = LoadTexture("./assets/textures/atlas/atlas.png");
 	// SetTextureFilter(atlas.textureAtlas, TEXTURE_FILTER_POINT);
 	// SetTextureFilter(atlas.textureAtlas, TEXTURE_FILTER_BILINEAR);
 	// SetTextureFilter(atlas.textureAtlas, TEXTURE_FILTER_ANISOTROPIC_8X);

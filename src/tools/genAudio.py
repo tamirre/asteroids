@@ -2,8 +2,8 @@
 import os
 from pathlib import Path
 
-AUDIO_DIR = f"{os.getcwd()}/audio"
-OUTPUT = f"{os.getcwd()}/../audio.h"
+AUDIO_DIR = f"{os.getcwd()}/assets/audio"
+OUTPUT = f"{os.getcwd()}/src/audio.h"
 
 def normalize(name: str) -> str:
     name = os.path.splitext(name)[0]
@@ -54,18 +54,18 @@ def main():
         f.write("typedef struct Audio {\n")
         f.write("    Sound sounds[SOUND_COUNT];\n")
         f.write("    Music music[MUSIC_COUNT];\n")
-        f.write("    int currentSongtrackID\n")
+        f.write("    int currentSongtrackID;\n")
         f.write("} Audio;\n\n")
 
         # ---- file path tables ----
         f.write("static const char *sound_files[] = {\n")
         for _, name in sounds:
-            f.write(f'    "audio/{name}",\n')
+            f.write(f'    "assets/audio/{name}",\n')
         f.write("};\n\n")
 
         f.write("static const char *music_files[] = {\n")
         for _, name in music:
-            f.write(f'    "audio/{name}",\n')
+            f.write(f'    "assets/audio/{name}",\n')
         f.write("};\n\n")
 
     print(f"Generated {OUTPUT}")
