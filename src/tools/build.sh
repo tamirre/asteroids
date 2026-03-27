@@ -22,6 +22,9 @@ while getopts ":p:a:l:s:d" opt; do
     esac
 done
 
+if grep -qi microsoft /proc/version 2>/dev/null; then
+	PLATFORM="windows"
+fi
 export GAME_NAME=asteroids
 export SRC_DIR=$(dirname $0)/../
 export BIN_DIR=$(dirname $0)/../../bin

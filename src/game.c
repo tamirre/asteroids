@@ -58,7 +58,7 @@ void initializeGameState(GameState* gameState) {
 		.player = {0},
 		.enemies = {0},
 		.enemyCount = 0,
-		.enemySpawnRate = 2.0f,
+		.enemySpawnRate = 30.0f,
 		.enemySpawnTime = 0.0f,
 		.bullets = {0},
         .bulletCount = 0,
@@ -1363,7 +1363,12 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						// Change the frame per second speed of animation
 						// atlas->animations[SpriteToAnimation[SPRITE_BULLET]].framesPerSecond = 14;
-						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_BULLET]], bullet->collider, (Vector2){0, 0}, bullet->rotation, WHITE, *shader, false, false);
+						bool flipY = false;
+						if (bullet->owner != &gameState->player)
+						{
+							flipY = true;
+						}
+						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_BULLET]], bullet->collider, (Vector2){0, 0}, bullet->rotation, WHITE, *shader, false, flipY);
 					}
 				}
 				// Draw boosts
