@@ -23,14 +23,14 @@ void Cleanup(GameMemory* gameMemory) {
 	CloseAudioDevice();
 }
 
-void setFxVolume(Audio* audio, float volume) {
+void SetFxVolume(Audio* audio, float volume) {
 	for (int i = 0; i < SOUND_COUNT; i++)
 	{
 		SetSoundVolume(audio->sounds[i], volume);
 	}
 }
 
-void initializeAudio(Audio* audio, Options* options) {
+void InitializeAudio(Audio* audio, Options* options) {
 	InitAudioDevice();
 	ASSERT(IsAudioDeviceReady());
 	for (int i = 0; i < MUSIC_COUNT; i++)
@@ -45,10 +45,10 @@ void initializeAudio(Audio* audio, Options* options) {
 	}
 	PlayMusicStream(audio->music[audio->currentSongtrackID]);
 	SetMusicVolume(audio->music[audio->currentSongtrackID], options->musicVolume);
-	setFxVolume(audio, options->fxVolume);
+	SetFxVolume(audio, options->fxVolume);
 }
 
-void initializeGameState(GameState* gameState) {
+void InitializeGameState(GameState* gameState) {
     *gameState = (GameState) {
 		.experience = 0,
 		.score = 0,
@@ -59,7 +59,7 @@ void initializeGameState(GameState* gameState) {
 		.enemies = {0},
 		.enemyCount = 0,
 		.enemySpawnRate = 30.0f,
-		.enemySpawnTime = 0.0f,
+		.enemySpawnTime = 25.0f,
 		.bullets = {0},
         .bulletCount = 0,
 		.explosions = {0},
@@ -112,7 +112,7 @@ void initializeGameState(GameState* gameState) {
     };
 }
 
-void initializeOptions(Options* options) {
+void InitializeOptions(Options* options) {
 
 	int maxFontSize = 64;
 	*options = (Options) {
@@ -175,9 +175,9 @@ void InitGame(GameMemory* gameMemory)
 	// Options options = {0};
 	GameState gameState = {0};
 	Audio audio = {0};
-	initializeOptions(gameMemory->options);
-	initializeGameState(gameMemory->gameState);
-	initializeAudio(gameMemory->audio, gameMemory->options);
+	InitializeOptions(gameMemory->options);
+	InitializeGameState(gameMemory->gameState);
+	InitializeAudio(gameMemory->audio, gameMemory->options);
 	// gameMemory->options = &options;
 	RenderTexture2D scene = LoadRenderTexture(gameMemory->options->screenWidth, gameMemory->options->screenHeight);
 	RenderTexture2D litScene = LoadRenderTexture(gameMemory->options->screenWidth, gameMemory->options->screenHeight);
@@ -214,7 +214,7 @@ Color GetRainbowColor(float time)
     };
 }
 
-void draw_text_wave(Font font, const char* text, Vector2 center, float fontSize, Color color, float time)
+void DrawTextWave(Font font, const char* text, Vector2 center, float fontSize, Color color, float time)
 {
     float spacing = GetDefaultSpacing(fontSize);
 
@@ -278,7 +278,7 @@ void draw_text_wave(Font font, const char* text, Vector2 center, float fontSize,
     }
 }
 
-void draw_text_centered(Font font, const char* text, Vector2 pos, int fontSize, Color color)
+void DrawTextCentered(Font font, const char* text, Vector2 pos, int fontSize, Color color)
 {
 	float fontSpacing = GetDefaultSpacing(fontSize);
 	const Vector2 textSize = MeasureTextEx(font, text, fontSize, fontSpacing);
@@ -687,7 +687,7 @@ void UpdateGame(GameMemory* gameMemory)
 					if (gameState->player.bulletCount > 0 && gameState->bulletCount < MAX_BULLETS - gameState->player.bulletCount)
 					{
 						int count = gameState->player.bulletCount;
-						float spreadAngle = 30.0f; // total spread in degrees (adjust as needed)
+						float spreadAngle = 30.0f; // total spread in degrees 
 						float startAngle = -spreadAngle / 2.0f;
 						for (int i = 0; i < count; i++)
 						{
@@ -714,7 +714,7 @@ void UpdateGame(GameMemory* gameMemory)
 
 							// Adjust Y so bullet spawns at top of player
 							bullet.position.y -= gameState->player.sprite.coords.height * gameState->player.size / 2.0f
-								- bullet.sprite.coords.height * bullet.size / 2.0f;
+								               - bullet.sprite.coords.height * bullet.size / 2.0f;
 
 							gameState->bullets[gameState->bulletCount++] = bullet;
 						}
@@ -850,38 +850,42 @@ void UpdateGame(GameMemory* gameMemory)
 								.y = texture_y,
 							};
 							// Collision asteroid bullet
-							if(CheckCollisionRecs(asteroid->collider, bullet->collider) && bullet->owner == &gameState->player)
+							if(bullet->owner == &gameState->player) 
 							{
-								Rectangle collisionRec = GetCollisionRec(asteroid->collider, bullet->collider);
-								Rectangle bulletSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_BULLET]]);
-								if (pixelPerfectCollision(spriteMasks[SPRITE_BULLET].pixels, spriteMasks[asteroid->sprite.spriteID].pixels, 
-											bulletSrc.width, asteroid->sprite.coords.width,
-											bulletSrc.height, asteroid->sprite.coords.height,
-											bullet->collider, asteroid->collider, collisionRec, bullet->rotation, asteroid->rotation))
-								{
 
-									Explosion* explosion = NULL;
-									if (gameState->explosionCount < MAX_EXPLOSIONS)
+								if(CheckCollisionRecs(asteroid->collider, bullet->collider))
+								{
+									Rectangle collisionRec = GetCollisionRec(asteroid->collider, bullet->collider);
+									Rectangle bulletSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_BULLET]]);
+									if (pixelPerfectCollision(spriteMasks[SPRITE_BULLET].pixels, spriteMasks[asteroid->sprite.spriteID].pixels, 
+												bulletSrc.width, asteroid->sprite.coords.width,
+												bulletSrc.height, asteroid->sprite.coords.height,
+												bullet->collider, asteroid->collider, collisionRec, bullet->rotation, asteroid->rotation))
 									{
-										PlaySound(audio->sounds[SOUND_EXPLOSIONBLAST]);
-										explosion = &gameState->explosions[gameState->explosionCount++];
-										explosion->position = bullet->position;
-										explosion->position.y -= bulletSrc.height/2.0f;
-										explosion->velocity = asteroid->velocity;
-										explosion->startTime = GetTime();
-										explosion->active = true;
-									}
-									// Replace with bullet with last bullet
-									*bullet = gameState->bullets[--gameState->bulletCount];
-									asteroid->health -= bullet->damage;
-									if (asteroid->health < 1)
-									{
-										gameState->experience += MAX((int)(asteroid->size * 100),1);
-										gameState->score += MAX((int)(asteroid->size * 100),1);
-										*asteroid = gameState->asteroids[--gameState->asteroidCount];
-										if(explosion != NULL)
+
+										Explosion* explosion = NULL;
+										if (gameState->explosionCount < MAX_EXPLOSIONS)
 										{
-											explosion->velocity.y = 0.0f;
+											PlaySound(audio->sounds[SOUND_EXPLOSIONBLAST]);
+											explosion = &gameState->explosions[gameState->explosionCount++];
+											explosion->position = bullet->position;
+											explosion->position.y -= bulletSrc.height/2.0f;
+											explosion->velocity = asteroid->velocity;
+											explosion->startTime = GetTime();
+											explosion->active = true;
+										}
+										// Replace with bullet with last bullet
+										*bullet = gameState->bullets[--gameState->bulletCount];
+										asteroid->health -= bullet->damage;
+										if (asteroid->health < 1)
+										{
+											gameState->experience += MAX((int)(asteroid->size * 100),1);
+											gameState->score += MAX((int)(asteroid->size * 100),1);
+											*asteroid = gameState->asteroids[--gameState->asteroidCount];
+											if(explosion != NULL)
+											{
+												explosion->velocity.y = 0.0f;
+											}
 										}
 									}
 								}
@@ -1197,10 +1201,10 @@ void UpdateGame(GameMemory* gameMemory)
 #ifdef PLATFORM_WEB
 					GameState gameState = {0};
 					Audio audio = {0};
-					initializeOptions(gameMemory->options);
-					initializeGameState(gameMemory->gameState);
+					InitializeOptions(gameMemory->options);
+					InitializeGameState(gameMemory->gameState);
 					CloseAudioDevice();
-					initializeAudio(gameMemory->audio, gameMemory->options);
+					InitializeAudio(gameMemory->audio, gameMemory->options);
 					// gameMemory->options = &options;
 					RenderTexture2D scene = LoadRenderTexture(gameMemory->options->screenWidth, gameMemory->options->screenHeight);
 					RenderTexture2D litScene = LoadRenderTexture(gameMemory->options->screenWidth, gameMemory->options->screenHeight);
@@ -1219,8 +1223,8 @@ void UpdateGame(GameMemory* gameMemory)
 					gameMemory->gameState->state = STATE_RUNNING;
 					gameMemory->gameState->stateChanged = true;
 #else
-					initializeOptions(options);
-					initializeGameState(gameState);
+					InitializeOptions(options);
+					InitializeGameState(gameState);
 					gameState->state = STATE_RUNNING;
 					gameState->stateChanged = true;
 #endif
@@ -1263,7 +1267,7 @@ void UpdateGame(GameMemory* gameMemory)
 				}
 				if (options->fxVolumeChanged) 
 				{
-					setFxVolume(audio, options->fxVolume);
+					SetFxVolume(audio, options->fxVolume);
 					options->fxVolumeChanged = false;
 				}
 				if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) 
@@ -1630,10 +1634,10 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-	// draw_text_centered(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 80.0f}, 40, WHITE);
-	// draw_text_centered(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 35.0f}, 40, WHITE);
-	draw_text_wave(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 100.0f}, 40, WHITE, gameState->time);
-	draw_text_wave(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 55.0f}, 40, WHITE, gameState->time);
+	// DrawTextCentered(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 80.0f}, 40, WHITE);
+	// DrawTextCentered(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 35.0f}, 40, WHITE);
+	DrawTextWave(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 100.0f}, 40, WHITE, gameState->time);
+	DrawTextWave(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 55.0f}, 40, WHITE, gameState->time);
 	float scaling = 3.0f;
 	const float width  = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width;
 	const float height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height;
@@ -1737,7 +1741,7 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 	float scale = viewport.width / VIRTUAL_WIDTH;
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-	draw_text_centered(options->font, T(TXT_GAME_PAUSED), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/5.0f}, 40 * scale, WHITE);
+	DrawTextCentered(options->font, T(TXT_GAME_PAUSED), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/5.0f}, 40 * scale, WHITE);
 	// Draw a window box
 	const float boxWidth = 475.0f * scale;
 	const float boxHeight = 350.0f * scale;
@@ -1859,14 +1863,14 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader*
 				float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
-				draw_text_centered(options->font, T(TXT_GAME_TITLE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f}, 40 * scale, WHITE);
-				draw_text_centered(options->font, T(TXT_PRESS_TO_PLAY), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 30}, 20 * scale, WHITE);
-				draw_text_centered(options->font, T(TXT_INSTRUCTIONS), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 50}, 20 * scale, WHITE);
-				draw_text_centered(options->font, "v0.1", (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height - 15}, 15 * scale, WHITE);
+				DrawTextCentered(options->font, T(TXT_GAME_TITLE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f}, 40 * scale, WHITE);
+				DrawTextCentered(options->font, T(TXT_PRESS_TO_PLAY), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 30}, 20 * scale, WHITE);
+				DrawTextCentered(options->font, T(TXT_INSTRUCTIONS), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 50}, 20 * scale, WHITE);
+				DrawTextCentered(options->font, "v0.1", (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height - 15}, 15 * scale, WHITE);
 
 				// char testBuffer[2048] = {0};
 				// TWrap(testBuffer, 2048, options->font, "This is a test of the text wrapping function.", 50.0, 20.0);
-				// draw_text_centered(options->font, testBuffer, (Vector2){viewport.width/2.0f, viewport.height - 100}, 15, WHITE);
+				// DrawTextCentered(options->font, testBuffer, (Vector2){viewport.width/2.0f, viewport.height - 100}, 15, WHITE);
 				//
 				// DrawTextWrapped(options->font, "This is a test of the text wrapping function. This should also be aligned to the center", testBuffer, 2048,
 				// 				(Vector2){50,60},
@@ -1889,10 +1893,10 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader*
 				float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
-				draw_text_centered(options->font, T(TXT_GAME_OVER), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f}, 40, WHITE);
+				DrawTextCentered(options->font, T(TXT_GAME_OVER), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f}, 40, WHITE);
 				char scoreText[100] = {0};
-				draw_text_centered(options->font, TF(TXT_SCORE, gameState->score), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 30.0f}, 20.0f, WHITE);
-				draw_text_centered(options->font, T(TXT_TRY_AGAIN), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 60.0f}, 20.0f, WHITE);
+				DrawTextCentered(options->font, TF(TXT_SCORE, gameState->score), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 30.0f}, 20.0f, WHITE);
+				DrawTextCentered(options->font, T(TXT_TRY_AGAIN), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 60.0f}, 20.0f, WHITE);
 				break;
 			}
 		case STATE_UPGRADE:
