@@ -151,7 +151,7 @@ typedef struct Player {
 } Player;
 
 typedef struct Enemy {
-    float velocity;
+    Vector2 velocity;
     Vector2 position;
     int health;
     Sprite sprite;

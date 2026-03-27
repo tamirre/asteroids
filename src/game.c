@@ -676,6 +676,14 @@ void UpdateGame(GameMemory* gameMemory)
 					gameState->player.shieldEnabled = false;
 					gameState->player.shieldTime = 5.25f;
 				}
+				float playerWidth = gameState->player.sprite.coords.width/gameState->player.animationFrames * gameState->player.size;
+				float playerHeight = gameState->player.sprite.coords.height * gameState->player.size;
+				gameState->player.collider = (Rectangle) {
+					.width = playerWidth,
+						.height =  playerHeight,
+						.x = gameState->player.position.x - playerWidth/2.0f,
+						.y = gameState->player.position.y - playerHeight/2.0f,
+				};
 				// Shoot bullets
 				while (IsKeyDown(KEY_SPACE) 
 						&& gameState->player.shootTime >= 1.0f/gameState->player.fireRate
@@ -722,18 +730,35 @@ void UpdateGame(GameMemory* gameMemory)
 						gameState->player.shootTime -= 1.0f / gameState->player.fireRate;
 					}
 				}
-				// Update Bullets
+				// Spawn enemies
 				{
-                    for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
-                    {
-                        Bullet* bullet = &gameState->bullets[bulletIndex];
-                        if(!CheckCollisionPointRec(bullet->position, screenRect))
+					gameState->enemySpawnTime += gameState->dt;
+					if (gameState->enemySpawnTime > gameState->enemySpawnRate && gameState->enemyCount < MAX_ENEMIES) 
+					{
+						// printf("Spawning enemy\n");
+						// float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
+						float size = 2.0;
+						// float enemyXPosition = GetRandomValue(0, VIRTUAL_WIDTH);
+						Vector2 velocity = (Vector2){0.1f + (float)GetRandomValue(0, 10)/20.0f,0};
+						Enemy enemy =
 						{
-							// Replace with last projectile
-							*bullet = gameState->bullets[--gameState->bulletCount];
-						}
-                        bullet->position.x -= bullet->velocity.x * gameState->dt;
-                        bullet->position.y -= bullet->velocity.y * gameState->dt;
+							.position = (Vector2){0, 70},
+							.health = 20,
+							.velocity = velocity,
+							.size = size,
+							.sprite = getSprite(SPRITE_ENEMY),
+							.shootTime = 0.0f,
+							.fireRate = 1.0f,
+							.bulletCount = 3,
+						};
+						enemy.collider = (Rectangle){
+							.x = enemy.position.x - enemy.sprite.coords.width*enemy.size/2.0f,
+							.y = enemy.position.y - enemy.sprite.coords.height*enemy.size/2.0f,
+							.width = enemy.sprite.coords.width*enemy.size,
+							.height = enemy.sprite.coords.height*enemy.size,
+						};
+						gameState->enemies[gameState->enemyCount++] = enemy;
+						gameState->enemySpawnTime = 0.0f;
 					}
 				}
 				// Spawn Asteroids
@@ -766,6 +791,20 @@ void UpdateGame(GameMemory* gameMemory)
 						gameState->asteroids[gameState->asteroidCount++] = asteroid;
 					}
 				}
+				// Update Bullets
+				{
+                    for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
+                    {
+                        Bullet* bullet = &gameState->bullets[bulletIndex];
+                        if(!CheckCollisionPointRec(bullet->position, screenRect))
+						{
+							// Replace with last projectile
+							*bullet = gameState->bullets[--gameState->bulletCount];
+						}
+                        bullet->position.x -= bullet->velocity.x * gameState->dt;
+                        bullet->position.y -= bullet->velocity.y * gameState->dt;
+					}
+				}
 				// Update asteroids
 				{
 					for (int asteroidIndex = 0; asteroidIndex < gameState->asteroidCount; asteroidIndex++)
@@ -782,54 +821,54 @@ void UpdateGame(GameMemory* gameMemory)
 							.height = height, 
 						};
 					}
+				}
 
-					for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
-					{
-						Bullet* bullet = &gameState->bullets[bulletIndex];
-						const int texture_x = bullet->position.x - bullet->sprite.coords.width * bullet->size / getSprite(SPRITE_BULLET).numFrames / 2.0;
-						const int texture_y = bullet->position.y - bullet->sprite.coords.height * bullet->size / 2.0;
-						const float width = bullet->sprite.coords.width / getSprite(SPRITE_BULLET).numFrames * bullet->size;
-						const float height = bullet->sprite.coords.height * bullet->size;
-						bullet->collider = (Rectangle) {
-							.width = width,
-								.height = height,
-								.x = texture_x,
-								.y = texture_y,
-						};
-						// Collision player bullet
-						if(CheckCollisionRecs(gameState->player.collider, bullet->collider) 
+				for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
+				{
+					Bullet* bullet = &gameState->bullets[bulletIndex];
+					const int texture_x = bullet->position.x - bullet->sprite.coords.width * bullet->size / getSprite(SPRITE_BULLET).numFrames / 2.0;
+					const int texture_y = bullet->position.y - bullet->sprite.coords.height * bullet->size / 2.0;
+					const float width = bullet->sprite.coords.width / getSprite(SPRITE_BULLET).numFrames * bullet->size;
+					const float height = bullet->sprite.coords.height * bullet->size;
+					bullet->collider = (Rectangle) {
+						.width = width,
+							.height = height,
+							.x = texture_x,
+							.y = texture_y,
+					};
+					// Collision player bullet
+					if(CheckCollisionRecs(gameState->player.collider, bullet->collider) 
 							&& bullet->owner != &gameState->player 
 							&& gameState->player.invulTime <= 0.0f 
 							&& gameState->player.shieldEnabled == false)
+					{
+						Rectangle collisionRec = GetCollisionRec(gameState->player.collider, bullet->collider);
+						Rectangle bulletSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_BULLET]]);
+						if (pixelPerfectCollision(spriteMasks[SPRITE_BULLET].pixels, spriteMasks[gameState->player.sprite.spriteID].pixels, 
+									bulletSrc.width, gameState->player.sprite.coords.width,
+									bulletSrc.height, gameState->player.sprite.coords.height,
+									bullet->collider, gameState->player.collider, collisionRec, bullet->rotation, 0))
 						{
-							Rectangle collisionRec = GetCollisionRec(gameState->player.collider, bullet->collider);
-							Rectangle bulletSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_BULLET]]);
-							if (pixelPerfectCollision(spriteMasks[SPRITE_BULLET].pixels, spriteMasks[gameState->player.sprite.spriteID].pixels, 
-										bulletSrc.width, gameState->player.sprite.coords.width,
-										bulletSrc.height, gameState->player.sprite.coords.height,
-										bullet->collider, gameState->player.collider, collisionRec, bullet->rotation, 0))
-							{
 
-								Explosion* explosion = NULL;
-								if (gameState->explosionCount < MAX_EXPLOSIONS)
-								{
-									PlaySound(audio->sounds[SOUND_EXPLOSIONBLAST]);
-									explosion = &gameState->explosions[gameState->explosionCount++];
-									explosion->position = bullet->position;
-									explosion->position.y -= bulletSrc.height/2.0f;
-									explosion->velocity.y = gameState->player.velocity;
-									explosion->startTime = GetTime();
-									explosion->active = true;
-								}
-								PlaySound(audio->sounds[SOUND_HIT]);
-								// Replace with bullet with last bullet
-								*bullet = gameState->bullets[--gameState->bulletCount];
-								gameState->player.invulTime = gameState->player.invulDuration;
-								if (--gameState->player.health < 1)
-								{
-									gameState->state = STATE_GAME_OVER;
-									gameState->stateChanged = true;
-								}
+							Explosion* explosion = NULL;
+							if (gameState->explosionCount < MAX_EXPLOSIONS)
+							{
+								PlaySound(audio->sounds[SOUND_EXPLOSIONBLAST]);
+								explosion = &gameState->explosions[gameState->explosionCount++];
+								explosion->position = bullet->position;
+								explosion->position.y -= bulletSrc.height/2.0f;
+								explosion->velocity.y = gameState->player.velocity;
+								explosion->startTime = GetTime();
+								explosion->active = true;
+							}
+							PlaySound(audio->sounds[SOUND_HIT]);
+							// Replace with bullet with last bullet
+							*bullet = gameState->bullets[--gameState->bulletCount];
+							gameState->player.invulTime = gameState->player.invulDuration;
+							if (--gameState->player.health < 1)
+							{
+								gameState->state = STATE_GAME_OVER;
+								gameState->stateChanged = true;
 							}
 						}
 					}
@@ -852,7 +891,6 @@ void UpdateGame(GameMemory* gameMemory)
 							// Collision asteroid bullet
 							if(bullet->owner == &gameState->player) 
 							{
-
 								if(CheckCollisionRecs(asteroid->collider, bullet->collider))
 								{
 									Rectangle collisionRec = GetCollisionRec(asteroid->collider, bullet->collider);
@@ -892,27 +930,6 @@ void UpdateGame(GameMemory* gameMemory)
 							}
 						}
 
-						float playerWidth = gameState->player.sprite.coords.width/gameState->player.animationFrames * gameState->player.size;
-						float playerHeight = gameState->player.sprite.coords.height * gameState->player.size;
-						gameState->player.collider = (Rectangle) {
-							.width = playerWidth,
-							.height =  playerHeight,
-							.x = gameState->player.position.x - playerWidth/2.0f,
-							.y = gameState->player.position.y - playerHeight/2.0f,
-						};
-						 
-						// Rectangle screenRectExtended = {
-						// 	.width = VIRTUAL_WIDTH,
-						// 	.height = VIRTUAL_HEIGHT + asteroid->sprite.coords.height * asteroid->size,
-						// 	.x = 0.0,
-						// 	.y = asteroid->position.y, // to make them scroll into screen smoothly
-						// };
-						// if(!CheckCollisionPointRec(asteroid->position, screenRectExtended))
-						// {
-						// 	// Replace with last asteroid
-						// 	*asteroid = gameState->asteroids[--gameState->asteroidCount];
-						// }
-						
 						// Collision asteroid player
 						if(CheckCollisionRecs(asteroid->collider, gameState->player.collider) && 
 								gameState->player.invulTime <= 0.0f &&
@@ -936,8 +953,7 @@ void UpdateGame(GameMemory* gameMemory)
 									gameState->stateChanged = true;
 								}
 							}
-						} else {
-						}
+						} 
 						// Check if asteroid is off-screen
 						if (asteroid->position.y > VIRTUAL_HEIGHT + asteroid->sprite.coords.height * asteroid->size)
 						{
@@ -945,51 +961,66 @@ void UpdateGame(GameMemory* gameMemory)
 						}
 					}
 				}
-				// Spawn enemies
-				{
-					gameState->enemySpawnTime += gameState->dt;
-					if (gameState->enemySpawnTime > gameState->enemySpawnRate && gameState->enemyCount < MAX_ENEMIES) 
-					{
-						// printf("Spawning enemy\n");
-						// float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
-						float size = 2.0;
-						// float enemyXPosition = GetRandomValue(0, VIRTUAL_WIDTH);
-						float velocity = 0.1f + (float)GetRandomValue(0, 10)/20.0f;
-						Enemy enemy =
-						{
-							.position = (Vector2){0, 70},
-							.health = 20,
-							.velocity = velocity,
-							.size = size,
-							.sprite = getSprite(SPRITE_ENEMY),
-							.shootTime = 0.0f,
-							.fireRate = 1.0f,
-							.bulletCount = 3,
-						};
-						enemy.collider = (Rectangle){
-							.x = enemy.position.x - enemy.sprite.coords.width*enemy.size/2.0f,
-							.y = enemy.position.y - enemy.sprite.coords.height*enemy.size/2.0f,
-							.width = enemy.sprite.coords.width*enemy.size,
-							.height = enemy.sprite.coords.height*enemy.size,
-						};
-						gameState->enemies[gameState->enemyCount++] = enemy;
-						gameState->enemySpawnTime = 0.0f;
-					}
-				}
 				// Update enemies
 				{
 					for (int enemyIndex = 0; enemyIndex < gameState->enemyCount; enemyIndex++)
 					{
 						Enemy* enemy = &gameState->enemies[enemyIndex];
-						enemy->position.x = 0.5 * enemy->sprite.coords.width + (VIRTUAL_WIDTH - enemy->sprite.coords.width) * 0.5 * (1.0 + sinf(gameState->time * enemy->velocity));
+						enemy->position.x = 0.5 * enemy->sprite.coords.width*enemy->size + (VIRTUAL_WIDTH - enemy->sprite.coords.width*enemy->size) * 0.5 * (1.0 + sinf(gameState->time * enemy->velocity.x));
 						enemy->collider = (Rectangle){
 							.x = enemy->position.x - enemy->sprite.coords.width*enemy->size/2.0f,
 							.y = enemy->position.y - enemy->sprite.coords.height*enemy->size/2.0f,
 							.width = enemy->sprite.coords.width*enemy->size,
 							.height = enemy->sprite.coords.height*enemy->size,
 						};
+						// Collision enemy bullet
+						for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
+						{
+							Bullet* bullet = &gameState->bullets[bulletIndex];
+							if(bullet->owner == &gameState->player) 
+							{
+								if(CheckCollisionRecs(enemy->collider, bullet->collider))
+								{
+									Rectangle collisionRec = GetCollisionRec(enemy->collider, bullet->collider);
+									Rectangle bulletSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_BULLET]]);
+									if (pixelPerfectCollision(spriteMasks[SPRITE_BULLET].pixels, spriteMasks[enemy->sprite.spriteID].pixels, 
+												bulletSrc.width, enemy->sprite.coords.width,
+												bulletSrc.height, enemy->sprite.coords.height,
+												bullet->collider, enemy->collider, collisionRec, bullet->rotation, 0))
+									{
+
+										Explosion* explosion = NULL;
+										if (gameState->explosionCount < MAX_EXPLOSIONS)
+										{
+											PlaySound(audio->sounds[SOUND_EXPLOSIONBLAST]);
+											explosion = &gameState->explosions[gameState->explosionCount++];
+											explosion->position = bullet->position;
+											explosion->position.y -= bulletSrc.height/2.0f;
+											explosion->velocity = enemy->velocity;
+											explosion->startTime = GetTime();
+											explosion->active = true;
+										}
+										// Replace bullet with last bullet
+										*bullet = gameState->bullets[--gameState->bulletCount];
+										enemy->health -= bullet->damage;
+										if (enemy->health < 1)
+										{
+											gameState->experience += 200;
+											gameState->score += 20 * MAX((int)(enemy->size * 100),1);
+											*enemy = gameState->enemies[--gameState->enemyCount];
+											if(explosion != NULL)
+											{
+												explosion->velocity.x = 0.0f;
+											}
+										}
+									}
+								}
+							}
+						}
 						// Shoot bullets from enemies
+						if (0) {
 						enemy->shootTime += gameState->dt;
+
 						if (enemy->shootTime >= 1.0f/enemy->fireRate && gameState->bulletCount <= MAX_BULLETS)
 						{
 							PlaySound(audio->sounds[SOUND_GUN]);
@@ -1027,6 +1058,7 @@ void UpdateGame(GameMemory* gameMemory)
 								enemy->shootTime -= 1.0f / enemy->fireRate;
 							}
 						}
+						}
 					}
 				}
 				// Update explosions
@@ -1035,6 +1067,7 @@ void UpdateGame(GameMemory* gameMemory)
 					Explosion* explosion = &gameState->explosions[explosionIndex];
 					if (explosion->active)
 					{
+						explosion->position.x += explosion->velocity.x * gameState->dt;
 						explosion->position.y += explosion->velocity.y * gameState->dt;
 					}
 				}
@@ -1397,7 +1430,16 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						// DrawRectangleLines(boost->collider.x, boost->collider.y, boost->collider.width, boost->collider.height, GREEN);
 					}
 				}
-
+				// Draw Enemies
+				{
+					for (int i = 0; i < gameState->enemyCount; i++)
+					{
+						Enemy* enemy = &gameState->enemies[i];
+						Vector2 texSize = { enemy->sprite.coords.width, enemy->sprite.coords.height };
+						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						DrawTexturePro(atlas->textureAtlas, enemy->sprite.coords, enemy->collider, (Vector2){0,0}, 0, WHITE);
+					}
+				}
 				// Draw explosions
 				{
 					Sprite sprite = getSprite(SPRITE_EXPLOSION);
@@ -1436,16 +1478,6 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 
 						if (finished)
 							explosion->active = false;
-					}
-				}
-				// Draw Enemies
-				{
-					for (int i = 0; i < gameState->enemyCount; i++)
-					{
-						Enemy* enemy = &gameState->enemies[i];
-						Vector2 texSize = { enemy->sprite.coords.width, enemy->sprite.coords.height };
-						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
-						DrawTexturePro(atlas->textureAtlas, enemy->sprite.coords, enemy->collider, (Vector2){0,0}, 0, WHITE);
 					}
 				}
 				// Draw Player
