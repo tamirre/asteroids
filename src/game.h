@@ -11,6 +11,8 @@
 #include "assetsUtils.h"
 #include "localization.h"
 
+#include <time.h>
+
 #include "raymath.h"
 #include "raylib.h"
 #define RAYGUI_IMPLEMENTATION
@@ -189,6 +191,12 @@ typedef struct Options {
 	bool showDebugInfo;
 } Options;
 
+typedef struct GifRecorder {
+	MsfGifState* gifState;
+	bool recording;
+	unsigned int frameCounter;
+} GifRecorder;
+
 typedef struct GameState {
     // General
     int experience;
@@ -231,9 +239,7 @@ typedef struct GameState {
     bool shouldExit;
     Rectangle currentCollision;
 	bool stateChanged;
-	bool gifRecording;
-	unsigned int gifFrameCounter;
-	MsfGifState gifState;
+	GifRecorder gifRecorder;
 } GameState;
 
 typedef struct GameMemory
@@ -248,6 +254,7 @@ typedef struct GameMemory
     Shader* shader;
     Shader* lightShader;
 } GameMemory;
+
 
 #if defined(PLATFORM_WINDOWS)
 // Function declarations that are exported from the DLL

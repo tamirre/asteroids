@@ -1,6 +1,55 @@
 #include "game.h"
 
-void Cleanup(GameMemory* gameMemory) {
+#define GIF_NUMBER_FRAMES (1)
+
+void GifRecordUpdate(GifRecorder* rec) 
+{
+	if (!rec->recording) return;
+    int centiSeconds = (int)(GetFrameTime() * 100.0f / GIF_NUMBER_FRAMES);
+
+    // Only write a frame when we have at least 1 centisecond
+    if (centiSeconds <= 0) return;
+
+    // capture screen (slow but simple)
+    Image img = LoadImageFromScreen();
+
+    msf_gif_frame(
+        rec->gifState,
+        (uint8_t*)img.data,
+        centiSeconds,
+        16,                 // quality (lower = faster)
+        img.width * 4
+    );
+
+	UnloadImage(img);
+}
+
+void GifRecordStart(GifRecorder* rec) 
+{
+	rec->recording = true;
+	rec->frameCounter = 0;
+	msf_gif_begin(rec->gifState, GetRenderWidth(), GetRenderHeight());
+	TraceLog(LOG_INFO, "Start animated GIF recording");
+}
+
+void GifRecordStop(GifRecorder* rec) 
+{
+	// Stop current recording and save file
+	rec->recording = false;
+	MsfGifResult result = msf_gif_end(rec->gifState);
+
+	// Get time stamp
+	time_t now = time(NULL);
+	struct tm *t = localtime(&now);
+	char buffer[100];
+	strftime(buffer, sizeof(buffer), "%Y-%m-%d-%H-%M", t);
+	SaveFileData(TextFormat("%s/scrn-rec-%s.gif", GetApplicationDirectory(), buffer), result.data, (unsigned int)result.dataSize);
+	msf_gif_free(result);
+	TraceLog(LOG_INFO, "Finish animated GIF recording");
+}
+
+void Cleanup(GameMemory* gameMemory) 
+{
 	UnloadShader(*gameMemory->shader);
 	UnloadShader(*gameMemory->lightShader);
 	for (int i = 0; i < ANIMATION_COUNT; i++)
@@ -23,25 +72,23 @@ void Cleanup(GameMemory* gameMemory) {
 	// De-Initialization of gif recording
     //--------------------------------------------------------------------------------------
     // If still recording a GIF on close window, just finish
-    if (gameMemory->gameState->gifRecording)
-    {
-        MsfGifResult result = msf_gif_end(&gameMemory->gameState->gifState);
-		SaveFileData(TextFormat("%s/screenrecording.gif", GetApplicationDirectory()), result.data, (unsigned int)result.dataSize);
-        msf_gif_free(result);
-        gameMemory->gameState->gifRecording = false;
-		TraceLog(LOG_INFO, "Finish animated GIF recording");
-    }
+	if(gameMemory->gameState->gifRecorder.recording)
+	{
+		GifRecordStop(&gameMemory->gameState->gifRecorder);
+	}
 	CloseAudioDevice();
 }
 
-void SetFxVolume(Audio* audio, float volume) {
+void SetFxVolume(Audio* audio, float volume) 
+{
 	for (int i = 0; i < SOUND_COUNT; i++)
 	{
 		SetSoundVolume(audio->sounds[i], volume);
 	}
 }
 
-void InitializeAudio(Audio* audio, Options* options) {
+void InitializeAudio(Audio* audio, Options* options) 
+{
 	InitAudioDevice();
 	ASSERT(IsAudioDeviceReady());
 	for (int i = 0; i < MUSIC_COUNT; i++)
@@ -59,7 +106,8 @@ void InitializeAudio(Audio* audio, Options* options) {
 	SetFxVolume(audio, options->fxVolume);
 }
 
-void InitializeGameState(GameState* gameState) {
+void InitializeGameState(GameState* gameState) 
+{
     *gameState = (GameState) {
 		.experience = 0,
 		.score = 0,
@@ -95,10 +143,14 @@ void InitializeGameState(GameState* gameState) {
 		.shouldExit = false,
 		.currentCollision = {0},
 		.stateChanged = true,
-		.gifRecording = false,
-		.gifFrameCounter = 0,
-		.gifState = { 0 },
     };
+
+	MsfGifState gifState = { 0 };
+	gameState->gifRecorder = (GifRecorder){ 
+		.gifState = &gifState,
+		.recording = false,
+		.frameCounter = 0,
+	};
 
 	for (int i = 0; i < UPGRADE_COUNT; i++)
 	{
@@ -126,8 +178,8 @@ void InitializeGameState(GameState* gameState) {
     };
 }
 
-void InitializeOptions(Options* options) {
-
+void InitializeOptions(Options* options) 
+{
 	int maxFontSize = 64;
 	*options = (Options) {
 		.screenWidth = (float)VIRTUAL_WIDTH,
@@ -500,8 +552,21 @@ void UpdateGame(GameMemory* gameMemory)
 				if (!IsMusicStreamPlaying(audio->music[audio->currentSongtrackID])) ResumeMusicStream(audio->music[audio->currentSongtrackID]);
 				ResumeSound(audio->sounds[SOUND_SHIELD]);
 				// Step debugging mode
+				if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) {
+					gameState->state = STATE_PAUSED;
+					gameState->lastState = STATE_RUNNING;
+					gameState->stateChanged = true;
+				}
 				if (IsKeyPressed(KEY_J)) stepMode = !stepMode;
 				if (IsKeyPressed(KEY_K)) stepOnce = true;
+				if (IsKeyPressed(KEY_H))
+				{
+					gameState->timeScale -= 0.1f;
+				}
+				if (IsKeyPressed(KEY_L)) 
+				{
+					gameState->timeScale += 0.1f;
+				}
 				if (IsKeyPressed(KEY_O)) options->disableShaders = !options->disableShaders;
 #ifndef PLATFORM_WEB
 				if (IsKeyPressed(KEY_F)) 
@@ -512,9 +577,15 @@ void UpdateGame(GameMemory* gameMemory)
 				{
 					writeSaveState(gameMemory);
 				}
-				if (IsKeyPressed(KEY_L)) 
+				if (IsKeyPressed(KEY_T)) 
 				{
 					loadSaveState(gameMemory);
+				}
+				if (IsKeyPressed(KEY_TAB)) // press Tab to toggle cursor
+				{
+					// if (cursorHidden) EnableCursor();
+					// else DisableCursor();
+					// cursorHidden = !cursorHidden;
 				}
 				if (IsKeyPressed(KEY_V)) {
 					if (IsWindowState(FLAG_VSYNC_HINT))
@@ -527,48 +598,17 @@ void UpdateGame(GameMemory* gameMemory)
 				// Start-Stop GIF recording on CTRL+R
 				if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_R))
 				{
-					if (gameState->gifRecording)
+					if (gameState->gifRecorder.recording)
 					{
-						// Stop current recording and save file
-						gameState->gifRecording = false;
-						MsfGifResult result = msf_gif_end(&gameState->gifState);
-						SaveFileData(TextFormat("%s/screenrecording.gif", GetApplicationDirectory()), result.data, (unsigned int)result.dataSize);
-						msf_gif_free(result);
-
-						TraceLog(LOG_INFO, "Finish animated GIF recording");
+						GifRecordStop(&gameState->gifRecorder);
 					}
 					else
 					{
-						// Start a new recording
-						gameState->gifRecording = true;
-						gameState->gifFrameCounter = 0;
-						msf_gif_begin(&gameState->gifState, GetRenderWidth(), GetRenderHeight());
-
-						TraceLog(LOG_INFO, "Start animated GIF recording");
+						GifRecordStart(&gameState->gifRecorder);
 					}
 				}
 				
-				if (gameState->gifRecording)
-				{
-					gameState->gifFrameCounter++;
-
-					// NOTE: We record one gif frame depending on the desired gif framerate
-					if (gameState->gifFrameCounter > GIF_RECORD_PER_FRAME)
-					{
-						// Get image data for the current frame (from backbuffer)
-						// WARNING: This process is quite slow, it can generate stuttering
-						Image imScreen = LoadImageFromScreen();
-
-						// Add the frame to the gif recording, providing and "estimated" time for display in centiseconds
-						// int msf_gif_frame(MsfGifState * handle, uint8_t * pixelData, int centiSecondsPerFrame, int quality, int pitchInBytes)
-						msf_gif_frame(&gameState->gifState, imScreen.data, (int)((1.0f/(float)GetFPS())*GIF_RECORD_PER_FRAME)/10.0f, 16, imScreen.width*4);
-						gameState->gifFrameCounter = 0;
-
-						UnloadImage(imScreen);    // Free image data
-					}
-				}
 #endif
-
 				if (stepMode && !stepOnce) return;
 				stepOnce = false;
 
@@ -587,21 +627,6 @@ void UpdateGame(GameMemory* gameMemory)
 					gameState->experience -= requiredExperience * gameState->player.level;
 					gameState->player.level++;
 				}
-				if (IsKeyPressed(KEY_H))
-				{
-					gameState->timeScale -= 0.1f;
-				}
-				if (IsKeyPressed(KEY_L)) 
-				{
-					gameState->timeScale += 0.1f;
-				}
-				if (IsKeyPressed(KEY_TAB)) // press Tab to toggle cursor
-				{
-					// if (cursorHidden) EnableCursor();
-					// else DisableCursor();
-					// cursorHidden = !cursorHidden;
-				}
-
 				UpdateMusicStream(audio->music[audio->currentSongtrackID]);
 				// Spawn stars for parallax
 				{
@@ -662,6 +687,7 @@ void UpdateGame(GameMemory* gameMemory)
 						}
 					}
 				}
+				// Update stars
                 {
                     for (int starIndex = 0; starIndex < gameState->starCount; starIndex++)
                     {
@@ -675,50 +701,54 @@ void UpdateGame(GameMemory* gameMemory)
                     }
                 }
 				// Update Player
-				if (gameState->player.invulTime < 0.0f)
+				
+				// Player movement
 				{
-					gameState->player.invulTime = 0.0f;
-				} else {
-					gameState->player.invulTime -= gameState->dt;
+					if (IsKeyDown(KEY_W)) {
+						if(!CheckCollisionPointLine((Vector2) {gameState->player.position.x * viewportScale, gameState->player.position.y * viewportScale},
+									(Vector2) {0, 0}, 
+									(Vector2) {viewport.width, 0},
+									gameState->player.sprite.coords.height * viewportScale))
+						{
+							gameState->player.position.y -= gameState->player.velocity * gameState->dt;
+						}   
+					}
+					if (IsKeyDown(KEY_S)) {
+						if(!CheckCollisionPointLine((Vector2) {gameState->player.position.x * viewportScale, gameState->player.position.y * viewportScale},
+									(Vector2) {0, viewport.height},
+									(Vector2) {viewport.width, viewport.height},
+									gameState->player.sprite.coords.height * viewportScale))
+						{
+							gameState->player.position.y += gameState->player.velocity * gameState->dt;
+						}
+					}
+					if (IsKeyDown(KEY_A)) {
+						if(!CheckCollisionPointLine((Vector2) {gameState->player.position.x * viewportScale, gameState->player.position.y * viewportScale},
+									(Vector2) {0, 0}, 
+									(Vector2) {0, viewport.height},
+									gameState->player.sprite.coords.width / gameState->player.animationFrames * viewportScale))
+						{
+							gameState->player.position.x -= gameState->player.velocity * gameState->dt;
+						}
+					}
+					if (IsKeyDown(KEY_D)) {
+						if(!CheckCollisionPointLine((Vector2) {gameState->player.position.x * viewportScale, gameState->player.position.y * viewportScale},
+									(Vector2) {viewport.width, 0},
+									(Vector2) {viewport.width, viewport.height},
+									gameState->player.sprite.coords.width / gameState->player.animationFrames * viewportScale))
+						{
+							gameState->player.position.x += gameState->player.velocity * gameState->dt;
+						}
+					}
 				}
 
-				// float screenWidth = VIRTUAL_WIDTH;
-				// float screenHeight = VIRTUAL_HEIGHT;
-				if (IsKeyDown(KEY_W)) {
-					if(!CheckCollisionPointLine((Vector2) {gameState->player.position.x * viewportScale, gameState->player.position.y * viewportScale},
-								                (Vector2) {0, 0}, 
-												(Vector2) {viewport.width, 0},
-												gameState->player.sprite.coords.height * viewportScale))
-					{
-						gameState->player.position.y -= gameState->player.velocity * gameState->dt;
-					}   
-				}
-				if (IsKeyDown(KEY_S)) {
-					if(!CheckCollisionPointLine((Vector2) {gameState->player.position.x * viewportScale, gameState->player.position.y * viewportScale},
-								                (Vector2) {0, viewport.height},
-												(Vector2) {viewport.width, viewport.height},
-												gameState->player.sprite.coords.height * viewportScale))
-					{
-						gameState->player.position.y += gameState->player.velocity * gameState->dt;
-					}
-				}
-				if (IsKeyDown(KEY_A)) {
-					if(!CheckCollisionPointLine((Vector2) {gameState->player.position.x * viewportScale, gameState->player.position.y * viewportScale},
-								                (Vector2) {0, 0}, 
-												(Vector2) {0, viewport.height},
-												gameState->player.sprite.coords.width / gameState->player.animationFrames * viewportScale))
-					{
-						gameState->player.position.x -= gameState->player.velocity * gameState->dt;
-					}
-				}
-				if (IsKeyDown(KEY_D)) {
-					if(!CheckCollisionPointLine((Vector2) {gameState->player.position.x * viewportScale, gameState->player.position.y * viewportScale},
-												(Vector2) {viewport.width, 0},
-												(Vector2) {viewport.width, viewport.height},
-												gameState->player.sprite.coords.width / gameState->player.animationFrames * viewportScale))
-					{
-						gameState->player.position.x += gameState->player.velocity * gameState->dt;
-					}
+				if (gameState->player.invulTime < 0.0f) 
+				{
+					gameState->player.invulTime = 0.0f;
+				} 
+				else 
+				{
+					gameState->player.invulTime -= gameState->dt;
 				}
 				if (gameState->player.shootTime < 1.0f/gameState->player.fireRate)
 				{
@@ -733,27 +763,26 @@ void UpdateGame(GameMemory* gameMemory)
 					gameState->player.shieldEnabled = false;
 					gameState->player.shieldTime = 5.25f;
 				}
-				float playerWidth = gameState->player.sprite.coords.width/gameState->player.animationFrames * gameState->player.size;
-				float playerHeight = gameState->player.sprite.coords.height * gameState->player.size;
+				const float playerWidth = gameState->player.sprite.coords.width/gameState->player.animationFrames * gameState->player.size;
+				const float playerHeight = gameState->player.sprite.coords.height * gameState->player.size;
 				gameState->player.collider = (Rectangle) {
 					.width = playerWidth,
 						.height =  playerHeight,
 						.x = gameState->player.position.x - playerWidth/2.0f,
 						.y = gameState->player.position.y - playerHeight/2.0f,
 				};
-				// Shoot bullets
-				while (IsKeyDown(KEY_SPACE) 
-						&& gameState->player.shootTime >= 1.0f/gameState->player.fireRate
-						&& gameState->bulletCount <= MAX_BULLETS)
+				// Shoot bullets (player)
+				if (IsKeyDown(KEY_SPACE) 
+					&& gameState->player.shootTime >= 1.0f/gameState->player.fireRate
+					&& gameState->bulletCount <= MAX_BULLETS)
 				{
-
 					PlaySound(audio->sounds[SOUND_GUN]);
-					float bulletSize = 0.5f;
 					if (gameState->player.bulletCount > 0 && gameState->bulletCount < MAX_BULLETS - gameState->player.bulletCount)
 					{
 						int count = gameState->player.bulletCount;
 						float spreadAngle = 30.0f; // total spread in degrees 
 						float startAngle = -spreadAngle / 2.0f;
+						float bulletSize = gameState->player.damageMulti/2.0f;
 						for (int i = 0; i < count; i++)
 						{
 							float t = (count == 1) ? 0.5f : (float)i / (count - 1);
@@ -879,7 +908,7 @@ void UpdateGame(GameMemory* gameMemory)
 						};
 					}
 				}
-
+				// Collision player bullet
 				for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
 				{
 					Bullet* bullet = &gameState->bullets[bulletIndex];
@@ -893,7 +922,6 @@ void UpdateGame(GameMemory* gameMemory)
 							.x = texture_x,
 							.y = texture_y,
 					};
-					// Collision player bullet
 					if(CheckCollisionRecs(gameState->player.collider, bullet->collider) 
 							&& bullet->owner != &gameState->player 
 							&& gameState->player.invulTime <= 0.0f 
@@ -929,6 +957,9 @@ void UpdateGame(GameMemory* gameMemory)
 							}
 						}
 					}
+				}
+				// Collision asteroid bullet
+				{
 					for (int asteroidIndex = 0; asteroidIndex < gameState->asteroidCount; asteroidIndex++)
 					{
 						Asteroid* asteroid = &gameState->asteroids[asteroidIndex];
@@ -941,11 +972,10 @@ void UpdateGame(GameMemory* gameMemory)
 							const float height = bullet->sprite.coords.height * bullet->size;
 							bullet->collider = (Rectangle) {
 								.width = width,
-								.height = height,
-								.x = texture_x,
-								.y = texture_y,
+									.height = height,
+									.x = texture_x,
+									.y = texture_y,
 							};
-							// Collision asteroid bullet
 							if(bullet->owner == &gameState->player) 
 							{
 								if(CheckCollisionRecs(asteroid->collider, bullet->collider))
@@ -1119,16 +1149,17 @@ void UpdateGame(GameMemory* gameMemory)
 					}
 				}
 				// Update explosions
-				for (int explosionIndex = 0; explosionIndex < gameState->explosionCount; explosionIndex++)
 				{
-					Explosion* explosion = &gameState->explosions[explosionIndex];
-					if (explosion->active)
+					for (int explosionIndex = 0; explosionIndex < gameState->explosionCount; explosionIndex++)
 					{
-						explosion->position.x += explosion->velocity.x * gameState->dt;
-						explosion->position.y += explosion->velocity.y * gameState->dt;
+						Explosion* explosion = &gameState->explosions[explosionIndex];
+						if (explosion->active)
+						{
+							explosion->position.x += explosion->velocity.x * gameState->dt;
+							explosion->position.y += explosion->velocity.y * gameState->dt;
+						}
 					}
 				}
-
 				// Spawn boosts
 				{
 					if (gameState->boostCount < MAX_BOOSTS)
@@ -1206,11 +1237,7 @@ void UpdateGame(GameMemory* gameMemory)
 						}
 					}
 				}
-				if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) {
-					gameState->state = STATE_PAUSED;
-					gameState->lastState = STATE_RUNNING;
-					gameState->stateChanged = true;
-				}
+
 				break;
 			}
 		case STATE_UPGRADE:
@@ -1276,7 +1303,7 @@ void UpdateGame(GameMemory* gameMemory)
 					if (gameState->pickedUpgrade == UPGRADE_MULTISHOT) {
 						gameState->player.bulletCount += 2;
 					} else if (gameState->pickedUpgrade == UPGRADE_DAMAGE) {
-						gameState->player.damageMulti += 0.2f;
+						gameState->player.damageMulti += 0.5f;
 					} else if (gameState->pickedUpgrade == UPGRADE_FIRERATE) {
 						gameState->player.fireRate += 0.5f;
 					}
@@ -1370,7 +1397,6 @@ void UpdateGame(GameMemory* gameMemory)
 	}
 }
 
-
 void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, RenderTexture2D* scene, Shader* shader)
 {
 	int texSizeLoc = GetShaderLocation(*shader, "textureSize");
@@ -1458,11 +1484,16 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						// Change the frame per second speed of animation
 						// atlas->animations[SpriteToAnimation[SPRITE_BULLET]].framesPerSecond = 14;
 						bool flipY = false;
-						if (bullet->owner != &gameState->player)
-						{
-							flipY = true;
-						}
-						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_BULLET]], bullet->collider, (Vector2){0, 0}, bullet->rotation, WHITE, *shader, false, flipY);
+						if (bullet->owner != &gameState->player) flipY = true;
+						DrawSpriteAnimationPro(&atlas->textureAtlas, 
+											   &atlas->animations[SpriteToAnimation[SPRITE_BULLET]],
+											   bullet->collider, 
+											   (Vector2){0, 0}, 
+											   bullet->rotation, 
+											   WHITE, 
+											   *shader, 
+											   false, 
+											   flipY);
 					}
 				}
 				// Draw boosts
@@ -1717,6 +1748,7 @@ float EaseOutBack(float t)
     float x = t - 1.0f;
     return 1.0f + c3 * x * x * x + c1 * x * x;
 }
+
 void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader)
 {
 	int texSizeLoc = GetShaderLocation(*shader, "textureSize");
@@ -1928,6 +1960,7 @@ void DrawFPSInViewport(Rectangle viewport)
 
     DrawFPS(offsetX + 15, offsetY + 50);
 }
+
 void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader)
 {
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
@@ -2060,6 +2093,12 @@ void UpdateDrawFrame(GameMemory* gameMemory)
 	HandleResize(gameMemory->options);
 	UpdateGame(gameMemory);
 	DrawGame(gameMemory);
+#ifndef PLATFORM_WEB
+	if (gameMemory->gameState->gifRecorder.recording)
+	{
+		GifRecordUpdate(&gameMemory->gameState->gifRecorder);
+	}
+#endif
 }
 
 
