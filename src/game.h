@@ -16,6 +16,8 @@
 #define RAYGUI_IMPLEMENTATION
 #include "third_party/include/raygui.h"
 #include "third_party/include/style_dark.h"
+#define MSF_GIF_IMPL
+#include "third_party/include/msf_gif.h"
 
 #if defined(PLATFORM_WEB)
 #include <emscripten/emscripten.h>
@@ -23,6 +25,7 @@
 
 #define MIN_SCREEN_WIDTH (400.0f)
 #define MIN_SCREEN_HEIGHT (225.0f)
+#define GIF_RECORD_PER_FRAME (1)
 
 #if defined(PLATFORM_WEB)
 #define VIRTUAL_WIDTH (1440.0f)
@@ -228,6 +231,9 @@ typedef struct GameState {
     bool shouldExit;
     Rectangle currentCollision;
 	bool stateChanged;
+	bool gifRecording;
+	unsigned int gifFrameCounter;
+	MsfGifState gifState;
 } GameState;
 
 typedef struct GameMemory

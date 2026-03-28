@@ -20,6 +20,17 @@ void Cleanup(GameMemory* gameMemory) {
 	{
 		UnloadSound(gameMemory->audio->sounds[i]);
 	}
+	// De-Initialization of gif recording
+    //--------------------------------------------------------------------------------------
+    // If still recording a GIF on close window, just finish
+    if (gameMemory->gameState->gifRecording)
+    {
+        MsfGifResult result = msf_gif_end(&gameMemory->gameState->gifState);
+		SaveFileData(TextFormat("%s/screenrecording.gif", GetApplicationDirectory()), result.data, (unsigned int)result.dataSize);
+        msf_gif_free(result);
+        gameMemory->gameState->gifRecording = false;
+		TraceLog(LOG_INFO, "Finish animated GIF recording");
+    }
 	CloseAudioDevice();
 }
 
@@ -84,6 +95,9 @@ void InitializeGameState(GameState* gameState) {
 		.shouldExit = false,
 		.currentCollision = {0},
 		.stateChanged = true,
+		.gifRecording = false,
+		.gifFrameCounter = 0,
+		.gifState = { 0 },
     };
 
 	for (int i = 0; i < UPGRADE_COUNT; i++)
@@ -498,11 +512,10 @@ void UpdateGame(GameMemory* gameMemory)
 				{
 					writeSaveState(gameMemory);
 				}
-				if (IsKeyPressed(KEY_R)) 
+				if (IsKeyPressed(KEY_L)) 
 				{
 					loadSaveState(gameMemory);
 				}
-#endif
 				if (IsKeyPressed(KEY_V)) {
 					if (IsWindowState(FLAG_VSYNC_HINT))
 					{
@@ -511,6 +524,50 @@ void UpdateGame(GameMemory* gameMemory)
 						SetWindowState(FLAG_VSYNC_HINT);
 					}
 				}
+				// Start-Stop GIF recording on CTRL+R
+				if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_R))
+				{
+					if (gameState->gifRecording)
+					{
+						// Stop current recording and save file
+						gameState->gifRecording = false;
+						MsfGifResult result = msf_gif_end(&gameState->gifState);
+						SaveFileData(TextFormat("%s/screenrecording.gif", GetApplicationDirectory()), result.data, (unsigned int)result.dataSize);
+						msf_gif_free(result);
+
+						TraceLog(LOG_INFO, "Finish animated GIF recording");
+					}
+					else
+					{
+						// Start a new recording
+						gameState->gifRecording = true;
+						gameState->gifFrameCounter = 0;
+						msf_gif_begin(&gameState->gifState, GetRenderWidth(), GetRenderHeight());
+
+						TraceLog(LOG_INFO, "Start animated GIF recording");
+					}
+				}
+				
+				if (gameState->gifRecording)
+				{
+					gameState->gifFrameCounter++;
+
+					// NOTE: We record one gif frame depending on the desired gif framerate
+					if (gameState->gifFrameCounter > GIF_RECORD_PER_FRAME)
+					{
+						// Get image data for the current frame (from backbuffer)
+						// WARNING: This process is quite slow, it can generate stuttering
+						Image imScreen = LoadImageFromScreen();
+
+						// Add the frame to the gif recording, providing and "estimated" time for display in centiseconds
+						// int msf_gif_frame(MsfGifState * handle, uint8_t * pixelData, int centiSecondsPerFrame, int quality, int pitchInBytes)
+						msf_gif_frame(&gameState->gifState, imScreen.data, (int)((1.0f/(float)GetFPS())*GIF_RECORD_PER_FRAME)/10.0f, 16, imScreen.width*4);
+						gameState->gifFrameCounter = 0;
+
+						UnloadImage(imScreen);    // Free image data
+					}
+				}
+#endif
 
 				if (stepMode && !stepOnce) return;
 				stepOnce = false;
