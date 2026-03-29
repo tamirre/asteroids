@@ -607,7 +607,6 @@ void UpdateGame(GameMemory* gameMemory)
 						GifRecordStart(&gameState->gifRecorder);
 					}
 				}
-				
 #endif
 				if (stepMode && !stepOnce) return;
 				stepOnce = false;
@@ -701,7 +700,6 @@ void UpdateGame(GameMemory* gameMemory)
                     }
                 }
 				// Update Player
-				
 				// Player movement
 				{
 					if (IsKeyDown(KEY_W)) {
@@ -740,37 +738,37 @@ void UpdateGame(GameMemory* gameMemory)
 							gameState->player.position.x += gameState->player.velocity * gameState->dt;
 						}
 					}
-				}
 
-				if (gameState->player.invulTime < 0.0f) 
-				{
-					gameState->player.invulTime = 0.0f;
-				} 
-				else 
-				{
-					gameState->player.invulTime -= gameState->dt;
+					if (gameState->player.invulTime < 0.0f) 
+					{
+						gameState->player.invulTime = 0.0f;
+					} 
+					else 
+					{
+						gameState->player.invulTime -= gameState->dt;
+					}
+					if (gameState->player.shootTime < 1.0f/gameState->player.fireRate)
+					{
+						gameState->player.shootTime += gameState->dt;
+					} 
+					if (gameState->player.shieldEnabled && gameState->player.shieldTime > 0.0f)
+					{
+						gameState->player.shieldTime -= gameState->dt;
+					}
+					if (gameState->player.shieldTime < 0.0f)
+					{
+						gameState->player.shieldEnabled = false;
+						gameState->player.shieldTime = 5.25f;
+					}
+					const float playerWidth = gameState->player.sprite.coords.width/gameState->player.animationFrames * gameState->player.size;
+					const float playerHeight = gameState->player.sprite.coords.height * gameState->player.size;
+					gameState->player.collider = (Rectangle) {
+						.width = playerWidth,
+							.height =  playerHeight,
+							.x = gameState->player.position.x - playerWidth/2.0f,
+							.y = gameState->player.position.y - playerHeight/2.0f,
+					};
 				}
-				if (gameState->player.shootTime < 1.0f/gameState->player.fireRate)
-				{
-					gameState->player.shootTime += gameState->dt;
-				} 
-				if (gameState->player.shieldEnabled && gameState->player.shieldTime > 0.0f)
-				{
-					gameState->player.shieldTime -= gameState->dt;
-				}
-				if (gameState->player.shieldTime < 0.0f)
-				{
-					gameState->player.shieldEnabled = false;
-					gameState->player.shieldTime = 5.25f;
-				}
-				const float playerWidth = gameState->player.sprite.coords.width/gameState->player.animationFrames * gameState->player.size;
-				const float playerHeight = gameState->player.sprite.coords.height * gameState->player.size;
-				gameState->player.collider = (Rectangle) {
-					.width = playerWidth,
-						.height =  playerHeight,
-						.x = gameState->player.position.x - playerWidth/2.0f,
-						.y = gameState->player.position.y - playerHeight/2.0f,
-				};
 				// Shoot bullets (player)
 				if (IsKeyDown(KEY_SPACE) 
 					&& gameState->player.shootTime >= 1.0f/gameState->player.fireRate
@@ -889,6 +887,16 @@ void UpdateGame(GameMemory* gameMemory)
 						}
                         bullet->position.x -= bullet->velocity.x * gameState->dt;
                         bullet->position.y -= bullet->velocity.y * gameState->dt;
+						const int texture_x = bullet->position.x - bullet->sprite.coords.width * bullet->size / getSprite(SPRITE_BULLET).numFrames / 2.0;
+						const int texture_y = bullet->position.y - bullet->sprite.coords.height * bullet->size / 2.0;
+						const float width = bullet->sprite.coords.width / getSprite(SPRITE_BULLET).numFrames * bullet->size;
+						const float height = bullet->sprite.coords.height * bullet->size;
+						bullet->collider = (Rectangle) {
+							.width = width,
+								.height = height,
+								.x = texture_x,
+								.y = texture_y,
+						};
 					}
 				}
 				// Update asteroids
@@ -912,16 +920,6 @@ void UpdateGame(GameMemory* gameMemory)
 				for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
 				{
 					Bullet* bullet = &gameState->bullets[bulletIndex];
-					const int texture_x = bullet->position.x - bullet->sprite.coords.width * bullet->size / getSprite(SPRITE_BULLET).numFrames / 2.0;
-					const int texture_y = bullet->position.y - bullet->sprite.coords.height * bullet->size / 2.0;
-					const float width = bullet->sprite.coords.width / getSprite(SPRITE_BULLET).numFrames * bullet->size;
-					const float height = bullet->sprite.coords.height * bullet->size;
-					bullet->collider = (Rectangle) {
-						.width = width,
-							.height = height,
-							.x = texture_x,
-							.y = texture_y,
-					};
 					if(CheckCollisionRecs(gameState->player.collider, bullet->collider) 
 							&& bullet->owner != &gameState->player 
 							&& gameState->player.invulTime <= 0.0f 
@@ -966,16 +964,6 @@ void UpdateGame(GameMemory* gameMemory)
 						for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
 						{
 							Bullet* bullet = &gameState->bullets[bulletIndex];
-							const int texture_x = bullet->position.x - bullet->sprite.coords.width * bullet->size / getSprite(SPRITE_BULLET).numFrames / 2.0;
-							const int texture_y = bullet->position.y - bullet->sprite.coords.height * bullet->size / 2.0;
-							const float width = bullet->sprite.coords.width / getSprite(SPRITE_BULLET).numFrames * bullet->size;
-							const float height = bullet->sprite.coords.height * bullet->size;
-							bullet->collider = (Rectangle) {
-								.width = width,
-									.height = height,
-									.x = texture_x,
-									.y = texture_y,
-							};
 							if(bullet->owner == &gameState->player) 
 							{
 								if(CheckCollisionRecs(asteroid->collider, bullet->collider))
@@ -1056,9 +1044,9 @@ void UpdateGame(GameMemory* gameMemory)
 						enemy->position.x = 0.5 * enemy->sprite.coords.width*enemy->size + (VIRTUAL_WIDTH - enemy->sprite.coords.width*enemy->size) * 0.5 * (1.0 + sinf(gameState->time * enemy->velocity.x));
 						enemy->collider = (Rectangle){
 							.x = enemy->position.x - enemy->sprite.coords.width*enemy->size/2.0f,
-							.y = enemy->position.y - enemy->sprite.coords.height*enemy->size/2.0f,
-							.width = enemy->sprite.coords.width*enemy->size,
-							.height = enemy->sprite.coords.height*enemy->size,
+								.y = enemy->position.y - enemy->sprite.coords.height*enemy->size/2.0f,
+								.width = enemy->sprite.coords.width*enemy->size,
+								.height = enemy->sprite.coords.height*enemy->size,
 						};
 						// Collision enemy bullet
 						for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
@@ -1104,10 +1092,13 @@ void UpdateGame(GameMemory* gameMemory)
 								}
 							}
 						}
-						// Shoot bullets from enemies
-						if (0) {
-						enemy->shootTime += gameState->dt;
+					}
 
+					for (int enemyIndex = 0; enemyIndex < gameState->enemyCount; enemyIndex++)
+					{
+						Enemy* enemy = &gameState->enemies[enemyIndex];
+						// Shoot bullets (enemies)
+						enemy->shootTime += gameState->dt;
 						if (enemy->shootTime >= 1.0f/enemy->fireRate && gameState->bulletCount <= MAX_BULLETS)
 						{
 							PlaySound(audio->sounds[SOUND_GUN]);
@@ -1138,13 +1129,12 @@ void UpdateGame(GameMemory* gameMemory)
 
 									// Adjust Y so bullet spawns at top of player
 									bullet.position.y -= enemy->sprite.coords.height * enemy->size / 2.0f
-										- bullet.sprite.coords.height * bullet.size / 2.0f;
+									                   - bullet.sprite.coords.height * bullet.size / 2.0f;
 
 									gameState->bullets[gameState->bulletCount++] = bullet;
 								}
 								enemy->shootTime -= 1.0f / enemy->fireRate;
 							}
-						}
 						}
 					}
 				}
@@ -1170,16 +1160,13 @@ void UpdateGame(GameMemory* gameMemory)
 					{
 						// int size = (int)GetRandomValue(1, 3);
 						float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
-						// float size = 1.0f;
 						float minSpawnDistance = 50.0f * size;  
 						float boostXPosition = MAX(minSpawnDistance, GetRandomValue(0, VIRTUAL_WIDTH));
 						Boost boost = {
 							.position = (Vector2) {boostXPosition, 0},
 							.velocity = (Vector2) {0, GetRandomValue(30.0f, 65.0f) * 5.0f / (float)size},
-							// .angularVelocity = GetRandomValue(-40.0f, 40.0f),
 							.angularVelocity = 0.0f,
 							.size = 2.0f,
-							// .rotation = GetRandomValue(0.0f, 360.0f),
 							.rotation = 0.0f,
 						};
 						Sprite boostSprite;
@@ -1233,11 +1220,9 @@ void UpdateGame(GameMemory* gameMemory)
 								PlaySound(audio->sounds[SOUND_SHIELD]);
 								gameState->currentCollision = (Rectangle){0,0,0,0};
 							}
-						} else {
-						}
+						} 
 					}
 				}
-
 				break;
 			}
 		case STATE_UPGRADE:
