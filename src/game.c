@@ -549,7 +549,14 @@ void UpdateGame(GameMemory* gameMemory)
 		case STATE_RUNNING:
 			{
 				float viewportScale = viewport.width / VIRTUAL_WIDTH;
+				const Rectangle screenRect = {
+					.height = VIRTUAL_HEIGHT,
+					.width = VIRTUAL_WIDTH,
+					.x = 0,
+					.y = 0
+				};
 				if (!IsMusicStreamPlaying(audio->music[audio->currentSongtrackID])) ResumeMusicStream(audio->music[audio->currentSongtrackID]);
+				UpdateMusicStream(audio->music[audio->currentSongtrackID]);
 				ResumeSound(audio->sounds[SOUND_SHIELD]);
 				// Input keys
 				{
@@ -613,22 +620,17 @@ void UpdateGame(GameMemory* gameMemory)
 					if (stepMode && !stepOnce) return;
 					stepOnce = false;
 				}
-				const Rectangle screenRect = {
-					.height = VIRTUAL_HEIGHT,
-					.width = VIRTUAL_WIDTH,
-					.x = 0,
-					.y = 0
-				};
 				// Update score
-				const float requiredExperience = 500.0;
-				if (gameState->experience > requiredExperience * gameState->player.level)
 				{
-					gameState->state = STATE_UPGRADE;
-					gameState->stateChanged = true;
-					gameState->experience -= requiredExperience * gameState->player.level;
-					gameState->player.level++;
+					const float requiredExperience = 500.0;
+					if (gameState->experience > requiredExperience * gameState->player.level)
+					{
+						gameState->state = STATE_UPGRADE;
+						gameState->stateChanged = true;
+						gameState->experience -= requiredExperience * gameState->player.level;
+						gameState->player.level++;
+					}
 				}
-				UpdateMusicStream(audio->music[audio->currentSongtrackID]);
 				// Spawn stars for parallax
 				{
 					if (gameState->initStars == 0)
@@ -816,70 +818,6 @@ void UpdateGame(GameMemory* gameMemory)
 						gameState->player.shootTime -= 1.0f / gameState->player.fireRate;
 					}
 				}
-				// Update Bullets
-				{
-                    for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
-                    {
-                        Bullet* bullet = &gameState->bullets[bulletIndex];
-                        if(!CheckCollisionPointRec(bullet->position, screenRect))
-						{
-							// Replace with last projectile
-							*bullet = gameState->bullets[--gameState->bulletCount];
-						}
-                        bullet->position.x -= bullet->velocity.x * gameState->dt;
-                        bullet->position.y -= bullet->velocity.y * gameState->dt;
-						const int texture_x = bullet->position.x - bullet->sprite.coords.width * bullet->size / getSprite(SPRITE_BULLET).numFrames / 2.0;
-						const int texture_y = bullet->position.y - bullet->sprite.coords.height * bullet->size / 2.0;
-						const float width = bullet->sprite.coords.width / getSprite(SPRITE_BULLET).numFrames * bullet->size;
-						const float height = bullet->sprite.coords.height * bullet->size;
-						bullet->collider = (Rectangle) {
-							.width = width,
-								.height = height,
-								.x = texture_x,
-								.y = texture_y,
-						};
-					}
-				}
-				// Collision player bullet
-				for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
-				{
-					Bullet* bullet = &gameState->bullets[bulletIndex];
-					if(CheckCollisionRecs(gameState->player.collider, bullet->collider) 
-							&& bullet->owner != &gameState->player 
-							&& gameState->player.invulTime <= 0.0f 
-							&& gameState->player.shieldEnabled == false)
-					{
-						Rectangle collisionRec = GetCollisionRec(gameState->player.collider, bullet->collider);
-						Rectangle bulletSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_BULLET]]);
-						if (pixelPerfectCollision(spriteMasks[SPRITE_BULLET].pixels, spriteMasks[gameState->player.sprite.spriteID].pixels, 
-									bulletSrc.width, gameState->player.sprite.coords.width,
-									bulletSrc.height, gameState->player.sprite.coords.height,
-									bullet->collider, gameState->player.collider, collisionRec, bullet->rotation, 0))
-						{
-
-							Explosion* explosion = NULL;
-							if (gameState->explosionCount < MAX_EXPLOSIONS)
-							{
-								PlaySound(audio->sounds[SOUND_EXPLOSIONBLAST]);
-								explosion = &gameState->explosions[gameState->explosionCount++];
-								explosion->position = bullet->position;
-								explosion->position.y -= bulletSrc.height/2.0f;
-								explosion->velocity.y = gameState->player.velocity;
-								explosion->startTime = GetTime();
-								explosion->active = true;
-							}
-							PlaySound(audio->sounds[SOUND_HIT]);
-							// Replace with bullet with last bullet
-							*bullet = gameState->bullets[--gameState->bulletCount];
-							gameState->player.invulTime = gameState->player.invulDuration;
-							if (--gameState->player.health < 1)
-							{
-								gameState->state = STATE_GAME_OVER;
-								gameState->stateChanged = true;
-							}
-						}
-					}
-				}
 				// Spawn enemies
 				{
 					gameState->enemySpawnTime += gameState->dt;
@@ -927,7 +865,7 @@ void UpdateGame(GameMemory* gameMemory)
 						for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
 						{
 							Bullet* bullet = &gameState->bullets[bulletIndex];
-							if(bullet->owner == &gameState->player) 
+							if(bullet->owner == &gameState->player)
 							{
 								if(CheckCollisionRecs(enemy->collider, bullet->collider))
 								{
@@ -999,7 +937,7 @@ void UpdateGame(GameMemory* gameMemory)
 										.sprite = getSprite(SPRITE_BULLET),
 										.rotation = angleDeg,
 										.size = bulletSize,
-										.owner = enemy,
+										.owner = &enemy,
 									};
 
 									// Adjust Y so bullet spawns at top of player
@@ -1009,6 +947,70 @@ void UpdateGame(GameMemory* gameMemory)
 									gameState->bullets[gameState->bulletCount++] = bullet;
 								}
 								enemy->shootTime -= 1.0f / enemy->fireRate;
+							}
+						}
+					}
+				}
+				// Update Bullets
+				{
+                    for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
+                    {
+                        Bullet* bullet = &gameState->bullets[bulletIndex];
+                        if(!CheckCollisionPointRec(bullet->position, screenRect))
+						{
+							// Replace with last projectile
+							*bullet = gameState->bullets[--gameState->bulletCount];
+						}
+                        bullet->position.x -= bullet->velocity.x * gameState->dt;
+                        bullet->position.y -= bullet->velocity.y * gameState->dt;
+						const int texture_x = bullet->position.x - bullet->sprite.coords.width * bullet->size / getSprite(SPRITE_BULLET).numFrames / 2.0;
+						const int texture_y = bullet->position.y - bullet->sprite.coords.height * bullet->size / 2.0;
+						const float width = bullet->sprite.coords.width / getSprite(SPRITE_BULLET).numFrames * bullet->size;
+						const float height = bullet->sprite.coords.height * bullet->size;
+						bullet->collider = (Rectangle) {
+							.width = width,
+								.height = height,
+								.x = texture_x,
+								.y = texture_y,
+						};
+					}
+				}
+				// Collision player bullet
+				for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
+				{
+					Bullet* bullet = &gameState->bullets[bulletIndex];
+					if(CheckCollisionRecs(gameState->player.collider, bullet->collider) 
+							&& bullet->owner != &gameState->player 
+							&& gameState->player.invulTime <= 0.0f 
+							&& gameState->player.shieldEnabled == false)
+					{
+						Rectangle collisionRec = GetCollisionRec(gameState->player.collider, bullet->collider);
+						Rectangle bulletSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_BULLET]]);
+						if (pixelPerfectCollision(spriteMasks[SPRITE_BULLET].pixels, spriteMasks[gameState->player.sprite.spriteID].pixels, 
+									bulletSrc.width, gameState->player.sprite.coords.width,
+									bulletSrc.height, gameState->player.sprite.coords.height,
+									bullet->collider, gameState->player.collider, collisionRec, bullet->rotation, 0))
+						{
+
+							Explosion* explosion = NULL;
+							if (gameState->explosionCount < MAX_EXPLOSIONS)
+							{
+								PlaySound(audio->sounds[SOUND_EXPLOSIONBLAST]);
+								explosion = &gameState->explosions[gameState->explosionCount++];
+								explosion->position = bullet->position;
+								explosion->position.y -= bulletSrc.height/2.0f;
+								explosion->velocity.y = gameState->player.velocity;
+								explosion->startTime = GetTime();
+								explosion->active = true;
+							}
+							PlaySound(audio->sounds[SOUND_HIT]);
+							// Replace with bullet with last bullet
+							*bullet = gameState->bullets[--gameState->bulletCount];
+							gameState->player.invulTime = gameState->player.invulDuration;
+							if (--gameState->player.health < 1)
+							{
+								gameState->state = STATE_GAME_OVER;
+								gameState->stateChanged = true;
 							}
 						}
 					}
@@ -1092,8 +1094,8 @@ void UpdateGame(GameMemory* gameMemory)
 											explosion->active = true;
 										}
 										// Replace with bullet with last bullet
-										*bullet = gameState->bullets[--gameState->bulletCount];
 										asteroid->health -= bullet->damage;
+										*bullet = gameState->bullets[--gameState->bulletCount];
 										if (asteroid->health < 1)
 										{
 											gameState->experience += MAX((int)(asteroid->size * 100),1);
