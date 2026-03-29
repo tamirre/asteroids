@@ -551,66 +551,68 @@ void UpdateGame(GameMemory* gameMemory)
 				float viewportScale = viewport.width / VIRTUAL_WIDTH;
 				if (!IsMusicStreamPlaying(audio->music[audio->currentSongtrackID])) ResumeMusicStream(audio->music[audio->currentSongtrackID]);
 				ResumeSound(audio->sounds[SOUND_SHIELD]);
-				// Step debugging mode
-				if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) {
-					gameState->state = STATE_PAUSED;
-					gameState->lastState = STATE_RUNNING;
-					gameState->stateChanged = true;
-				}
-				if (IsKeyPressed(KEY_J)) stepMode = !stepMode;
-				if (IsKeyPressed(KEY_K)) stepOnce = true;
-				if (IsKeyPressed(KEY_H))
+				// Input keys
 				{
-					gameState->timeScale -= 0.1f;
-				}
-				if (IsKeyPressed(KEY_L)) 
-				{
-					gameState->timeScale += 0.1f;
-				}
-				if (IsKeyPressed(KEY_O)) options->disableShaders = !options->disableShaders;
+					// Step debugging mode
+					if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) {
+						gameState->state = STATE_PAUSED;
+						gameState->lastState = STATE_RUNNING;
+						gameState->stateChanged = true;
+					}
+					if (IsKeyPressed(KEY_J)) stepMode = !stepMode;
+					if (IsKeyPressed(KEY_K)) stepOnce = true;
+					if (IsKeyPressed(KEY_H))
+					{
+						gameState->timeScale -= 0.1f;
+					}
+					if (IsKeyPressed(KEY_L)) 
+					{
+						gameState->timeScale += 0.1f;
+					}
+					if (IsKeyPressed(KEY_O)) options->disableShaders = !options->disableShaders;
 #ifndef PLATFORM_WEB
-				if (IsKeyPressed(KEY_F)) 
-				{
-					ToggleFullscreen();
-				}
-				if (IsKeyPressed(KEY_F2)) 
-				{
-					writeSaveState(gameMemory);
-				}
-				if (IsKeyPressed(KEY_T)) 
-				{
-					loadSaveState(gameMemory);
-				}
-				if (IsKeyPressed(KEY_TAB)) // press Tab to toggle cursor
-				{
-					// if (cursorHidden) EnableCursor();
-					// else DisableCursor();
-					// cursorHidden = !cursorHidden;
-				}
-				if (IsKeyPressed(KEY_V)) {
-					if (IsWindowState(FLAG_VSYNC_HINT))
+					if (IsKeyPressed(KEY_F)) 
 					{
-						ClearWindowState(FLAG_VSYNC_HINT);
-					} else {
-						SetWindowState(FLAG_VSYNC_HINT);
+						ToggleFullscreen();
 					}
-				}
-				// Start-Stop GIF recording on CTRL+R
-				if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_R))
-				{
-					if (gameState->gifRecorder.recording)
+					if (IsKeyPressed(KEY_F2)) 
 					{
-						GifRecordStop(&gameState->gifRecorder);
+						writeSaveState(gameMemory);
 					}
-					else
+					if (IsKeyPressed(KEY_T)) 
 					{
-						GifRecordStart(&gameState->gifRecorder);
+						loadSaveState(gameMemory);
 					}
-				}
+					if (IsKeyPressed(KEY_TAB)) // press Tab to toggle cursor
+					{
+						// if (cursorHidden) EnableCursor();
+						// else DisableCursor();
+						// cursorHidden = !cursorHidden;
+					}
+					if (IsKeyPressed(KEY_V)) {
+						if (IsWindowState(FLAG_VSYNC_HINT))
+						{
+							ClearWindowState(FLAG_VSYNC_HINT);
+						} else {
+							SetWindowState(FLAG_VSYNC_HINT);
+						}
+					}
+					// Start-Stop GIF recording on CTRL+R
+					if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_R))
+					{
+						if (gameState->gifRecorder.recording)
+						{
+							GifRecordStop(&gameState->gifRecorder);
+						}
+						else
+						{
+							GifRecordStart(&gameState->gifRecorder);
+						}
+					}
 #endif
-				if (stepMode && !stepOnce) return;
-				stepOnce = false;
-
+					if (stepMode && !stepOnce) return;
+					stepOnce = false;
+				}
 				const Rectangle screenRect = {
 					.height = VIRTUAL_HEIGHT,
 					.width = VIRTUAL_WIDTH,
@@ -814,67 +816,6 @@ void UpdateGame(GameMemory* gameMemory)
 						gameState->player.shootTime -= 1.0f / gameState->player.fireRate;
 					}
 				}
-				// Spawn enemies
-				{
-					gameState->enemySpawnTime += gameState->dt;
-					if (gameState->enemySpawnTime > gameState->enemySpawnRate && gameState->enemyCount < MAX_ENEMIES) 
-					{
-						// printf("Spawning enemy\n");
-						// float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
-						float size = 2.0;
-						// float enemyXPosition = GetRandomValue(0, VIRTUAL_WIDTH);
-						Vector2 velocity = (Vector2){0.1f + (float)GetRandomValue(0, 10)/20.0f,0};
-						Enemy enemy =
-						{
-							.position = (Vector2){0, 70},
-							.health = 20,
-							.velocity = velocity,
-							.size = size,
-							.sprite = getSprite(SPRITE_ENEMY),
-							.shootTime = 0.0f,
-							.fireRate = 1.0f,
-							.bulletCount = 3,
-						};
-						enemy.collider = (Rectangle){
-							.x = enemy.position.x - enemy.sprite.coords.width*enemy.size/2.0f,
-							.y = enemy.position.y - enemy.sprite.coords.height*enemy.size/2.0f,
-							.width = enemy.sprite.coords.width*enemy.size,
-							.height = enemy.sprite.coords.height*enemy.size,
-						};
-						gameState->enemies[gameState->enemyCount++] = enemy;
-						gameState->enemySpawnTime = 0.0f;
-					}
-				}
-				// Spawn Asteroids
-				{
-					gameState->spawnTime += gameState->dt;
-					if (gameState->spawnTime > gameState->asteroidSpawnRate && gameState->asteroidCount < MAX_ASTEROIDS) 
-					{
-						float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
-						float asteroidXPosition = GetRandomValue(0, VIRTUAL_WIDTH);
-						Asteroid asteroid =
-						{
-							.position = (Vector2) {asteroidXPosition, 0},
-							.health = (int) (size + 1.0) * 2.0,
-							.velocity = (Vector2) {0, GetRandomValue(30.0f, 65.0f) * 5.0f / (float)size},
-							.angularVelocity = GetRandomValue(-40.0f, 40.0f),
-							.size = size,
-						};
-						int whichAsteroid = GetRandomValue(1,10);
-						Sprite asteroidSprite;
-						if (whichAsteroid < 6) {
-							asteroidSprite = getSprite(SPRITE_ASTEROID1);
-						} else if (whichAsteroid < 9) {
-							asteroidSprite = getSprite(SPRITE_ASTEROID2);
-						} else {
-							asteroidSprite = getSprite(SPRITE_ASTEROID3);
-						}
-						asteroid.sprite = asteroidSprite;
-						asteroid.position.y -= asteroid.sprite.coords.height; // to make them come into screen smoothly
-						gameState->spawnTime = 0;
-						gameState->asteroids[gameState->asteroidCount++] = asteroid;
-					}
-				}
 				// Update Bullets
 				{
                     for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
@@ -896,23 +837,6 @@ void UpdateGame(GameMemory* gameMemory)
 								.height = height,
 								.x = texture_x,
 								.y = texture_y,
-						};
-					}
-				}
-				// Update asteroids
-				{
-					for (int asteroidIndex = 0; asteroidIndex < gameState->asteroidCount; asteroidIndex++)
-					{
-						Asteroid* asteroid = &gameState->asteroids[asteroidIndex];
-						asteroid->position.y += asteroid->velocity.y * gameState->dt;
-						asteroid->rotation   += asteroid->angularVelocity * gameState->dt;
-						float width  = asteroid->sprite.coords.width * asteroid->size;
-						float height = asteroid->sprite.coords.height * asteroid->size;
-						asteroid->collider = (Rectangle) {
-							.x = asteroid->position.x - width / 2.0f,
-							.y = asteroid->position.y - height / 2.0f, 
-							.width  = width,
-							.height = height, 
 						};
 					}
 				}
@@ -956,84 +880,35 @@ void UpdateGame(GameMemory* gameMemory)
 						}
 					}
 				}
-				// Collision asteroid bullet
+				// Spawn enemies
 				{
-					for (int asteroidIndex = 0; asteroidIndex < gameState->asteroidCount; asteroidIndex++)
+					gameState->enemySpawnTime += gameState->dt;
+					if (gameState->enemySpawnTime > gameState->enemySpawnRate && gameState->enemyCount < MAX_ENEMIES) 
 					{
-						Asteroid* asteroid = &gameState->asteroids[asteroidIndex];
-						for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
+						// printf("Spawning enemy\n");
+						// float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
+						float size = 2.0;
+						// float enemyXPosition = GetRandomValue(0, VIRTUAL_WIDTH);
+						Vector2 velocity = (Vector2){0.1f + (float)GetRandomValue(0, 10)/20.0f,0};
+						Enemy enemy =
 						{
-							Bullet* bullet = &gameState->bullets[bulletIndex];
-							if(bullet->owner == &gameState->player) 
-							{
-								if(CheckCollisionRecs(asteroid->collider, bullet->collider))
-								{
-									Rectangle collisionRec = GetCollisionRec(asteroid->collider, bullet->collider);
-									Rectangle bulletSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_BULLET]]);
-									if (pixelPerfectCollision(spriteMasks[SPRITE_BULLET].pixels, spriteMasks[asteroid->sprite.spriteID].pixels, 
-												bulletSrc.width, asteroid->sprite.coords.width,
-												bulletSrc.height, asteroid->sprite.coords.height,
-												bullet->collider, asteroid->collider, collisionRec, bullet->rotation, asteroid->rotation))
-									{
-
-										Explosion* explosion = NULL;
-										if (gameState->explosionCount < MAX_EXPLOSIONS)
-										{
-											PlaySound(audio->sounds[SOUND_EXPLOSIONBLAST]);
-											explosion = &gameState->explosions[gameState->explosionCount++];
-											explosion->position = bullet->position;
-											explosion->position.y -= bulletSrc.height/2.0f;
-											explosion->velocity = asteroid->velocity;
-											explosion->startTime = GetTime();
-											explosion->active = true;
-										}
-										// Replace with bullet with last bullet
-										*bullet = gameState->bullets[--gameState->bulletCount];
-										asteroid->health -= bullet->damage;
-										if (asteroid->health < 1)
-										{
-											gameState->experience += MAX((int)(asteroid->size * 100),1);
-											gameState->score += MAX((int)(asteroid->size * 100),1);
-											*asteroid = gameState->asteroids[--gameState->asteroidCount];
-											if(explosion != NULL)
-											{
-												explosion->velocity.y = 0.0f;
-											}
-										}
-									}
-								}
-							}
-						}
-
-						// Collision asteroid player
-						if(CheckCollisionRecs(asteroid->collider, gameState->player.collider) && 
-								gameState->player.invulTime <= 0.0f &&
-								gameState->player.shieldEnabled == false)
-						{
-							Rectangle collisionRec = GetCollisionRec(asteroid->collider, gameState->player.collider);
-							gameState->currentCollision = collisionRec;
-							Rectangle playerSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_PLAYER]]);
-							if (pixelPerfectCollision(spriteMasks[SPRITE_PLAYER].pixels, spriteMasks[asteroid->sprite.spriteID].pixels, 
-										playerSrc.width, asteroid->sprite.coords.width,
-										playerSrc.height, asteroid->sprite.coords.height, 
-										gameState->player.collider, asteroid->collider, collisionRec, 0.0f, asteroid->rotation))
-							{
-								PlaySound(audio->sounds[SOUND_HIT]);
-								gameState->player.invulTime = gameState->player.invulDuration;
-								*asteroid = gameState->asteroids[--gameState->asteroidCount];
-								gameState->currentCollision = (Rectangle){0,0,0,0};
-								if(--gameState->player.health < 1) 
-								{
-									gameState->state = STATE_GAME_OVER;
-									gameState->stateChanged = true;
-								}
-							}
-						} 
-						// Check if asteroid is off-screen
-						if (asteroid->position.y > VIRTUAL_HEIGHT + asteroid->sprite.coords.height * asteroid->size)
-						{
-							*asteroid = gameState->asteroids[--gameState->asteroidCount];
-						}
+							.position = (Vector2){0, 70},
+							.health = 20,
+							.velocity = velocity,
+							.size = size,
+							.sprite = getSprite(SPRITE_ENEMY),
+							.shootTime = 0.0f,
+							.fireRate = 1.0f,
+							.bulletCount = 3,
+						};
+						enemy.collider = (Rectangle){
+							.x = enemy.position.x - enemy.sprite.coords.width*enemy.size/2.0f,
+							.y = enemy.position.y - enemy.sprite.coords.height*enemy.size/2.0f,
+							.width = enemy.sprite.coords.width*enemy.size,
+							.height = enemy.sprite.coords.height*enemy.size,
+						};
+						gameState->enemies[gameState->enemyCount++] = enemy;
+						gameState->enemySpawnTime = 0.0f;
 					}
 				}
 				// Update enemies
@@ -1135,6 +1010,133 @@ void UpdateGame(GameMemory* gameMemory)
 								}
 								enemy->shootTime -= 1.0f / enemy->fireRate;
 							}
+						}
+					}
+				}
+				// Spawn Asteroids
+				{
+					gameState->spawnTime += gameState->dt;
+					if (gameState->spawnTime > gameState->asteroidSpawnRate && gameState->asteroidCount < MAX_ASTEROIDS) 
+					{
+						float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
+						float asteroidXPosition = GetRandomValue(0, VIRTUAL_WIDTH);
+						Asteroid asteroid =
+						{
+							.position = (Vector2) {asteroidXPosition, 0},
+							.health = (int) (size + 1.0) * 2.0,
+							.velocity = (Vector2) {0, GetRandomValue(30.0f, 65.0f) * 5.0f / (float)size},
+							.angularVelocity = GetRandomValue(-40.0f, 40.0f),
+							.size = size,
+						};
+						int whichAsteroid = GetRandomValue(1,10);
+						Sprite asteroidSprite;
+						if (whichAsteroid < 6) {
+							asteroidSprite = getSprite(SPRITE_ASTEROID1);
+						} else if (whichAsteroid < 9) {
+							asteroidSprite = getSprite(SPRITE_ASTEROID2);
+						} else {
+							asteroidSprite = getSprite(SPRITE_ASTEROID3);
+						}
+						asteroid.sprite = asteroidSprite;
+						asteroid.position.y -= asteroid.sprite.coords.height; // to make them come into screen smoothly
+						gameState->spawnTime = 0;
+						gameState->asteroids[gameState->asteroidCount++] = asteroid;
+					}
+				}
+				// Update asteroids
+				{
+					for (int asteroidIndex = 0; asteroidIndex < gameState->asteroidCount; asteroidIndex++)
+					{
+						Asteroid* asteroid = &gameState->asteroids[asteroidIndex];
+						asteroid->position.y += asteroid->velocity.y * gameState->dt;
+						asteroid->rotation   += asteroid->angularVelocity * gameState->dt;
+						float width  = asteroid->sprite.coords.width * asteroid->size;
+						float height = asteroid->sprite.coords.height * asteroid->size;
+						asteroid->collider = (Rectangle) {
+							.x = asteroid->position.x - width / 2.0f,
+							.y = asteroid->position.y - height / 2.0f, 
+							.width  = width,
+							.height = height, 
+						};
+					}
+				}
+				// Collision asteroid bullet
+				{
+					for (int asteroidIndex = 0; asteroidIndex < gameState->asteroidCount; asteroidIndex++)
+					{
+						Asteroid* asteroid = &gameState->asteroids[asteroidIndex];
+						for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
+						{
+							Bullet* bullet = &gameState->bullets[bulletIndex];
+							if(bullet->owner == &gameState->player) 
+							{
+								if(CheckCollisionRecs(asteroid->collider, bullet->collider))
+								{
+									Rectangle collisionRec = GetCollisionRec(asteroid->collider, bullet->collider);
+									Rectangle bulletSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_BULLET]]);
+									if (pixelPerfectCollision(spriteMasks[SPRITE_BULLET].pixels, spriteMasks[asteroid->sprite.spriteID].pixels, 
+												bulletSrc.width, asteroid->sprite.coords.width,
+												bulletSrc.height, asteroid->sprite.coords.height,
+												bullet->collider, asteroid->collider, collisionRec, bullet->rotation, asteroid->rotation))
+									{
+
+										Explosion* explosion = NULL;
+										if (gameState->explosionCount < MAX_EXPLOSIONS)
+										{
+											PlaySound(audio->sounds[SOUND_EXPLOSIONBLAST]);
+											explosion = &gameState->explosions[gameState->explosionCount++];
+											explosion->position = bullet->position;
+											explosion->position.y -= bulletSrc.height/2.0f;
+											explosion->velocity = asteroid->velocity;
+											explosion->startTime = GetTime();
+											explosion->active = true;
+										}
+										// Replace with bullet with last bullet
+										*bullet = gameState->bullets[--gameState->bulletCount];
+										asteroid->health -= bullet->damage;
+										if (asteroid->health < 1)
+										{
+											gameState->experience += MAX((int)(asteroid->size * 100),1);
+											gameState->score += MAX((int)(asteroid->size * 100),1);
+											*asteroid = gameState->asteroids[--gameState->asteroidCount];
+											if(explosion != NULL)
+											{
+												explosion->velocity.y = 0.0f;
+											}
+										}
+									}
+								}
+							}
+						}
+
+						// Collision asteroid player
+						if(CheckCollisionRecs(asteroid->collider, gameState->player.collider) && 
+								gameState->player.invulTime <= 0.0f &&
+								gameState->player.shieldEnabled == false)
+						{
+							Rectangle collisionRec = GetCollisionRec(asteroid->collider, gameState->player.collider);
+							gameState->currentCollision = collisionRec;
+							Rectangle playerSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_PLAYER]]);
+							if (pixelPerfectCollision(spriteMasks[SPRITE_PLAYER].pixels, spriteMasks[asteroid->sprite.spriteID].pixels, 
+										playerSrc.width, asteroid->sprite.coords.width,
+										playerSrc.height, asteroid->sprite.coords.height, 
+										gameState->player.collider, asteroid->collider, collisionRec, 0.0f, asteroid->rotation))
+							{
+								PlaySound(audio->sounds[SOUND_HIT]);
+								gameState->player.invulTime = gameState->player.invulDuration;
+								*asteroid = gameState->asteroids[--gameState->asteroidCount];
+								gameState->currentCollision = (Rectangle){0,0,0,0};
+								if(--gameState->player.health < 1) 
+								{
+									gameState->state = STATE_GAME_OVER;
+									gameState->stateChanged = true;
+								}
+							}
+						} 
+						// Check if asteroid is off-screen
+						if (asteroid->position.y > VIRTUAL_HEIGHT + asteroid->sprite.coords.height * asteroid->size)
+						{
+							*asteroid = gameState->asteroids[--gameState->asteroidCount];
 						}
 					}
 				}
