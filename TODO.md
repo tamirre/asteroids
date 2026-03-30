@@ -1,9 +1,10 @@
 # TODO list: 
 
-- [ ] make it fun
 - [ ] native windows build
 - [ ] add particle effects
+- [ ] add destruction/explotion shader to asteroids
 - [ ] make score and leaderboard system
+- [ ] make it fun
 - [ ] rework sprite system to use arbitrary animation frame position in texture atlas (non-continuous animation sprite sheets in atlas)
 - [x] savestates
 - [x] hot code reloading
