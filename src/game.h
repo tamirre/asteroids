@@ -99,7 +99,7 @@ typedef struct Star {
 
 typedef struct Asteroid {
     Vector2 position;
-    int health;
+    float health;
     float size;
     Vector2 velocity;
     float angularVelocity;
@@ -158,7 +158,8 @@ typedef struct Player {
 typedef struct Enemy {
     Vector2 velocity;
     Vector2 position;
-    int health;
+	float phase;
+    float health;
     Sprite sprite;
     int size;
     int animationFrames;

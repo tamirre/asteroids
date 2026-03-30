@@ -22,7 +22,7 @@ while getopts ":p:a:l:s:d" opt; do
     esac
 done
 
-if grep -qi microsoft /proc/version 2>/dev/null; then
+if grep -qi microsoft /proc/version 2>/dev/null && [ "$PLATFORM" == "" ]; then
 	PLATFORM="windows"
 fi
 export GAME_NAME=asteroids
@@ -59,7 +59,6 @@ if [ "$PLATFORM" == "web" ]; then
 
 	export RAYLIB_PATH=~/raylib/src/
 	export EMSDK_QUIET=1
-	mkdir -p $SRC_DIR/../web
 	source ~/raylib/emsdk/emsdk_env.sh 
 
 	WEB_DIR=$SRC_DIR/../web

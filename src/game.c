@@ -200,7 +200,7 @@ void InitializeOptions(Options* options)
 		.fxVolume = 0.15f,
 		.musicVolumeChanged = false,
 		.fxVolumeChanged = false,
-		.showDebugInfo = true,
+		.showDebugInfo = false,
 	};
 	GuiSetStyle(DEFAULT, TEXT_SIZE, 24);
 	GuiSetStyle(DEFAULT, TEXT_SPACING, 2);
@@ -623,11 +623,11 @@ void UpdateGame(GameMemory* gameMemory)
 				// Update score
 				{
 					const float requiredExperience = 500.0;
-					if (gameState->experience > requiredExperience * gameState->player.level)
+					if (gameState->experience > requiredExperience * gameState->player.level * 1.5f)
 					{
 						gameState->state = STATE_UPGRADE;
 						gameState->stateChanged = true;
-						gameState->experience -= requiredExperience * gameState->player.level;
+						gameState->experience -= requiredExperience * gameState->player.level * 1.5f;
 						gameState->player.level++;
 					}
 				}
@@ -801,10 +801,10 @@ void UpdateGame(GameMemory* gameMemory)
 							Bullet bullet = {
 								.position = gameState->player.position,
 								.velocity = velocity,
-								.damage = 1.0f * gameState->player.damageMulti,
+								.damage = 1.5f * gameState->player.damageMulti,
 								.sprite = getSprite(SPRITE_BULLET),
 								.rotation = angleDeg,
-								.size = bulletSize,
+								.size = bulletSize * 0.75f,
 								.owner = &gameState->player,
 							};
 
@@ -823,16 +823,17 @@ void UpdateGame(GameMemory* gameMemory)
 					gameState->enemySpawnTime += gameState->dt;
 					if (gameState->enemySpawnTime > gameState->enemySpawnRate && gameState->enemyCount < MAX_ENEMIES) 
 					{
-						// printf("Spawning enemy\n");
-						// float size = GetRandomValue(50.0f, 200.0f) / 100.0f;
+						printf("Spawning enemy\n");
 						float size = 2.0;
-						// float enemyXPosition = GetRandomValue(0, VIRTUAL_WIDTH);
-						Vector2 velocity = (Vector2){0.1f + (float)GetRandomValue(0, 10)/20.0f,0};
+						Vector2 velocity = (Vector2){0.1f + (float)GetRandomValue(3, 10)/20.0f,0};
+						float enemyXPosition = GetRandomValue(0            +getSprite(SPRITE_ENEMY).coords.width/2.0f, 
+								                              VIRTUAL_WIDTH-getSprite(SPRITE_ENEMY).coords.width/2.0f);
 						Enemy enemy =
 						{
-							.position = (Vector2){0, 70},
-							.health = 20,
 							.velocity = velocity,
+							.position = (Vector2){enemyXPosition, 70},
+							.phase = 0.0f,
+							.health = 20,
 							.size = size,
 							.sprite = getSprite(SPRITE_ENEMY),
 							.shootTime = 0.0f,
@@ -854,12 +855,13 @@ void UpdateGame(GameMemory* gameMemory)
 					for (int enemyIndex = 0; enemyIndex < gameState->enemyCount; enemyIndex++)
 					{
 						Enemy* enemy = &gameState->enemies[enemyIndex];
-						enemy->position.x = 0.5 * enemy->sprite.coords.width*enemy->size + (VIRTUAL_WIDTH - enemy->sprite.coords.width*enemy->size) * 0.5 * (1.0 + sinf(gameState->time * enemy->velocity.x));
+						enemy->phase += enemy->velocity.x * gameState->dt;
+						enemy->position.x = 0.5 * enemy->sprite.coords.width*enemy->size + (VIRTUAL_WIDTH - enemy->sprite.coords.width*enemy->size) * 0.5f * (1.0f + sinf(enemy->phase));
 						enemy->collider = (Rectangle){
 							.x = enemy->position.x - enemy->sprite.coords.width*enemy->size/2.0f,
-								.y = enemy->position.y - enemy->sprite.coords.height*enemy->size/2.0f,
-								.width = enemy->sprite.coords.width*enemy->size,
-								.height = enemy->sprite.coords.height*enemy->size,
+							.y = enemy->position.y - enemy->sprite.coords.height*enemy->size/2.0f,
+							.width = enemy->sprite.coords.width*enemy->size,
+							.height = enemy->sprite.coords.height*enemy->size,
 						};
 						// Collision enemy bullet
 						for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
@@ -889,9 +891,9 @@ void UpdateGame(GameMemory* gameMemory)
 											explosion->active = true;
 										}
 										// Replace bullet with last bullet
-										*bullet = gameState->bullets[--gameState->bulletCount];
 										enemy->health -= bullet->damage;
-										if (enemy->health < 1)
+										*bullet = gameState->bullets[--gameState->bulletCount];
+										if (enemy->health <= 0.0f)
 										{
 											gameState->experience += 200;
 											gameState->score += 20 * MAX((int)(enemy->size * 100),1);
@@ -1025,7 +1027,7 @@ void UpdateGame(GameMemory* gameMemory)
 						Asteroid asteroid =
 						{
 							.position = (Vector2) {asteroidXPosition, 0},
-							.health = (int) (size + 1.0) * 2.0,
+							.health = (size + 1.0),
 							.velocity = (Vector2) {0, GetRandomValue(30.0f, 65.0f) * 5.0f / (float)size},
 							.angularVelocity = GetRandomValue(-40.0f, 40.0f),
 							.size = size,
@@ -1096,7 +1098,7 @@ void UpdateGame(GameMemory* gameMemory)
 										// Replace with bullet with last bullet
 										asteroid->health -= bullet->damage;
 										*bullet = gameState->bullets[--gameState->bulletCount];
-										if (asteroid->health < 1)
+										if (asteroid->health <= 0.0)
 										{
 											gameState->experience += MAX((int)(asteroid->size * 100),1);
 											gameState->score += MAX((int)(asteroid->size * 100),1);
@@ -1303,7 +1305,7 @@ void UpdateGame(GameMemory* gameMemory)
 			}
 		case STATE_GAME_OVER:
 			{
-				// if (IsKeyPressed(KEY_ENTER)) {
+				if (IsKeyPressed(KEY_ENTER)) {
 #ifdef PLATFORM_WEB
 					GameState gameState = {0};
 					Audio audio = {0};
@@ -1334,7 +1336,7 @@ void UpdateGame(GameMemory* gameMemory)
 					gameState->state = STATE_RUNNING;
 					gameState->stateChanged = true;
 #endif
-				// }
+				}
 				break;
 			}
 		case STATE_PAUSED:
@@ -1351,18 +1353,18 @@ void UpdateGame(GameMemory* gameMemory)
 					{
 						case LANG_EN:
 							{
-								StopLanguageSelectSounds(audio);
-								PlaySound(audio->sounds[SOUND_AMERICA]); break;
+								// StopLanguageSelectSounds(audio);
+								// PlaySound(audio->sounds[SOUND_AMERICA]); break;
 							}
 						case LANG_DE:
 							{
-								StopLanguageSelectSounds(audio);
-								PlaySound(audio->sounds[SOUND_ERIKA]); break;
+								// StopLanguageSelectSounds(audio);
+								// PlaySound(audio->sounds[SOUND_ERIKA]); break;
 							}
 						case LANG_ZH:
 							{
-								StopLanguageSelectSounds(audio);
-								PlaySound(audio->sounds[SOUND_BINGCHILLING]); break;
+								// StopLanguageSelectSounds(audio);
+								// PlaySound(audio->sounds[SOUND_BINGCHILLING]); break;
 							}
 					}
 				}
@@ -1713,7 +1715,7 @@ void DrawScore(GameState* gameState, Options* options, TextureAtlas* atlas)
 	float recPosX = letterBoxOffsetX + VIRTUAL_WIDTH * scale - recWidth - 10.0f;
 	float recPosY = letterBoxOffsetY + recHeight - 10.0f;
 
-	DrawRectangle(recPosX, recPosY, gameState->experience / (float)gameState->player.level / 5.0f, recHeight, ColorAlpha(BLUE, 0.5));
+	DrawRectangle(recPosX, recPosY, gameState->experience / ((float)gameState->player.level*1.5f) / 5.0f, recHeight, ColorAlpha(BLUE, 0.5));
 	DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
 	Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), 20.0f, GetDefaultSpacing(20.0f));
 	DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
@@ -1950,6 +1952,22 @@ void DrawFPSInViewport(Rectangle viewport)
     DrawFPS(offsetX + 15, offsetY + 50);
 }
 
+void DrawEnemyHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader) {
+
+	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+	float scale = viewport.width / VIRTUAL_WIDTH;
+	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
+	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
+	float recHeight = 10.0f;
+	float recWidth = 50.0f;
+	for (int i = 0; i < gameState->enemyCount; i++) {
+		Enemy* enemy = &gameState->enemies[i];
+		float recPosX = letterBoxOffsetX + (enemy->position.x - recWidth/2.0f) * scale ;
+		float recPosY = letterBoxOffsetY + (enemy->position.y + enemy->sprite.coords.height - recHeight) * scale ;
+		DrawRectangle(recPosX, recPosY, recWidth/20.0f * enemy->health, recHeight, RED);
+		DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, WHITE);
+	}
+}
 void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader)
 {
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
@@ -1957,6 +1975,7 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader*
 		case STATE_RUNNING:
 			{
 				DrawHealthBar(gameState, options, atlas, shader);
+				DrawEnemyHealthBar(gameState, options, atlas, shader);
 				DrawScore(gameState, options, atlas);
 
 				// DrawCircleV(gameState->player.position, 5.0f, RED);
@@ -2020,6 +2039,7 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader*
 		case STATE_PAUSED:
 			{
 				DrawHealthBar(gameState, options, atlas, shader);
+				DrawEnemyHealthBar(gameState, options, atlas, shader);
 				DrawScore(gameState, options, atlas);
 				if (gameState->lastState == STATE_RUNNING) 
 				{
