@@ -38,6 +38,7 @@ int main()
 	RenderTexture2D scene = {0};
 	RenderTexture2D litScene = {0};
 	Shader shader = {0};
+	Shader explosionShader = {0};
 	Shader lightShader = {0};
 
 	GameMemory gameMemory = {0}; 
@@ -49,6 +50,7 @@ int main()
 	gameMemory.scene = &scene;
 	gameMemory.litScene = &litScene;
 	gameMemory.shader = &shader;
+	gameMemory.explosionShader = &explosionShader;
 	gameMemory.lightShader = &lightShader;
 
 	// InitAudioDevice();
@@ -57,8 +59,9 @@ int main()
 	if (game.Init) game.Init(&gameMemory);
 	g_game = &game;
 	g_memory = &gameMemory;
-	*g_memory->shader = LoadShader(0, TextFormat("./src/shaders/test_web.glsl", GLSL_VERSION));
+	*g_memory->shader = LoadShader(0, TextFormat("./src/shaders/default_web.glsl", GLSL_VERSION));
 	*g_memory->lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
+	*g_memory->explosionShader = LoadShader(0, TextFormat("./src/shaders/explode_web.fs", GLSL_VERSION));
 	emscripten_set_main_loop(WebWrapper, TARGET_FPS, 1);
 #else
 	GameCode game = LoadGameCode();
@@ -78,7 +81,7 @@ int main()
 
 			printf("Hot reloading game...\n");
 
-			shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
+			shader = LoadShader(0, TextFormat("./src/shaders/default.glsl", GLSL_VERSION));
 			lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
 
 			// CloseAudioDevice();

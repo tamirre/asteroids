@@ -106,6 +106,8 @@ typedef struct Asteroid {
     float rotation;
     Sprite sprite;
 	Rectangle collider;
+	bool dying;
+	float deathTime;
 } Asteroid;
 
 typedef struct Boost {
@@ -254,6 +256,7 @@ typedef struct GameMemory
     RenderTexture2D* litScene;
     Shader* shader;
     Shader* lightShader;
+    Shader* explosionShader;
 } GameMemory;
 
 

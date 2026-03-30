@@ -67,22 +67,6 @@ static inline void UnloadGameCode(GameCode* game)
 
 static inline void WebWrapper()
 {
-	// time_t newWriteTime = GetLastWriteTime(dll);
-	// if (newWriteTime != game.lastWriteTime)
-	// {
-	// 	printf("Hot reloading game...\n");
-	//
-	// 	*g_memory->shader = LoadShader(0, TextFormat("./src/shaders/test_web.glsl", GLSL_VERSION));
-	// 	*g_memory->lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
-	//
-	// 	// CloseAudioDevice();
-	// 	UnloadGameCode(g_game);
-	// 	GameCode newGame = LoadGameCode();
-	// 	if (newGame.handle)
-	// 	{
-	// 		g_game = &newGame; 
-	// 	}
-	// }
 	if (g_game->Update) g_game->Update(g_memory);
 }
 

@@ -52,6 +52,7 @@ void Cleanup(GameMemory* gameMemory)
 {
 	UnloadShader(*gameMemory->shader);
 	UnloadShader(*gameMemory->lightShader);
+	UnloadShader(*gameMemory->explosionShader);
 	for (int i = 0; i < ANIMATION_COUNT; i++)
 	{
 		FreeSpriteAnimation(gameMemory->atlas->animations[i]);
@@ -258,8 +259,9 @@ void InitGame(GameMemory* gameMemory)
 	gameMemory->options->previousWidth  = VIRTUAL_WIDTH;
 	gameMemory->options->previousHeight = VIRTUAL_HEIGHT;
 #ifndef PLATFORM_WEB
-	*gameMemory->shader = LoadShader(0, TextFormat("./src/shaders/test.glsl", GLSL_VERSION));
+	*gameMemory->shader = LoadShader(0, TextFormat("./src/shaders/default.glsl", GLSL_VERSION));
 	*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
+	*gameMemory->explosionShader = LoadShader(0, TextFormat("./src/shaders/explode.glsl", GLSL_VERSION));
 #endif
 	printf("InitGame done!\n");
 }
@@ -1031,6 +1033,8 @@ void UpdateGame(GameMemory* gameMemory)
 							.velocity = (Vector2) {0, GetRandomValue(30.0f, 65.0f) * 5.0f / (float)size},
 							.angularVelocity = GetRandomValue(-40.0f, 40.0f),
 							.size = size,
+							.dying = false,
+							.deathTime = 0.0f,
 						};
 						int whichAsteroid = GetRandomValue(1,10);
 						Sprite asteroidSprite;
@@ -1052,8 +1056,10 @@ void UpdateGame(GameMemory* gameMemory)
 					for (int asteroidIndex = 0; asteroidIndex < gameState->asteroidCount; asteroidIndex++)
 					{
 						Asteroid* asteroid = &gameState->asteroids[asteroidIndex];
-						asteroid->position.y += asteroid->velocity.y * gameState->dt;
-						asteroid->rotation   += asteroid->angularVelocity * gameState->dt;
+						if (!asteroid->dying) {
+							asteroid->position.y += asteroid->velocity.y * gameState->dt;
+							asteroid->rotation   += asteroid->angularVelocity * gameState->dt;
+						}
 						float width  = asteroid->sprite.coords.width * asteroid->size;
 						float height = asteroid->sprite.coords.height * asteroid->size;
 						asteroid->collider = (Rectangle) {
@@ -1062,6 +1068,15 @@ void UpdateGame(GameMemory* gameMemory)
 							.width  = width,
 							.height = height, 
 						};
+						if (asteroid->dying) {
+							// printf("dying: %f\n", asteroid->deathTime);
+							asteroid->deathTime += gameState->dt;
+						}
+						if (asteroid->deathTime > 2.0f) {
+							// printf("dying done: %f\n", asteroid->deathTime);
+							asteroid->dying = false;
+							*asteroid = gameState->asteroids[--gameState->asteroidCount];
+						}
 					}
 				}
 				// Collision asteroid bullet
@@ -1072,7 +1087,7 @@ void UpdateGame(GameMemory* gameMemory)
 						for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
 						{
 							Bullet* bullet = &gameState->bullets[bulletIndex];
-							if(bullet->owner == &gameState->player) 
+							if(bullet->owner == &gameState->player && !asteroid->dying)
 							{
 								if(CheckCollisionRecs(asteroid->collider, bullet->collider))
 								{
@@ -1095,19 +1110,30 @@ void UpdateGame(GameMemory* gameMemory)
 											explosion->startTime = GetTime();
 											explosion->active = true;
 										}
-										// Replace with bullet with last bullet
 										asteroid->health -= bullet->damage;
+										// Replace with last bullet
 										*bullet = gameState->bullets[--gameState->bulletCount];
-										if (asteroid->health <= 0.0)
-										{
-											gameState->experience += MAX((int)(asteroid->size * 100),1);
-											gameState->score += MAX((int)(asteroid->size * 100),1);
-											*asteroid = gameState->asteroids[--gameState->asteroidCount];
+
+										if (asteroid->health <= 0.0f && !asteroid->dying) {
+											asteroid->dying = true;
+											asteroid->deathTime = 0.0f;
 											if(explosion != NULL)
 											{
 												explosion->velocity.y = 0.0f;
 											}
 										}
+
+										
+										// if (asteroid->health <= 0.0)
+										// {
+										// 	gameState->experience += MAX((int)(asteroid->size * 100),1);
+										// 	gameState->score += MAX((int)(asteroid->size * 100),1);
+										// 	*asteroid = gameState->asteroids[--gameState->asteroidCount];
+										// 	if(explosion != NULL)
+										// 	{
+										// 		explosion->velocity.y = 0.0f;
+										// 	}
+										// }
 									}
 								}
 							}
@@ -1116,7 +1142,8 @@ void UpdateGame(GameMemory* gameMemory)
 						// Collision asteroid player
 						if(CheckCollisionRecs(asteroid->collider, gameState->player.collider) && 
 								gameState->player.invulTime <= 0.0f &&
-								gameState->player.shieldEnabled == false)
+								gameState->player.shieldEnabled == false &&
+								!asteroid->dying)
 						{
 							Rectangle collisionRec = GetCollisionRec(asteroid->collider, gameState->player.collider);
 							gameState->currentCollision = collisionRec;
@@ -1326,7 +1353,7 @@ void UpdateGame(GameMemory* gameMemory)
 					gameMemory->spriteMasks = spriteMasks;
 					gameMemory->options->previousWidth  = VIRTUAL_WIDTH;
 					gameMemory->options->previousHeight = VIRTUAL_HEIGHT;
-					*gameMemory->shader = LoadShader(0, TextFormat("./src/shaders/test_web.glsl", GLSL_VERSION));
+					*gameMemory->shader = LoadShader(0, TextFormat("./src/shaders/default_web.glsl", GLSL_VERSION));
 					*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
 					gameMemory->gameState->state = STATE_RUNNING;
 					gameMemory->gameState->stateChanged = true;
@@ -1388,9 +1415,10 @@ void UpdateGame(GameMemory* gameMemory)
 	}
 }
 
-void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, RenderTexture2D* scene, Shader* shader)
+void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, RenderTexture2D* scene, Shader* shader, Shader* explosionShader)
 {
 	int texSizeLoc = GetShaderLocation(*shader, "textureSize");
+	int progressLoc = GetShaderLocation(*explosionShader, "progress");
 	BeginTextureMode(*scene);
 
 	switch (gameState->state) {
@@ -1457,9 +1485,24 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						};
 
 						Vector2 texSize = { width, height };
-						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
-						DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
-								(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
+						if (asteroid->dying) {
+							BeginShaderMode(*explosionShader);
+							BeginBlendMode(BLEND_ALPHA);
+							// float progress = Clamp(asteroid->deathTime/4.0,0.0f,1.0f);		
+							float progress = Remap(asteroid->deathTime,0.0f,2.0f,0.0f,1.0f);		
+							SetShaderValue(*explosionShader, progressLoc, &progress, SHADER_UNIFORM_FLOAT);
+							DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
+									(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
+							EndBlendMode();
+							EndShaderMode();
+						} else {
+							SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+							DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
+									(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
+						}
+						// SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+						// DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
+						// 		(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
 
 						// DrawRectangleLines(asteroidDrawRect.x, asteroidDrawRect.y,
 						// 		asteroidDrawRect.width, asteroidDrawRect.height, GREEN);
@@ -1998,23 +2041,6 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader*
 				DrawTextCentered(options->font, T(TXT_INSTRUCTIONS), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 50}, 20 * scale, WHITE);
 				DrawTextCentered(options->font, "v0.1", (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height - 15}, 15 * scale, WHITE);
 
-				// char testBuffer[2048] = {0};
-				// TWrap(testBuffer, 2048, options->font, "This is a test of the text wrapping function.", 50.0, 20.0);
-				// DrawTextCentered(options->font, testBuffer, (Vector2){viewport.width/2.0f, viewport.height - 100}, 15, WHITE);
-				//
-				// DrawTextWrapped(options->font, "This is a test of the text wrapping function. This should also be aligned to the center", testBuffer, 2048,
-				// 				(Vector2){50,60},
-				// 				50.0f,
-				// 				15, 
-				// 				ALIGN_CENTER,
-				// 				WHITE);
-				//
-				// DrawTextWrapped(options->font, "This is a test of the text wrapping function. This should also be aligned to the right", testBuffer, 2048,
-				// 				(Vector2){150,60},
-				// 				50.0f,
-				// 				20,
-				// 				ALIGN_RIGHT,
-				// 				WHITE);
 				break;
 			}
 		case STATE_GAME_OVER:
@@ -2082,9 +2108,10 @@ void DrawGame(GameMemory* gameMemory)
 	RenderTexture2D* litScene = gameMemory->litScene;
 	Shader* shader = gameMemory->shader;
 	Shader* lightShader = gameMemory->lightShader;
+	Shader* explosionShader = gameMemory->explosionShader;
 
 	DrawLightmap(gameState, options, litScene, lightShader);
-	DrawScene(gameState, options, atlas, scene, shader);
+	DrawScene(gameState, options, atlas, scene, shader, explosionShader);
 
 	BeginDrawing();
 	{
