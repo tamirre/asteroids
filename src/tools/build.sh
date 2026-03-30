@@ -100,7 +100,7 @@ if [ "$PLATFORM" == "web" ]; then
 		$LINK_FLAGS \
 		$DEBUG_FLAGS \
 		$DEFINES \
-		$RAYLIB_PATH/web/libraylib.web.a \
+		$SRC_DIR/third_party/lib/libraylib.web.a \
 		-s USE_GLFW=3 \
 		-s ASYNCIFY \
 		-s STACK_SIZE=256MB \
