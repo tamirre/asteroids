@@ -165,7 +165,7 @@ elif [ "$PLATFORM" == "windows" ]; then
 
 	# ensure replace
 	mv $SRC_DIR/game_tmp.dll $SRC_DIR/game.dll
-
+	rm ./*.obj 2> /dev/null
 	echo "Built game.dll"
 	echo "Built Windows executable: $OUT_EXE"
 else
