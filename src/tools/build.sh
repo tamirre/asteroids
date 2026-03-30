@@ -89,9 +89,9 @@ if [ "$PLATFORM" == "web" ]; then
 	echo "Built game.wasm"
 
 	# ---------------------------
-	# build MAIN MODULE (host)
+	# build MAIN MODULE (main)
 	# ---------------------------
-	$CC $SRC_DIR/host.c \
+	$CC $SRC_DIR/main.c \
 		-o $WEB_DIR/index.html \
 		-Wall -std=c99 -D_DEFAULT_SOURCE \
 		-Wno-missing-braces \
@@ -151,11 +151,11 @@ elif [ "$PLATFORM" == "windows" ]; then
 		$LINK_FLAGS 
 
 	# ---------------------------
-	# build EXE (host)
+	# build EXE (main)
 	# ---------------------------
 	OUT_EXE="$BIN_DIR/${GAME_NAME}.exe"
 
-	$CC $SRC_DIR/host.c \
+	$CC $SRC_DIR/main.c \
 		-o $OUT_EXE \
 		$DEFINES \
 		$DEBUG_FLAGS \
@@ -179,7 +179,7 @@ else
 
 	rm $SRC_DIR/game_*.so 2> /dev/null
 	# Write to game_tmp.so instead of game.so. 
-	# We need to do this because otherwise host.c will
+	# We need to do this because otherwise main.c will
 	# try to load the .so before it is fully written, since we only
 	# check the timestamp
 	$CC $DEBUG_FLAGS -shared -fPIC $SRC_DIR/game.c -o $SRC_DIR/game_tmp.so \
@@ -187,10 +187,10 @@ else
 		$LINK_FLAGS
 
 	# This is needed so the game.so is only finished when gcc is done
-	# game.so is then copied by host.c to load into the game
+	# game.so is then copied by main.c to load into the game
 	mv $SRC_DIR/game_tmp.so $SRC_DIR/game.so
 
-	$CC $DEBUG_FLAGS $SRC_DIR/host.c -o $BIN_DIR/$GAME_NAME \
+	$CC $DEBUG_FLAGS $SRC_DIR/main.c -o $BIN_DIR/$GAME_NAME \
 		$INCLUDE_FLAGS \
 		$LINK_FLAGS \
 		-rdynamic

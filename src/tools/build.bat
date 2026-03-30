@@ -56,7 +56,7 @@ REM ----------------------------------------
 REM CLEAN
 REM ----------------------------------------
 echo Cleaning...
-del /q game.obj host.obj 2>nul
+del /q game.obj main.obj 2>nul
 del /q %SRC_DIR%\game_*.dll 2>nul
 del /q %SRC_DIR%\game.pdb 2>nul
 del /q %BIN_DIR%\*.pdb 2>nul
@@ -68,8 +68,8 @@ echo Compiling game.c...
 %CC% -c %SRC_DIR%\game.c -o game.obj %CFLAGS%
 if errorlevel 1 exit /b 1
 
-echo Compiling host.c...
-%CC% -c %SRC_DIR%\host.c -o host.obj %CFLAGS%
+echo Compiling main.c...
+%CC% -c %SRC_DIR%\main.c -o main.obj %CFLAGS%
 if errorlevel 1 exit /b 1
 
 REM ----------------------------------------
@@ -87,12 +87,12 @@ echo Linking game.dll...
 if errorlevel 1 exit /b 1
 
 REM ----------------------------------------
-REM LINK HOST EXE
+REM LINK main EXE
 REM ----------------------------------------
-echo Linking host executable...
+echo Linking main executable...
 set OUT_EXE=%BIN_DIR%\%GAME_NAME%.exe
 
-%LINKER% host.obj ^
+%LINKER% main.obj ^
     /OUT:%OUT_EXE% ^
     /DEBUG ^
     /PDB:%BIN_DIR%\%GAME_NAME%.pdb ^
