@@ -1,9 +1,11 @@
 #version 330
 
+in vec2 fragTexCoord;
+
+out vec4 finalColor;
+
 uniform sampler2D texture0;
 uniform ivec2 textureSize; 
-in vec2 fragTexCoord;
-out vec4 finalColor;
 
 vec2 uv_klems(vec2 uv, ivec2 textureSize) {
     vec2 pixels = uv * textureSize + 0.5;

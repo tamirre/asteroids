@@ -1117,6 +1117,8 @@ void UpdateGame(GameMemory* gameMemory)
 										if (asteroid->health <= 0.0f && !asteroid->dying) {
 											asteroid->dying = true;
 											asteroid->deathTime = 0.0f;
+											gameState->experience += MAX((int)(asteroid->size * 100),1);
+											gameState->score += MAX((int)(asteroid->size * 100),1);
 											if(explosion != NULL)
 											{
 												explosion->velocity.y = 0.0f;
