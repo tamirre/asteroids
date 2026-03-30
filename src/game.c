@@ -1072,7 +1072,7 @@ void UpdateGame(GameMemory* gameMemory)
 							// printf("dying: %f\n", asteroid->deathTime);
 							asteroid->deathTime += gameState->dt;
 						}
-						if (asteroid->deathTime > 2.0f) {
+						if (asteroid->deathTime > 0.5f) {
 							// printf("dying done: %f\n", asteroid->deathTime);
 							asteroid->dying = false;
 							*asteroid = gameState->asteroids[--gameState->asteroidCount];
@@ -1491,7 +1491,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 							BeginShaderMode(*explosionShader);
 							BeginBlendMode(BLEND_ALPHA);
 							// float progress = Clamp(asteroid->deathTime/4.0,0.0f,1.0f);		
-							float progress = Remap(asteroid->deathTime,0.0f,2.0f,0.0f,1.0f);		
+							float progress = Remap(asteroid->deathTime,0.0f,0.5f,0.0f,1.0f);		
 							SetShaderValue(*explosionShader, progressLoc, &progress, SHADER_UNIFORM_FLOAT);
 							DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
 									(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
