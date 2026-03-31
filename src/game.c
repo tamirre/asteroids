@@ -705,12 +705,17 @@ void UpdateGame(GameMemory* gameMemory)
                     for (int starIndex = 0; starIndex < gameState->starCount; starIndex++)
                     {
                         Star* star = &gameState->stars[starIndex];
+                        star->position.y += star->velocity * gameState->dt;
                         if(!CheckCollisionPointRec(star->position, screenRect))
 						{
 							// Replace with last star
-							*star = gameState->stars[--gameState->starCount];
+							if (gameState->starCount > 0)
+							{
+								*star = gameState->stars[--gameState->starCount];
+							} else {
+								gameState->starCount = 0;
+							}
 						}
-                        star->position.y += star->velocity * gameState->dt;
                     }
                 }
 				// Update Player
@@ -906,12 +911,22 @@ void UpdateGame(GameMemory* gameMemory)
 										}
 										enemy->health -= bullet->damage;
 										// Replace bullet with last bullet
-										*bullet = gameState->bullets[--gameState->bulletCount];
+										if (gameState->bulletCount > 0)
+										{
+											*bullet = gameState->bullets[--gameState->bulletCount];
+										} else {
+											gameState->bulletCount = 0;
+										}
 										if (enemy->health <= 0.0f)
 										{
 											gameState->experience += 200;
 											gameState->score += 20 * MAX((int)(enemy->size * 100),1);
-											*enemy = gameState->enemies[--gameState->enemyCount];
+											if (gameState->enemyCount > 0)
+											{
+												*enemy = gameState->enemies[--gameState->enemyCount];
+											} else {
+												gameState->enemyCount = 0;
+											}
 											if(explosion != NULL)
 											{
 												explosion->velocity.x = 0.0f;
@@ -975,7 +990,12 @@ void UpdateGame(GameMemory* gameMemory)
                         if(!CheckCollisionPointRec(bullet->position, screenRect))
 						{
 							// Replace with last projectile
-							*bullet = gameState->bullets[--gameState->bulletCount];
+							if (gameState->bulletCount > 0)
+							{
+								*bullet = gameState->bullets[--gameState->bulletCount];
+							} else {
+								gameState->bulletCount = 0;
+							}
 						}
                         bullet->position.x -= bullet->velocity.x * gameState->dt;
                         bullet->position.y -= bullet->velocity.y * gameState->dt;
@@ -996,9 +1016,9 @@ void UpdateGame(GameMemory* gameMemory)
 				{
 					Bullet* bullet = &gameState->bullets[bulletIndex];
 					if(CheckCollisionRecs(gameState->player.collider, bullet->collider) 
-							&& bullet->owner != &gameState->player 
-							&& gameState->player.invulTime <= 0.0f 
-							&& gameState->player.shieldEnabled == false)
+						&& bullet->owner != &gameState->player 
+						&& gameState->player.invulTime <= 0.0f 
+						&& gameState->player.shieldEnabled == false)
 					{
 						Rectangle collisionRec = GetCollisionRec(gameState->player.collider, bullet->collider);
 						Rectangle bulletSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_BULLET]]);
@@ -1021,7 +1041,12 @@ void UpdateGame(GameMemory* gameMemory)
 							}
 							PlaySound(audio->sounds[SOUND_HIT]);
 							// Replace with bullet with last bullet
-							*bullet = gameState->bullets[--gameState->bulletCount];
+							if (gameState->bulletCount > 0)
+							{
+								*bullet = gameState->bullets[--gameState->bulletCount];
+							} else {
+								gameState->bulletCount = 0;
+							}
 							gameState->player.invulTime = gameState->player.invulDuration;
 							if (--gameState->player.health < 1)
 							{
@@ -1579,6 +1604,11 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						DrawTexturePro(atlas->textureAtlas, enemy->sprite.coords, enemy->collider, (Vector2){0,0}, 0, WHITE);
 					}
+					// char buffer[100] = {0};
+					// sprintf(buffer, "Timer: %.2f", gameState->enemySpawnTime);
+					// DrawTextEx(options->font, buffer, (Vector2){20,50}, 30, 1, WHITE);
+					// sprintf(buffer, "Count: %d", gameState->enemyCount);
+					// DrawTextEx(options->font, buffer, (Vector2){20,80}, 30, 1, WHITE);
 				}
 				// Draw explosions
 				{
@@ -1592,7 +1622,12 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						if (!explosion->active) 
 						{
 							// Replace with last explosion
-							*explosion = gameState->explosions[--gameState->explosionCount];
+							if (gameState->explosionCount > 0)
+							{
+								*explosion = gameState->explosions[--gameState->explosionCount];
+							} else {
+								gameState->explosionCount = 0;
+							}
 							continue;
 						}
 
@@ -1731,7 +1766,6 @@ void DrawLightmap(GameState* gameState, Options* options, RenderTexture2D* litSc
 
 void DrawHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader)
 {
-	// Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	// Draw player health
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
@@ -2038,8 +2072,8 @@ void DrawEnemyHealthBar(GameState* gameState, Options* options, TextureAtlas* at
 		Enemy* enemy = &gameState->enemies[i];
 		float recPosX = letterBoxOffsetX + (enemy->position.x - recWidth/2.0f) * scale ;
 		float recPosY = letterBoxOffsetY + (enemy->position.y + enemy->sprite.coords.height - recHeight) * scale ;
-		DrawRectangle(recPosX, recPosY, recWidth/20.0f * enemy->health, recHeight, RED);
-		DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, WHITE);
+		DrawRectangle(recPosX, recPosY, recWidth/20.0f * enemy->health * scale, recHeight * scale, RED);
+		DrawRectangleLines(recPosX, recPosY, recWidth * scale, recHeight * scale, WHITE);
 	}
 }
 void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader)
