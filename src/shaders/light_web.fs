@@ -5,8 +5,11 @@ precision mediump int;
 varying vec2 fragTexCoord;
 
 uniform sampler2D texture0;
+
 uniform int lightCount;
+uniform float ambience;
 uniform vec2 lightPos[128];
+
 uniform float lightRadius;
 uniform float aspect;
 
@@ -32,7 +35,7 @@ void main()
         lighting += intensity * 1.7;
     }
 
-    float finalIntensity = min(0.3 + lighting, 1.0);
+    float finalIntensity = min(ambience + lighting, 1.0);
 
     gl_FragColor = vec4(base.rgb * finalIntensity, base.a);
 }

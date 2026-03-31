@@ -1372,6 +1372,7 @@ void UpdateGame(GameMemory* gameMemory)
 					gameMemory->options->previousHeight = VIRTUAL_HEIGHT;
 					*gameMemory->shader = LoadShader(0, TextFormat("./src/shaders/default_web.glsl", GLSL_VERSION));
 					*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
+					*gameMemory->explosionShader = LoadShader(0, TextFormat("./src/shaders/explode_web.glsl", GLSL_VERSION));
 					gameMemory->gameState->state = STATE_RUNNING;
 					gameMemory->gameState->stateChanged = true;
 #else

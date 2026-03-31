@@ -61,7 +61,7 @@ int main()
 	g_memory = &gameMemory;
 	*g_memory->shader = LoadShader(0, TextFormat("./src/shaders/default_web.glsl", GLSL_VERSION));
 	*g_memory->lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
-	*g_memory->explosionShader = LoadShader(0, TextFormat("./src/shaders/explode_web.fs", GLSL_VERSION));
+	*g_memory->explosionShader = LoadShader(0, TextFormat("./src/shaders/explode_web.glsl", GLSL_VERSION));
 	emscripten_set_main_loop(WebWrapper, TARGET_FPS, 1);
 #else
 	GameCode game = LoadGameCode();
