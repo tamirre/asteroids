@@ -3,10 +3,7 @@
 #include "raylib.h"
 
 typedef enum SoundId {
-    SOUND_AMERICA,
-    SOUND_BINGCHILLING,
     SOUND_CARDSELECT,
-    SOUND_ERIKA,
     SOUND_EXPLOSIONBLAST,
     SOUND_GUN,
     SOUND_HIT,
@@ -26,10 +23,7 @@ typedef struct Audio {
 } Audio;
 
 static const char *sound_files[] = {
-    "assets/audio/sound_america.mp3",
-    "assets/audio/sound_bingchilling.mp3",
     "assets/audio/sound_cardSelect.mp3",
-    "assets/audio/sound_erika.mp3",
     "assets/audio/sound_explosionBlast.wav",
     "assets/audio/sound_gun.wav",
     "assets/audio/sound_hit.wav",

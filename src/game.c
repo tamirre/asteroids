@@ -58,6 +58,7 @@ void Cleanup(GameMemory* gameMemory)
 		FreeSpriteAnimation(gameMemory->atlas->animations[i]);
 	}
     UnloadFont(gameMemory->options->font);
+    UnloadFont(gameMemory->options->titleFont);
 	for (int i = 0; i < SPRITE_COUNT; i++)
 	{
 		UnloadImageColors(gameMemory->spriteMasks[i].pixels);
@@ -181,7 +182,8 @@ void InitializeGameState(GameState* gameState)
 
 void InitializeOptions(Options* options) 
 {
-	int maxFontSize = 64;
+	const int maxFontSize = 64;
+	const int maxTitleFontSize = 100;
 	*options = (Options) {
 		.screenWidth = (float)VIRTUAL_WIDTH,
 		.screenHeight = (float)VIRTUAL_HEIGHT,
@@ -189,6 +191,7 @@ void InitializeOptions(Options* options)
 		.previousHeight = (float)VIRTUAL_HEIGHT,
 		.disableShaders = true,
 		.font = LoadLanguageFont("./assets/fonts/UnifontExMono.ttf", maxFontSize, LANG_EN), 
+		.titleFont = LoadLanguageFont("./assets/fonts/Ethnocentric-Regular.otf", maxTitleFontSize, LANG_EN), 
 		.fontSpacing = 1.0f,
 		.maxFontSize = maxFontSize,
 		.language = LANG_EN,
@@ -203,6 +206,8 @@ void InitializeOptions(Options* options)
 		.fxVolumeChanged = false,
 		.showDebugInfo = false,
 	};
+	SetTextureFilter(options->font.texture, TEXTURE_FILTER_BILINEAR);
+	SetTextureFilter(options->titleFont.texture, TEXTURE_FILTER_BILINEAR);
 	GuiSetStyle(DEFAULT, TEXT_SIZE, 24);
 	GuiSetStyle(DEFAULT, TEXT_SPACING, 2);
 	GuiSetStyle(DEFAULT, BORDER_WIDTH, 2);
@@ -282,7 +287,7 @@ Color GetRainbowColor(float time)
     };
 }
 
-void DrawTextWave(Font font, const char* text, Vector2 center, float fontSize, Color color, float time)
+void DrawTextWave(Font font, const char* text, Vector2 center, float fontSize, Color color, bool rainbow, float time)
 {
     float spacing = GetDefaultSpacing(fontSize);
 
@@ -330,14 +335,17 @@ void DrawTextWave(Font font, const char* text, Vector2 center, float fontSize, C
 		float frequency = 3.0f;
 		float phase = i * 0.5f;
         float yOffset = amplitude * sinf(time * frequency + phase);
-        Color rainbow = GetRainbowColor(time + i * 0.3f);
-
+		Color fontColor = color;
+		if (rainbow) 
+		{
+			fontColor = GetRainbowColor(time + i * 0.3f);
+		} 
         // Draw using codepoint version
         DrawTextCodepoint(font,
                           codepoint,
                           (Vector2){x, center.y + yOffset},
                           fontSize,
-                          rainbow);
+                          fontColor);
 
         x += charWidth + spacing;
 
@@ -509,18 +517,18 @@ void HandleResize(Options* options)
 
 void StopLanguageSelectSounds(Audio* audio)
 {
-	if(IsSoundPlaying(audio->sounds[SOUND_BINGCHILLING]))
-	{
-		StopSound(audio->sounds[SOUND_BINGCHILLING]);
-	}
-	if(IsSoundPlaying(audio->sounds[SOUND_ERIKA]))
-	{
-		StopSound(audio->sounds[SOUND_ERIKA]);
-	}
-	if(IsSoundPlaying(audio->sounds[SOUND_AMERICA]))
-	{
-		StopSound(audio->sounds[SOUND_AMERICA]);
-	}
+	// if(IsSoundPlaying(audio->sounds[SOUND_BINGCHILLING]))
+	// {
+	// 	StopSound(audio->sounds[SOUND_BINGCHILLING]);
+	// }
+	// if(IsSoundPlaying(audio->sounds[SOUND_ERIKA]))
+	// {
+	// 	StopSound(audio->sounds[SOUND_ERIKA]);
+	// }
+	// if(IsSoundPlaying(audio->sounds[SOUND_AMERICA]))
+	// {
+	// 	StopSound(audio->sounds[SOUND_AMERICA]);
+	// }
 }
 
 void UpdateGame(GameMemory* gameMemory)
@@ -825,7 +833,7 @@ void UpdateGame(GameMemory* gameMemory)
 					gameState->enemySpawnTime += gameState->dt;
 					if (gameState->enemySpawnTime > gameState->enemySpawnRate && gameState->enemyCount < MAX_ENEMIES) 
 					{
-						printf("Spawning enemy\n");
+						// printf("Spawning enemy\n");
 						float size = 2.0;
 						Vector2 velocity = (Vector2){0.1f + (float)GetRandomValue(3, 10)/20.0f,0};
 						float enemyXPosition = GetRandomValue(0            +getSprite(SPRITE_ENEMY).coords.width/2.0f, 
@@ -865,6 +873,10 @@ void UpdateGame(GameMemory* gameMemory)
 							.width = enemy->sprite.coords.width*enemy->size,
 							.height = enemy->sprite.coords.height*enemy->size,
 						};
+					}
+					for (int enemyIndex = 0; enemyIndex < gameState->enemyCount; enemyIndex++)
+					{
+						Enemy* enemy = &gameState->enemies[enemyIndex];
 						// Collision enemy bullet
 						for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
 						{
@@ -892,8 +904,8 @@ void UpdateGame(GameMemory* gameMemory)
 											explosion->startTime = GetTime();
 											explosion->active = true;
 										}
-										// Replace bullet with last bullet
 										enemy->health -= bullet->damage;
+										// Replace bullet with last bullet
 										*bullet = gameState->bullets[--gameState->bulletCount];
 										if (enemy->health <= 0.0f)
 										{
@@ -1059,7 +1071,10 @@ void UpdateGame(GameMemory* gameMemory)
 						if (!asteroid->dying) {
 							asteroid->position.y += asteroid->velocity.y * gameState->dt;
 							asteroid->rotation   += asteroid->angularVelocity * gameState->dt;
+						} else {
+							asteroid->position.y -= 20.0 * gameState->dt;
 						}
+
 						float width  = asteroid->sprite.coords.width * asteroid->size;
 						float height = asteroid->sprite.coords.height * asteroid->size;
 						asteroid->collider = (Rectangle) {
@@ -1657,16 +1672,21 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 void DrawLightmap(GameState* gameState, Options* options, RenderTexture2D* litScene, Shader* lightShader)
 {
 	const Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+
 	int uLightPos = GetShaderLocation(*lightShader, "lightPos");
 	int uLightRadius = GetShaderLocation(*lightShader, "lightRadius");
+	int uLightCount = GetShaderLocation(*lightShader, "lightCount");
 	int uAspect = GetShaderLocation(*lightShader, "aspect");
-	float lightRadius = 0.1f;  // normalized radius
+	int uAmbience = GetShaderLocation(*lightShader, "ambience");
+
+	float ambience = 0.6f;
+	float lightRadius = 0.15f;  // normalized radius
 	float aspect = (float)viewport.width / (float)viewport.height;
-	SetShaderValueTexture(*lightShader, GetShaderLocation(*lightShader, "lightTexture"), litScene->texture);
+	// SetShaderValueTexture(*lightShader, GetShaderLocation(*lightShader, "lightTexture"), litScene->texture);
 	SetShaderValue(*lightShader, uLightRadius, &lightRadius, SHADER_UNIFORM_FLOAT);
 	SetShaderValue(*lightShader, uAspect, &aspect, SHADER_UNIFORM_FLOAT);
+	SetShaderValue(*lightShader, uAmbience, &ambience, SHADER_UNIFORM_FLOAT);
 	// --- Build lightmap ---
-	int uLightCount = GetShaderLocation(*lightShader, "lightCount");
 	BeginTextureMode(*litScene);
 	ClearBackground(BLACK);
 	BeginBlendMode(BLEND_ADDITIVE);
@@ -1685,6 +1705,14 @@ void DrawLightmap(GameState* gameState, Options* options, RenderTexture2D* litSc
 			// convert pixel -> normalized UV (0–1)
 			lights[lc].x = gameState->boosts[i].position.x / VIRTUAL_WIDTH;
 			lights[lc].y = 1.0f - gameState->boosts[i].position.y / VIRTUAL_HEIGHT;
+			lc++;
+		}
+	}
+	if (gameState->enemyCount > 0) {
+		for (int i = 0; i < gameState->enemyCount; i++) {
+			// convert pixel -> normalized UV (0–1)
+			lights[lc].x = gameState->enemies[i].position.x / VIRTUAL_WIDTH;
+			lights[lc].y = 1.0f - gameState->enemies[i].position.y / VIRTUAL_HEIGHT;
 			lc++;
 		}
 	}
@@ -1793,8 +1821,8 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
 	// DrawTextCentered(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 80.0f}, 40, WHITE);
 	// DrawTextCentered(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 35.0f}, 40, WHITE);
-	DrawTextWave(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 100.0f}, 40, WHITE, gameState->time);
-	DrawTextWave(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 55.0f}, 40, WHITE, gameState->time);
+	DrawTextWave(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 100.0f}, 40, WHITE, true, gameState->time);
+	DrawTextWave(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 55.0f}, 40, WHITE, true, gameState->time);
 	float scaling = 3.0f;
 	const float width  = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width;
 	const float height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height;
@@ -2038,10 +2066,10 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader*
 				float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
-				DrawTextCentered(options->font, T(TXT_GAME_TITLE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f}, 40 * scale, WHITE);
-				DrawTextCentered(options->font, T(TXT_PRESS_TO_PLAY), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 30}, 20 * scale, WHITE);
-				DrawTextCentered(options->font, T(TXT_INSTRUCTIONS), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 50}, 20 * scale, WHITE);
-				DrawTextCentered(options->font, "v0.1", (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height - 15}, 15 * scale, WHITE);
+				DrawTextWave(options->titleFont, T(TXT_GAME_TITLE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f}, 90 * scale, WHITE, false, gameState->time);
+				DrawTextCentered(options->titleFont, T(TXT_INSTRUCTIONS), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 90}, 20 * scale, WHITE);
+				DrawTextCentered(options->titleFont, T(TXT_PRESS_TO_PLAY), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 120}, 20 * scale, WHITE);
+				DrawTextCentered(options->titleFont, "v0.1", (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height - 15}, 15 * scale, WHITE);
 
 				break;
 			}

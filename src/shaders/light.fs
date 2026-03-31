@@ -5,8 +5,8 @@ out vec4 finalColor;
 
 uniform sampler2D texture0;
 
-// --- CHANGED: array of lights instead of one ---
 uniform int lightCount;
+uniform float ambience;
 uniform vec2 lightPos[128];     // normalized 0–1
 // -----------------------------------------------
 
@@ -21,7 +21,6 @@ void main()
 
     for (int i = 0; i < lightCount; i++)
     {
-        // Apply aspect fix like before
         vec2 p = fragTexCoord;
         p.x *= aspect;
 
@@ -30,13 +29,12 @@ void main()
 
         float dist = distance(p, lp);
         float intensity = 1.0 - smoothstep(0.0, lightRadius, dist);
-
-        // Accumulate — same formula as original
         lighting += intensity * 1.7;
     }
 
-    // Base ambient 0.3 stays constant
-    float finalIntensity = 0.3 + lighting;
+
+	// base ambeint is 0.5
+    float finalIntensity = ambience + lighting;
 
     // Clamp so lights don’t blow out white
     finalIntensity = min(finalIntensity, 1.0);

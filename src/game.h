@@ -179,6 +179,7 @@ typedef struct Options {
 	float previousHeight;
 	bool disableShaders;
 	Font font;
+	Font titleFont;
 	float fontSpacing;
 	int maxFontSize;
 	int language;

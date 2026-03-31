@@ -1,102 +1,71 @@
 #include "raylib.h"
-#include <math.h>
 
 int main(void)
 {
-    const int screenWidth = 1000;
-    const int screenHeight = 700;
+    const int screenWidth = 800;
+    const int screenHeight = 600;
 
-    InitWindow(screenWidth, screenHeight, "raylib sprite scaling test");
-    SetTargetFPS(60);
+    InitWindow(screenWidth, screenHeight, "chunk system");
 
-    Texture2D texture = LoadTexture("upgradeMultiShot.png");
-
-    // Let the shader control sampling
+    Texture2D texture = LoadTexture("asteroid3.png");
     SetTextureFilter(texture, TEXTURE_FILTER_POINT);
 
-    Shader shader = LoadShader(0, "shader.glsl");
+    // Create render target (FBO)
+    RenderTexture2D target = LoadRenderTexture(texture.width, texture.height);
 
-    int texSizeLoc = GetShaderLocation(shader, "textureSize");
-    Vector2 texSize = { texture.width, texture.height };
-    SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
+    Shader shader = LoadShader(0, "chunk.fs");
 
-    float time = 0.0f;
-    float scale = 3.5f;
-    float rotation = 0.0f;
+    int timeLoc = GetShaderLocation(shader, "time");
+    int explodeLoc = GetShaderLocation(shader, "explode");
 
-    bool animateScale = true;
-    bool animateRotation = true;
-    bool shaderOn = true;
+    float explode = 0.0f;
 
-    while (!WindowShouldClose())
-    {
-        float dt = GetFrameTime();
-        time += dt;
+    SetTargetFPS(60);
 
-        // toggles
-        if (IsKeyPressed(KEY_S)) animateScale = !animateScale;
-        if (IsKeyPressed(KEY_R)) animateRotation = !animateRotation;
-        if (IsKeyPressed(KEY_H)) shaderOn = !shaderOn;
+	while (!WindowShouldClose())
+	{
+		float dt = GetFrameTime();
 
-        // manual scale
-        if (IsKeyPressed(KEY_J)) scale += 0.1f;
-        if (IsKeyPressed(KEY_K)) scale -= 0.1f;
+	   if (IsKeyPressed(KEY_SPACE))
+		   explode = 0.0f;
 
-        // animated scale
-        if (animateScale)
-            scale = 3.5f + 2.0f * sinf(time);
+	   explode += dt * 1.5f;   // keeps growing
+	   if (explode > 5.0f)
+		   explode = 5.0f;
 
-        // animated rotation
-        if (animateRotation)
-            rotation = time * 45.0f;   // 45° per second
+	   SetShaderValue(shader, explodeLoc, &explode, SHADER_UNIFORM_FLOAT);     SetShaderValue(shader, explodeLoc, &explode, SHADER_UNIFORM_FLOAT);
 
-        Vector2 pos = { screenWidth / 2.0f, screenHeight / 2.0f };
-
-        Rectangle src = { 0, 0, texture.width, texture.height };
-
-        Rectangle dst = {
-            pos.x,
-            pos.y,
-            texture.width * scale,
-            texture.height * scale
-        };
-
-        Vector2 origin = {
-            dst.width / 2,
-            dst.height / 2
-        };
+        // --- render texture into FBO ---
+        BeginTextureMode(target);
+        ClearBackground(BLANK);
+        DrawTexture(texture, 0, 0, WHITE);
+        EndTextureMode();
 
         BeginDrawing();
         ClearBackground(BLACK);
 
-        if (shaderOn) BeginShaderMode(shader);
+        BeginShaderMode(shader);
 
-        DrawTexturePro(texture, src, dst, origin, rotation, WHITE);
+        DrawTextureRec(
+            target.texture,
+            (Rectangle){0, 0, (float)target.texture.width, -(float)target.texture.height}, // flip Y!
+            (Vector2){
+                screenWidth/2.0f - texture.width/2.0f,
+                screenHeight/2.0f - texture.height/2.0f
+            },
+            WHITE
+        );
 
-        if (shaderOn) EndShaderMode();
+        EndShaderMode();
 
-        // Controls
-        DrawText("S - toggle scale animation", 20, 20, 20, RAYWHITE);
-        DrawText("R - toggle rotation", 20, 50, 20, RAYWHITE);
-        DrawText("J/K - adjust scale", 20, 80, 20, RAYWHITE);
-        DrawText("H - toggle shader", 20, 110, 20, RAYWHITE);
-
-        // Status indicators
-        if (shaderOn)
-            DrawText("SHADER: ON", 20, 150, 24, GREEN);
-        else
-            DrawText("SHADER: OFF", 20, 150, 24, RED);
-
-        if (animateRotation)
-            DrawText("ROTATION: ON", 20, 180, 24, GREEN);
-        else
-            DrawText("ROTATION: OFF", 20, 180, 24, RED);
+        DrawText("Press SPACE to explode", 10, 10, 20, RAYWHITE);
 
         EndDrawing();
     }
 
-    UnloadShader(shader);
+    UnloadRenderTexture(target);
     UnloadTexture(texture);
+    UnloadShader(shader);
     CloseWindow();
 
     return 0;
