@@ -3,7 +3,7 @@
 #include "raylib.h"
 #include "assetsData.h"
 
-#define internal static
+// #define internal static inline
 #define SHAPE_PADDING 1
 
 typedef struct SpriteAnimation
@@ -28,10 +28,7 @@ typedef struct SpriteMask {
     int height;
 } SpriteMask;
 
-#define ASSETS_IMPLEMENTATION
-#ifdef ASSETS_IMPLEMENTATION
-
-internal Color* getPixelsFromAtlas(Image atlasImage, Sprite sprite, int numberOfFrames)
+static inline Color* getPixelsFromAtlas(Image atlasImage, Sprite sprite, int numberOfFrames)
 {
 	// Extract the sprite rectangle as an Image from the atlas image
 	Rectangle src = sprite.coords;
@@ -46,17 +43,17 @@ internal Color* getPixelsFromAtlas(Image atlasImage, Sprite sprite, int numberOf
 	return pixels;
 }
 
-Rectangle GetCurrentAnimationFrame(SpriteAnimation animation) {
+static inline Rectangle GetCurrentAnimationFrame(SpriteAnimation animation) {
     int index = (int)(GetTime() * animation.framesPerSecond) % animation.rectanglesLength;
     return animation.rectangles[index];
 }
 
-int GetCurrentAnimationFrameIndex(SpriteAnimation animation) {
+static inline int GetCurrentAnimationFrameIndex(SpriteAnimation animation) {
     int index = (int)(GetTime() * animation.framesPerSecond) % animation.rectanglesLength;
     return index;
 }
 
-SpriteAnimation createSpriteAnimation(Texture2D atlas, SpriteID spriteID, int framesPerSecond, int numFrames)
+static inline SpriteAnimation createSpriteAnimation(Texture2D atlas, SpriteID spriteID, int framesPerSecond, int numFrames)
 {
 	Sprite sprite = getSprite(spriteID);
 	int x = sprite.coords.x;
@@ -67,9 +64,9 @@ SpriteAnimation createSpriteAnimation(Texture2D atlas, SpriteID spriteID, int fr
     SpriteAnimation spriteAnimation = 
     {
         .framesPerSecond = framesPerSecond,
-        .rectanglesLength = numFrames,
-        .rectangles = NULL,
-        .timeStarted = GetTime(),
+		.timeStarted = (float)GetTime(),
+		.rectangles = NULL,
+		.rectanglesLength = numFrames,
     };
 
     Rectangle* mem = (Rectangle*)malloc(sizeof(Rectangle) * numFrames);
@@ -84,14 +81,14 @@ SpriteAnimation createSpriteAnimation(Texture2D atlas, SpriteID spriteID, int fr
     for(int i = 0; i < numFrames; i++)
     {
 
-        spriteAnimation.rectangles[i] = (Rectangle){x+i*((width/numFrames)+SHAPE_PADDING)-SHAPE_PADDING*numFrames,y,width/numFrames,height};
+        spriteAnimation.rectangles[i] = (Rectangle){(float)x+i*(((float)width/(float)numFrames)+SHAPE_PADDING)-SHAPE_PADDING*(float)numFrames,(float)y,(float)width/(float)numFrames,(float)height};
 		// printf("Rectangle %i: %f %f %f %f\n", i, spriteAnimation.rectangles[i].x, spriteAnimation.rectangles[i].y, spriteAnimation.rectangles[i].width, spriteAnimation.rectangles[i].height);
 	}
 
     return spriteAnimation;
 }
 
-bool DrawSpriteAnimationOnce(Texture2D atlas,
+static inline bool DrawSpriteAnimationOnce(Texture2D atlas,
                              SpriteAnimation animation,
                              Rectangle destination,
                              Vector2 origin,
@@ -119,7 +116,7 @@ bool DrawSpriteAnimationOnce(Texture2D atlas,
     return false; // still playing
 }
 
-void DrawSpriteAnimationPro(Texture2D* atlas, SpriteAnimation* animation, Rectangle destination, Vector2 origin, float rotation, Color tint, Shader shader, int flipX, int flipY)
+static inline void DrawSpriteAnimationPro(Texture2D* atlas, SpriteAnimation* animation, Rectangle destination, Vector2 origin, float rotation, Color tint, Shader shader, int flipX, int flipY)
 {
 	if (!atlas || !animation) return;
 	if (animation->framesPerSecond <= 0) return;
@@ -141,12 +138,12 @@ void DrawSpriteAnimationPro(Texture2D* atlas, SpriteAnimation* animation, Rectan
     DrawTexturePro(*atlas, source, destination, origin, rotation, tint);
 }
 
-void FreeSpriteAnimation(SpriteAnimation animation)
+static inline void FreeSpriteAnimation(SpriteAnimation animation)
 {
     free(animation.rectangles);
 }
 
-TextureAtlas initTextureAtlas(SpriteMask spriteMasks[])
+static inline TextureAtlas initTextureAtlas(SpriteMask spriteMasks[])
 {
     TextureAtlas atlas;
     atlas.textureAtlas = LoadTexture("./assets/textures/atlas/atlas.png");
@@ -160,19 +157,27 @@ TextureAtlas initTextureAtlas(SpriteMask spriteMasks[])
 	int animCount = 0;
 	for (int i = 0; i < SPRITE_COUNT; i++)
 	{
-		if (getSprite(i).numFrames > 1)
+		if (getSprite((SpriteID)i).numFrames > 1)
 		{
-			atlas.animations[animCount] = createSpriteAnimation(atlas.textureAtlas, i, 7, getSprite(i).numFrames);
-			// printf("Animation %i: %i frames\n", animCount, getSprite(SpriteToAnimation[i]).numFrames);
+			atlas.animations[animCount] = createSpriteAnimation(atlas.textureAtlas, (SpriteID)i, 7, getSprite((SpriteID)i).numFrames);
+			// printf("Animation %i: %i frames\n", animCount, getSprite((SpriteID)SpriteToAnimation[i]).numFrames);
 			animCount++;
 		}
-		spriteMasks[i].pixels = getPixelsFromAtlas(atlasImage, getSprite(i), getSprite(i).numFrames);
-		spriteMasks[i].width = getSprite(i).coords.width / getSprite(i).numFrames;
-		spriteMasks[i].height = getSprite(i).coords.height;
+		spriteMasks[i].pixels = getPixelsFromAtlas(atlasImage, getSprite((SpriteID)i), getSprite((SpriteID)i).numFrames);
+		spriteMasks[i].width = getSprite((SpriteID)i).coords.width / getSprite((SpriteID)i).numFrames;
+		spriteMasks[i].height = getSprite((SpriteID)i).coords.height;
 	}
 
     UnloadImage(atlasImage);
     return atlas;
 }
 
-#endif 
+static inline float EaseOutBack(float t)
+{
+    // t must be 0 → 1
+    const float c1 = 1.70158f;
+    const float c3 = c1 + 1.0f;
+
+    float x = t - 1.0f;
+    return 1.0f + c3 * x * x * x + c1 * x * x;
+}

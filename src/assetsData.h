@@ -1,7 +1,6 @@
 // AUTO-GENERATED — DO NOT EDIT
 #pragma once
 #include "raylib.h"
-#define internal static
 
 typedef enum SpriteID {
     SPRITE_ASTEROID1,

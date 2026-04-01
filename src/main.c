@@ -21,11 +21,11 @@ time_t GetLastWriteTime(const char* path)
 	return 0;
 }
 #ifdef PLATFORM_WINDOWS
-#include "platform_win32.h"
+#include "platformWin32.h"
 #elif defined(PLATFORM_WEB) || __EMSCRIPTEN__
-#include "platform_web.h"
+#include "platformWeb.h"
 #else
-#include "platform_unix.h"
+#include "platformUnix.h"
 #endif
 
 int main()

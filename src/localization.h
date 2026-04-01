@@ -51,22 +51,20 @@ static inline const char* T(TextID id)
     return gText[s_locLang][id];
 }
 
-// ======================= FORMATTING (%d %f %s) ===============================
-
-static inline const char* TF(TextID id, ...)
+// FORMATTING (%d %f %s) 
+static inline const char* TF(int id, ...)
 {
     static char buffer[2048];
 
     va_list args;
     va_start(args, id);
-    vsnprintf(buffer, sizeof(buffer), T(id), args);
+    vsnprintf(buffer, sizeof(buffer), T((TextID)id), args);
     va_end(args);
 
     return buffer;
 }
 
-// ======================= UTF-8 WORD WRAP =====================================
-
+// UTF-8 WORD WRAP
 static void flushWord(char *out, int capacity,
                       int *outLen,
                       char *word, int *wordLen,
@@ -108,9 +106,8 @@ static void flushWord(char *out, int capacity,
     word[0] = 0;
 }
 
-// ------------------------------------------------------------
-
-int TWrap(char *out, int capacity,
+// WRAP 
+static inline int TWrap(char *out, int capacity,
           Font font,
           const char *text,
           float maxWidth,
@@ -199,20 +196,19 @@ int TWrap(char *out, int capacity,
     return outLen;
 }
 
-// ======================= FORMAT + WRAP =======================================
-
+// FORMAT + WRAP 
 static inline const char* TFWrap(char *out, int capacity,
 								 Font font,
                                  float maxWidth,
                                  float fontSize,
                                  float spacing,
-                                 TextID id, ...)
+                                 int id, ...)
 {
     static char fmtBuf[2048];
 
     va_list args;
     va_start(args, id);
-    vsnprintf(fmtBuf, sizeof(fmtBuf), T(id), args);
+    vsnprintf(fmtBuf, sizeof(fmtBuf), T((TextID)id), args);
     va_end(args);
 
 	TWrap(out, capacity, font, fmtBuf, maxWidth, fontSize, spacing);
@@ -256,7 +252,7 @@ static inline Font LoadLanguageFont(const char *path,
 									int lang)
 {
     int maxGlyphs = 2000;
-    int *glyphs = malloc(sizeof(int) * maxGlyphs);
+	int *glyphs = (int*)malloc(sizeof(int) * maxGlyphs);
     int count = 0;
 
     // Always include basic ASCII so formatting works
@@ -280,70 +276,5 @@ static inline Font LoadLanguageFont(const char *path,
 
     free(glyphs);
     return f;
-}
-
-void DrawTextWrapped(Font font,
-                     const char *text,
-                     char *wrapped,
-                     int capacity,
-                     Vector2 pos,
-                     float maxWidth,
-                     float fontSize,
-                     TextAlign align,
-                     float rotation,
-					 float scaling,
-                     Vector2 pivot,
-                     Color color)
-{
-	fontSize *= (1.0f + scaling);
-    float spacing = GetDefaultSpacing(fontSize);
-    TWrap(wrapped, capacity, font, text, maxWidth, fontSize, spacing);
-
-    float yOffset = 0.0f;
-
-    const char *lineStart = wrapped;
-    const char *p = wrapped;
-
-    while (1)
-    {
-        if (*p == '\n' || *p == '\0')
-        {
-            int len = p - lineStart;
-            if (len >= 512) len = 511;
-
-            char line[512];
-            memcpy(line, lineStart, len);
-            line[len] = 0;
-
-            float w = MeasureTextEx(font, line, fontSize, spacing).x;
-
-            float x = pos.x;
-            if (align == ALIGN_RIGHT) x = pos.x + (maxWidth - w);
-            else if (align == ALIGN_CENTER) x = pos.x + (maxWidth - w) / 2.0f;
-
-            float y = pos.y;
-
-            // derive pivot for this line without mutating original pivot
-            Vector2 linePivot = {
-                pivot.x,
-                pivot.y - yOffset
-            };
-
-            DrawTextPro(font, line,
-                        (Vector2){ x, y },
-                        linePivot,
-                        rotation,
-                        fontSize,
-                        spacing,
-                        color);
-
-            if (*p == '\0')
-                break;
-
-            yOffset += fontSize;
-            lineStart = p + 1;
-        }
-        p++;
-    }
 }
 

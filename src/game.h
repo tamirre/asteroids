@@ -6,20 +6,18 @@
 #endif
 
 #include "assetsData.h"
-#include "txt.h"
+// #include "txt.h"
+#include "txt.c"
+#include "capture.h"
 #include "audio.h"
 #include "assetsUtils.h"
 #include "localization.h"
-
-#include <time.h>
 
 #include "raymath.h"
 #include "raylib.h"
 #define RAYGUI_IMPLEMENTATION
 #include "third_party/include/raygui.h"
 #include "third_party/include/style_dark.h"
-#define MSF_GIF_IMPL
-#include "third_party/include/msf_gif.h"
 
 #if defined(PLATFORM_WEB)
 #include <emscripten/emscripten.h>
@@ -195,11 +193,6 @@ typedef struct Options {
 	bool showDebugInfo;
 } Options;
 
-typedef struct GifRecorder {
-	MsfGifState* gifState;
-	bool recording;
-	unsigned int frameCounter;
-} GifRecorder;
 
 typedef struct GameState {
     // General

@@ -1,11 +1,12 @@
 # TODO list: 
 
-- [ ] native windows build
+- [ ] add ini file for settings
 - [ ] add particle effects
-- [ ] add destruction/explotion shader to asteroids
 - [ ] make score and leaderboard system
-- [ ] make it fun
 - [ ] rework sprite system to use arbitrary animation frame position in texture atlas (non-continuous animation sprite sheets in atlas)
+- [x] native windows build (with mingw for now)
+- [x] fix music loop
+- [x] add destruction/explotion shader to asteroids
 - [x] savestates
 - [x] hot code reloading
 - [x] mingw-w64 cross compile build

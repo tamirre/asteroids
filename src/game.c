@@ -1,53 +1,5 @@
 #include "game.h"
 
-#define GIF_NUMBER_FRAMES (1)
-
-void GifRecordUpdate(GifRecorder* rec) 
-{
-	if (!rec->recording) return;
-    int centiSeconds = (int)(GetFrameTime() * 100.0f / GIF_NUMBER_FRAMES);
-
-    // Only write a frame when we have at least 1 centisecond
-    if (centiSeconds <= 0) return;
-
-    // capture screen (slow but simple)
-    Image img = LoadImageFromScreen();
-
-    msf_gif_frame(
-        rec->gifState,
-        (uint8_t*)img.data,
-        centiSeconds,
-        16,                 // quality (lower = faster)
-        img.width * 4
-    );
-
-	UnloadImage(img);
-}
-
-void GifRecordStart(GifRecorder* rec) 
-{
-	rec->recording = true;
-	rec->frameCounter = 0;
-	msf_gif_begin(rec->gifState, GetRenderWidth(), GetRenderHeight());
-	TraceLog(LOG_INFO, "Start animated GIF recording");
-}
-
-void GifRecordStop(GifRecorder* rec) 
-{
-	// Stop current recording and save file
-	rec->recording = false;
-	MsfGifResult result = msf_gif_end(rec->gifState);
-
-	// Get time stamp
-	time_t now = time(NULL);
-	struct tm *t = localtime(&now);
-	char buffer[100];
-	strftime(buffer, sizeof(buffer), "%Y-%m-%d-%H-%M", t);
-	SaveFileData(TextFormat("%s/scrn-rec-%s.gif", GetApplicationDirectory(), buffer), result.data, (unsigned int)result.dataSize);
-	msf_gif_free(result);
-	TraceLog(LOG_INFO, "Finish animated GIF recording");
-}
-
 void Cleanup(GameMemory* gameMemory) 
 {
 	UnloadShader(*gameMemory->shader);
@@ -79,6 +31,22 @@ void Cleanup(GameMemory* gameMemory)
 		GifRecordStop(&gameMemory->gameState->gifRecorder);
 	}
 	CloseAudioDevice();
+}
+
+void LoopSoundtrack(Music* music) 
+{
+
+	// Hard coded loop for now 
+	const float sampleRate = 44100;
+	if (GetMusicTimePlayed(*music) > 1556879.0f/sampleRate)
+	{
+		SeekMusicStream(*music, 519288.0f/sampleRate);
+	}
+	// if (GetMusicTimePlayed(*music) > 56.425f)
+	// {
+	// 	SeekMusicStream(*music, 11.775f);
+	// }
+	UpdateMusicStream(*music);
 }
 
 void SetFxVolume(Audio* audio, float volume) 
@@ -271,98 +239,6 @@ void InitGame(GameMemory* gameMemory)
 	printf("InitGame done!\n");
 }
 
-Color GetRainbowColor(float time)
-{
-    float speed = 2.0f; // animation speed
-
-    float r = sinf(time * speed + 0.0f) * 0.5f + 0.5f;
-    float g = sinf(time * speed + 2.094f) * 0.5f + 0.5f; // +120°
-    float b = sinf(time * speed + 4.188f) * 0.5f + 0.5f; // +240°
-
-    return (Color){
-        (unsigned char)(r * 255),
-        (unsigned char)(g * 255),
-        (unsigned char)(b * 255),
-        255
-    };
-}
-
-void DrawTextWave(Font font, const char* text, Vector2 center, float fontSize, Color color, bool rainbow, float time)
-{
-    float spacing = GetDefaultSpacing(fontSize);
-
-    // --- First pass: compute total width ---
-    float totalWidth = 0.0f;
-
-    int byteOffset = 0;
-    int codepoint = 0;
-
-    while (text[byteOffset] != '\0')
-    {
-        int next = 0;
-        codepoint = GetCodepointNext(&text[byteOffset], &next);
-
-        int glyphIndex = GetGlyphIndex(font, codepoint);
-        float advance = (font.glyphs[glyphIndex].advanceX > 0)
-            ? font.glyphs[glyphIndex].advanceX
-            : font.recs[glyphIndex].width;
-
-        totalWidth += advance * (fontSize / font.baseSize) + spacing;
-
-        byteOffset += next;
-    }
-
-    float x = center.x - totalWidth / 2.0f;
-
-    // --- Second pass: draw ---
-    byteOffset = 0;
-    int i = 0;
-
-    while (text[byteOffset] != '\0')
-    {
-        int next = 0;
-        codepoint = GetCodepointNext(&text[byteOffset], &next);
-
-        int glyphIndex = GetGlyphIndex(font, codepoint);
-
-        float advance = (font.glyphs[glyphIndex].advanceX > 0)
-            ? font.glyphs[glyphIndex].advanceX
-            : font.recs[glyphIndex].width;
-
-        float charWidth = advance * (fontSize / font.baseSize);
-
-		float amplitude = 7.0f;
-		float frequency = 3.0f;
-		float phase = i * 0.5f;
-        float yOffset = amplitude * sinf(time * frequency + phase);
-		Color fontColor = color;
-		if (rainbow) 
-		{
-			fontColor = GetRainbowColor(time + i * 0.3f);
-		} 
-        // Draw using codepoint version
-        DrawTextCodepoint(font,
-                          codepoint,
-                          (Vector2){x, center.y + yOffset},
-                          fontSize,
-                          fontColor);
-
-        x += charWidth + spacing;
-
-        byteOffset += next;
-        i++;
-    }
-}
-
-void DrawTextCentered(Font font, const char* text, Vector2 pos, int fontSize, Color color)
-{
-	float fontSpacing = GetDefaultSpacing(fontSize);
-	const Vector2 textSize = MeasureTextEx(font, text, fontSize, fontSpacing);
-    pos.x -= textSize.x / 2.0f;
-    pos.y -= textSize.y / 2.0f;
-	DrawTextEx(font, text, (Vector2){pos.x, pos.y}, fontSize, fontSpacing, color);
-}
-
 void loadSaveState(GameMemory* gameMemory)
 {
 	FILE* file = fopen("save.dat", "rb");
@@ -515,22 +391,6 @@ void HandleResize(Options* options)
 	}
 }
 
-void StopLanguageSelectSounds(Audio* audio)
-{
-	// if(IsSoundPlaying(audio->sounds[SOUND_BINGCHILLING]))
-	// {
-	// 	StopSound(audio->sounds[SOUND_BINGCHILLING]);
-	// }
-	// if(IsSoundPlaying(audio->sounds[SOUND_ERIKA]))
-	// {
-	// 	StopSound(audio->sounds[SOUND_ERIKA]);
-	// }
-	// if(IsSoundPlaying(audio->sounds[SOUND_AMERICA]))
-	// {
-	// 	StopSound(audio->sounds[SOUND_AMERICA]);
-	// }
-}
-
 void UpdateGame(GameMemory* gameMemory)
 {
 	GameState* gameState = gameMemory->gameState;
@@ -565,8 +425,11 @@ void UpdateGame(GameMemory* gameMemory)
 					.x = 0,
 					.y = 0
 				};
-				if (!IsMusicStreamPlaying(audio->music[audio->currentSongtrackID])) ResumeMusicStream(audio->music[audio->currentSongtrackID]);
-				UpdateMusicStream(audio->music[audio->currentSongtrackID]);
+				if (!IsMusicStreamPlaying(audio->music[audio->currentSongtrackID])) 
+				{
+					ResumeMusicStream(audio->music[audio->currentSongtrackID]);
+				}
+				LoopSoundtrack(&audio->music[audio->currentSongtrackID]);
 				ResumeSound(audio->sounds[SOUND_SHIELD]);
 				// Input keys
 				{
@@ -793,6 +656,8 @@ void UpdateGame(GameMemory* gameMemory)
 					&& gameState->player.shootTime >= 1.0f/gameState->player.fireRate
 					&& gameState->bulletCount <= MAX_BULLETS)
 				{
+					const float random = (1.0f - (float)GetRandomValue(0, 2))/10.0f;
+					SetSoundPitch(audio->sounds[SOUND_GUN], 1.0f + random);
 					PlaySound(audio->sounds[SOUND_GUN]);
 					if (gameState->player.bulletCount > 0 && gameState->bulletCount < MAX_BULLETS - gameState->player.bulletCount)
 					{
@@ -945,6 +810,8 @@ void UpdateGame(GameMemory* gameMemory)
 						enemy->shootTime += gameState->dt;
 						if (enemy->shootTime >= 1.0f/enemy->fireRate && gameState->bulletCount <= MAX_BULLETS)
 						{
+							const float random = (1.0f - (float)GetRandomValue(0, 2))/10.0f;
+							SetSoundPitch(audio->sounds[SOUND_GUN], 1.0f + random);
 							PlaySound(audio->sounds[SOUND_GUN]);
 							float bulletSize = 0.5f;
 							if (enemy->bulletCount > 0 && gameState->bulletCount < MAX_BULLETS - enemy->bulletCount)
@@ -1302,12 +1169,12 @@ void UpdateGame(GameMemory* gameMemory)
 			}
 		case STATE_UPGRADE:
 			{
+				LoopSoundtrack(&audio->music[audio->currentSongtrackID]);
 				if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) {
 					gameState->state = STATE_PAUSED;
 					gameState->lastState = STATE_UPGRADE;
 					gameState->stateChanged = true;
 				}
-				UpdateMusicStream(audio->music[audio->currentSongtrackID]);
 				if (IsSoundPlaying(audio->sounds[SOUND_SHIELD]))
 				{
 					StopSound(audio->sounds[SOUND_SHIELD]);
@@ -1412,6 +1279,7 @@ void UpdateGame(GameMemory* gameMemory)
 		case STATE_PAUSED:
 			{
 				// PauseMusicStream(audio->music);
+				LoopSoundtrack(&audio->music[audio->currentSongtrackID]);
 				if(IsSoundPlaying(audio->sounds[SOUND_SHIELD]))
 				{
 					PauseSound(audio->sounds[SOUND_SHIELD]);
@@ -1419,24 +1287,6 @@ void UpdateGame(GameMemory* gameMemory)
 				if (options->languageChanged)
 				{
 					options->languageChanged = false;
-					switch (options->language)
-					{
-						case LANG_EN:
-							{
-								// StopLanguageSelectSounds(audio);
-								// PlaySound(audio->sounds[SOUND_AMERICA]); break;
-							}
-						case LANG_DE:
-							{
-								// StopLanguageSelectSounds(audio);
-								// PlaySound(audio->sounds[SOUND_ERIKA]); break;
-							}
-						case LANG_ZH:
-							{
-								// StopLanguageSelectSounds(audio);
-								// PlaySound(audio->sounds[SOUND_BINGCHILLING]); break;
-							}
-					}
 				}
 				if (options->musicVolumeChanged) 
 				{
@@ -1838,26 +1688,14 @@ void DrawScore(GameState* gameState, Options* options, TextureAtlas* atlas)
 						20.0f, GetDefaultSpacing(20.0f), WHITE);
 }
 
-float EaseOutBack(float t)
-{
-    // t must be 0 → 1
-    const float c1 = 1.70158f;
-    const float c3 = c1 + 1.0f;
-
-    float x = t - 1.0f;
-    return 1.0f + c3 * x * x * x + c1 * x * x;
-}
-
 void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader)
 {
 	int texSizeLoc = GetShaderLocation(*shader, "textureSize");
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-	// DrawTextCentered(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 80.0f}, 40, WHITE);
-	// DrawTextCentered(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 35.0f}, 40, WHITE);
-	DrawTextWave(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 100.0f}, 40, WHITE, true, gameState->time);
-	DrawTextWave(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 55.0f}, 40, WHITE, true, gameState->time);
+	DrawTextWave(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 100.0f}, 40, WHITE, true, gameState->time, 7.0f, 3.0f, 0.5f);
+	DrawTextWave(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 55.0f}, 40, WHITE, true, gameState->time, 7.0f, 3.0f, 0.5f);
 	float scaling = 3.0f;
 	const float width  = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width;
 	const float height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height;
@@ -2060,8 +1898,8 @@ void DrawFPSInViewport(Rectangle viewport)
     DrawFPS(offsetX + 15, offsetY + 50);
 }
 
-void DrawEnemyHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader) {
-
+void DrawEnemyHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader) 
+{
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	float scale = viewport.width / VIRTUAL_WIDTH;
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
@@ -2076,6 +1914,7 @@ void DrawEnemyHealthBar(GameState* gameState, Options* options, TextureAtlas* at
 		DrawRectangleLines(recPosX, recPosY, recWidth * scale, recHeight * scale, WHITE);
 	}
 }
+
 void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader)
 {
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
@@ -2101,7 +1940,7 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader*
 				float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
-				DrawTextWave(options->titleFont, T(TXT_GAME_TITLE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f}, 90 * scale, WHITE, false, gameState->time);
+				DrawTextWave(options->titleFont, T(TXT_GAME_TITLE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f}, 90 * scale, WHITE, false, gameState->time, 2.0f, 5.0f, 0.5f);
 				DrawTextCentered(options->titleFont, T(TXT_INSTRUCTIONS), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 90}, 20 * scale, WHITE);
 				DrawTextCentered(options->titleFont, T(TXT_PRESS_TO_PLAY), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 120}, 20 * scale, WHITE);
 				DrawTextCentered(options->titleFont, "v0.1", (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height - 15}, 15 * scale, WHITE);
