@@ -59,3 +59,13 @@ void static inline GifRecordStop(GifRecorder* rec)
 	msf_gif_free(result);
 	TraceLog(LOG_INFO, "Finish animated GIF recording");
 }
+
+void static inline ScreenShot() 
+{
+	// Get time stamp
+	time_t now = time(NULL);
+	struct tm *t = localtime(&now);
+	char buffer[100];
+	strftime(buffer, sizeof(buffer), "%Y-%m-%d-%H-%M", t);
+	TakeScreenshot(TextFormat("bin/screenshot-%s.png", buffer));
+}

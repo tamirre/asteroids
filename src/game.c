@@ -1,4 +1,5 @@
 #include "game.h"
+#include <raylib.h>
 
 void Cleanup(GameMemory* gameMemory) 
 {
@@ -489,6 +490,11 @@ void UpdateGame(GameMemory* gameMemory)
 							GifRecordStart(&gameState->gifRecorder);
 						}
 					}
+					// Take Screenshot
+					if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_M))
+					{
+						ScreenShot();
+					}
 #endif
 					if (stepMode && !stepOnce) return;
 					stepOnce = false;
@@ -888,6 +894,7 @@ void UpdateGame(GameMemory* gameMemory)
 						&& gameState->player.shieldEnabled == false)
 					{
 						Rectangle collisionRec = GetCollisionRec(gameState->player.collider, bullet->collider);
+						gameState->currentCollision = collisionRec;
 						Rectangle bulletSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_BULLET]]);
 						if (pixelPerfectCollision(spriteMasks[SPRITE_BULLET].pixels, spriteMasks[gameState->player.sprite.spriteID].pixels, 
 									bulletSrc.width, gameState->player.sprite.coords.width,
@@ -1241,6 +1248,7 @@ void UpdateGame(GameMemory* gameMemory)
 			}
 		case STATE_GAME_OVER:
 			{
+				LoopSoundtrack(&audio->music[audio->currentSongtrackID]);
 				if (IsKeyPressed(KEY_ENTER)) {
 #ifdef PLATFORM_WEB
 					GameState gameState = {0};
@@ -1347,22 +1355,23 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					gameState->currentCollision = (Rectangle){0,0,0,0};
 				}
 
-				BeginShaderMode(*shader);
 
 				// Draw Stars
 				{
+					BeginBlendMode(BLEND_ALPHA);
 					for (int starIndex = 0; starIndex < gameState->starCount; starIndex++)
 					{
 						Star* star = &gameState->stars[starIndex];
 
 						const int texture_x = star->position.x - star->sprite.coords.width / 2.0 * star->size;
 						const int texture_y = star->position.y - star->sprite.coords.height / 2.0 * star->size;
-						Vector2 texSize = { star->sprite.coords.width / star->sprite.numFrames, star->sprite.coords.height };
-						SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						Color starColor = ColorAlpha(WHITE, star->alpha);
 						DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_STAR1).coords, (Vector2) {texture_x, texture_y}, starColor);
 					}
+					EndBlendMode();
 				}
+				// Only after drawing stars with alpha values. Otherwise alpha needs to be passed to the shader?
+				BeginShaderMode(*shader);
 				// Draw asteroids
 				{
 					for (int asteroidIndex = 0; asteroidIndex < gameState->asteroidCount; asteroidIndex++)
