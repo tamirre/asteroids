@@ -36,17 +36,12 @@ void Cleanup(GameMemory* gameMemory)
 
 void LoopSoundtrack(Music* music) 
 {
-
 	// Hard coded loop for now 
 	const float sampleRate = 44100;
 	if (GetMusicTimePlayed(*music) > 1556879.0f/sampleRate)
 	{
 		SeekMusicStream(*music, 519288.0f/sampleRate);
 	}
-	// if (GetMusicTimePlayed(*music) > 56.425f)
-	// {
-	// 	SeekMusicStream(*music, 11.775f);
-	// }
 	UpdateMusicStream(*music);
 }
 
@@ -896,9 +891,10 @@ void UpdateGame(GameMemory* gameMemory)
 						Rectangle collisionRec = GetCollisionRec(gameState->player.collider, bullet->collider);
 						gameState->currentCollision = collisionRec;
 						Rectangle bulletSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_BULLET]]);
-						if (pixelPerfectCollision(spriteMasks[SPRITE_BULLET].pixels, spriteMasks[gameState->player.sprite.spriteID].pixels, 
-									bulletSrc.width, gameState->player.sprite.coords.width,
-									bulletSrc.height, gameState->player.sprite.coords.height,
+						Rectangle playerSrc = GetCurrentAnimationFrame(atlas->animations[SpriteToAnimation[SPRITE_PLAYER]]);
+						if (pixelPerfectCollision(spriteMasks[SPRITE_BULLET].pixels, spriteMasks[SPRITE_PLAYER].pixels, 
+									bulletSrc.width, playerSrc.width,
+									bulletSrc.height, playerSrc.height,
 									bullet->collider, gameState->player.collider, collisionRec, bullet->rotation, 0))
 						{
 

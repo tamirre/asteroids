@@ -1,6 +1,9 @@
 # Asteroid Game
 
-A simple Asteroid game written in C using the [raylib](https://www.raylib.com/) library. The player controls a spaceship and must dodge or destroy incoming asteroids to survive as long as possible.
+### [Try the web version here](https://gwarnak.itch.io/asteroids)
+A simple Asteroid game written in C using the [raylib](https://www.raylib.com/) library. This is just a personal project to
+learn the basics of game development with all its moving parts.
+The player controls a spaceship and must dodge or destroy incoming asteroids to survive as long as possible.
 
 ## Gameplay
 
@@ -31,9 +34,6 @@ cd asteroids
 ```bash
 ./src/tools/run.sh
 ```
-## Building the Game
-
-### On Linux/MacOS
 
 ## How to Play
 
