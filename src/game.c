@@ -154,7 +154,9 @@ void InitializeOptions(Options* options)
 		.previousWidth = (float)VIRTUAL_WIDTH,
 		.previousHeight = (float)VIRTUAL_HEIGHT,
 		.disableShaders = true,
-		.font = LoadLanguageFont("./assets/fonts/UnifontExMono.ttf", maxFontSize, LANG_EN), 
+		// .font = LoadLanguageFont("./assets/fonts/UnifontExMono.ttf", maxFontSize, LANG_EN), 
+		// .font = LoadLanguageFont("./assets/fonts/Thin Sans.ttf", maxFontSize, LANG_EN), 
+		.font = LoadLanguageFont("./assets/fonts/m6x11plus.ttf", maxFontSize, LANG_EN), 
 		.titleFont = LoadLanguageFont("./assets/fonts/Ethnocentric-Regular.otf", maxTitleFontSize, LANG_EN), 
 		.fontSpacing = 1.0f,
 		.maxFontSize = maxFontSize,
@@ -657,7 +659,7 @@ void UpdateGame(GameMemory* gameMemory)
 					&& gameState->player.shootTime >= 1.0f/gameState->player.fireRate
 					&& gameState->bulletCount <= MAX_BULLETS)
 				{
-					const float random = (1.0f - (float)GetRandomValue(0, 2))/10.0f;
+					const float random = (1.0f - (float)GetRandomValue(0, 2))/5.0f;
 					SetSoundPitch(audio->sounds[SOUND_GUN], 1.0f + random);
 					PlaySound(audio->sounds[SOUND_GUN]);
 					if (gameState->player.bulletCount > 0 && gameState->bulletCount < MAX_BULLETS - gameState->player.bulletCount)
@@ -811,7 +813,7 @@ void UpdateGame(GameMemory* gameMemory)
 						enemy->shootTime += gameState->dt;
 						if (enemy->shootTime >= 1.0f/enemy->fireRate && gameState->bulletCount <= MAX_BULLETS)
 						{
-							const float random = (1.0f - (float)GetRandomValue(0, 2))/10.0f;
+							const float random = (1.0f - (float)GetRandomValue(0, 2))/5.0f;
 							SetSoundPitch(audio->sounds[SOUND_GUN], 1.0f + random);
 							PlaySound(audio->sounds[SOUND_GUN]);
 							float bulletSize = 0.5f;
@@ -1178,6 +1180,12 @@ void UpdateGame(GameMemory* gameMemory)
 					gameState->lastState = STATE_UPGRADE;
 					gameState->stateChanged = true;
 				}
+#ifndef PLATFORM_WEB
+				if (IsKeyPressed(KEY_F)) 
+				{
+					ToggleFullscreen();
+				}
+#endif
 				if (IsSoundPlaying(audio->sounds[SOUND_SHIELD]))
 				{
 					StopSound(audio->sounds[SOUND_SHIELD]);
@@ -1282,6 +1290,12 @@ void UpdateGame(GameMemory* gameMemory)
 			}
 		case STATE_PAUSED:
 			{
+#ifndef PLATFORM_WEB
+				if (IsKeyPressed(KEY_F)) 
+				{
+					ToggleFullscreen();
+				}
+#endif
 				// PauseMusicStream(audio->music);
 				LoopSoundtrack(&audio->music[audio->currentSongtrackID]);
 				if(IsSoundPlaying(audio->sounds[SOUND_SHIELD]))
@@ -1321,6 +1335,12 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 	switch (gameState->state) {
 		case STATE_MAIN_MENU:
 			{
+#ifndef PLATFORM_WEB
+				if (IsKeyPressed(KEY_F)) 
+				{
+					ToggleFullscreen();
+				}
+#endif
 				break;
 			}
 		case STATE_RUNNING:
@@ -1623,17 +1643,28 @@ void DrawHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas, 
 {
 	// Draw player health
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+	float scale = viewport.width / VIRTUAL_WIDTH;
+	scale *= 1.5f;
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
 	int texSizeLoc = GetShaderLocation(*shader, "textureSize");
-	Vector2 texSize = { getSprite(SPRITE_HEART).coords.width / getSprite(SPRITE_HEART).numFrames,
-						getSprite(SPRITE_HEART).coords.height };
+	Vector2 texSize = { getSprite(SPRITE_HEART).coords.width * scale,
+						getSprite(SPRITE_HEART).coords.height * scale};
+
 	SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 	for (int i = 1; i <= gameState->player.health; i++)
 	{
-		const int texture_x = letterBoxOffsetX + i * 16;
-		const int texture_y = letterBoxOffsetY + getSprite(SPRITE_HEART).coords.height;
-		DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_HEART).coords, (Vector2){texture_x, texture_y}, WHITE);
+		const int texture_x = letterBoxOffsetX + i * 16 * scale;
+		const int texture_y = letterBoxOffsetY + getSprite(SPRITE_HEART).coords.height * scale;
+		const Rectangle heartRect = {
+			.x = texture_x,
+			.y = texture_y,
+			.width = texSize.x,
+			.height = texSize.y,
+		};
+		// DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_HEART).coords, (Vector2){texture_x, texture_y}, WHITE);
+		DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_HEART).coords, 
+				       heartRect, (Vector2){0,0}, 0, WHITE);
 	}
 }
 
@@ -1649,7 +1680,7 @@ void DrawShieldText(GameState* gameState, Options* options, TextureAtlas* atlas,
 	const int texture_x = letterBoxOffsetX + gameState->player.position.x * scale;
 	const int texture_y = letterBoxOffsetY + (gameState->player.position.y - gameState->player.sprite.coords.height * gameState->player.size / 2.0) * scale;
 	char shieldText[100] = {0};
-	const float textSize = 18.0f;
+	const float textSize = 18.0f*scale;
 	sprintf(shieldText, "%.2f", gameState->player.shieldTime);
 	Vector2 position = (Vector2) {texture_x, texture_y};
 	position.y -= textSize;
@@ -1672,41 +1703,47 @@ void DrawScore(GameState* gameState, Options* options, TextureAtlas* atlas)
 	float scale = viewport.width / VIRTUAL_WIDTH;
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-	// Draw Score
-	float recHeight = 30.0f;
-	float recWidth = 100.0f;
-	float recPosX = letterBoxOffsetX + VIRTUAL_WIDTH * scale - recWidth - 10.0f;
-	float recPosY = letterBoxOffsetY + recHeight - 10.0f;
+	// Draw Experience
+	float recHeight = 30.0f * scale;
+	float recWidth = 100.0f * scale;
+	float recPosX = letterBoxOffsetX + VIRTUAL_WIDTH * scale - recWidth - 20.0f * scale;
+	float recPosY = letterBoxOffsetY + recHeight - 5.0f * scale;
 
-	DrawRectangle(recPosX, recPosY, gameState->experience / ((float)gameState->player.level*1.5f) / 5.0f, recHeight, ColorAlpha(BLUE, 0.5));
+	DrawRectangle(recPosX, recPosY, gameState->experience*scale / ((float)gameState->player.level*1.5f) / 5.0f, recHeight, ColorAlpha(BLUE, 0.5));
 	DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
-	Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), 20.0f, GetDefaultSpacing(20.0f));
-	DrawTextEx(options->font, T(TXT_EXPERIENCE), (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 20.0f, GetDefaultSpacing(20.0f), WHITE);
+	Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), 
+			                         20.0f*scale, GetDefaultSpacing(20.0f*scale));
+	DrawTextEx(options->font, T(TXT_EXPERIENCE), 
+			   (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, 
+			             recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 
+			   20.0f*scale, GetDefaultSpacing(20.0f*scale), WHITE);
 
+	// Draw Score
 	recPosX = letterBoxOffsetX + VIRTUAL_WIDTH * 0.5 * scale;
-	recPosY = letterBoxOffsetY + VIRTUAL_HEIGHT * 0.05 * scale + 10.0f;
+	recPosY = letterBoxOffsetY + VIRTUAL_HEIGHT * 0.05 * scale;
 	textSize = MeasureTextEx(options->font, TF(TXT_SCORE, gameState->score), 
-			                         20.0f, GetDefaultSpacing(20.0f));
+							 20.0f*scale, GetDefaultSpacing(20.0f*scale));
 	DrawTextEx(options->font, TF(TXT_SCORE, gameState->score),
 			  (Vector2){recPosX - textSize.x / 2.0f,
 			            recPosY - textSize.y / 2.0f}, 
-						20.0f, GetDefaultSpacing(20.0f), WHITE);
+			   20.0f*scale, GetDefaultSpacing(20.0f * scale), WHITE);
 }
 
 void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader)
 {
 	int texSizeLoc = GetShaderLocation(*shader, "textureSize");
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+	float scale = viewport.width / VIRTUAL_WIDTH;
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-	DrawTextWave(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 100.0f}, 40, WHITE, true, gameState->time, 7.0f, 3.0f, 0.5f);
-	DrawTextWave(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 55.0f}, 40, WHITE, true, gameState->time, 7.0f, 3.0f, 0.5f);
+	DrawTextWave(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 100.0f*scale}, 40*scale, WHITE, true, gameState->time, 3.0f, 3.0f, 0.5f);
+	DrawTextWave(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 55.0f*scale}, 40*scale, WHITE, true, gameState->time, 3.0f, 3.0f, 0.5f);
 	float scaling = 3.0f;
 	const float width  = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width;
 	const float height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height;
 	const float pos_x  = letterBoxOffsetX + viewport.width/2 - width/2;
-	const float pos_y  = letterBoxOffsetY + viewport.height/2 - height/2 + 130;
-	const int spacing_x = 240;
+	const float pos_y  = letterBoxOffsetY + viewport.height/2 - height/2 + 130*scale;
+	const int spacing_x = 240 * scale;
 
 	const int upgradeToSprite[UPGRADE_COUNT] = {
 		[UPGRADE_MULTISHOT] = SPRITE_UPGRADEMULTISHOT,
@@ -1719,7 +1756,7 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 		[UPGRADE_FIRERATE]  = TXT_UPGRADE_FIRERATE,
 	};
 	char upgradeBuffer[2048] = {0};
-	const int fontSize = 4.0f;
+	const int fontSize = 4.0 + 1.0f * scale;
 	const float rotScal  = 3.0f;
 	const float timeScal = 0.1f;
 	float pulseScaling = 0.0f;
@@ -1753,12 +1790,12 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 		}
 		scaling = 3.0f + pulseScaling;
 		*anim = Clamp(*anim, 0.0f, 1.0f);
-		yOff = -40.0f * EaseOutBack(*anim);
+		yOff = -40.0f*scale * EaseOutBack(*anim);
 		upgradeRect.y += yOff;
 
-		// Apply scaling
-		upgradeRect.width  *= scaling;
-		upgradeRect.height *= scaling;
+		// Apply scaling and screen scale
+		upgradeRect.width  *= scaling * scale;
+		upgradeRect.height *= scaling * scale;
 
 		// Pivot for rotation
 		Vector2 pivot = { upgradeRect.width / 2.0f, upgradeRect.height / 2.0f };
@@ -1775,7 +1812,7 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 
 		// Text offsets
 		Vector2 cardCenter = { upgradeRect.x + upgradeRect.width*0.5f, upgradeRect.y + upgradeRect.height*0.5f };
-		Vector2 textOffset = { 8.0f * scaling, 45.0f * scaling };
+		Vector2 textOffset = { 9.0f * scaling * scale, 45.0f * scaling * scale };
 		Vector2 textPos    = { upgradeRect.x + textOffset.x, upgradeRect.y + textOffset.y };
 
 		// Draw the upgrade sprite
@@ -1786,11 +1823,11 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 		DrawTextWrapped(options->font, T(upgradeToText[i]), 
 				        upgradeBuffer, 2048,
 						(Vector2){textPos.x - textOffset.x, textPos.y - textOffset.y},
-						32.0f*scaling, 
+						32.0f*scaling*scale, 
 						fontSize, 
 						ALIGN_LEFT,
 						rotation,
-						scaling,
+						scaling*scale,
 						(Vector2){cardCenter.x - textPos.x, cardCenter.y - textPos.y},
 						WHITE);
 
@@ -1802,9 +1839,11 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 {
 	const Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	float scale = viewport.width / VIRTUAL_WIDTH;
+	GuiSetStyle(DEFAULT, TEXT_SIZE, 24*scale);
+	GuiSetStyle(DEFAULT, TEXT_SPACING, GetDefaultSpacing(24*scale));
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-	DrawTextCentered(options->font, T(TXT_GAME_PAUSED), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/5.0f}, 40 * scale, WHITE);
+	DrawTextWave(options->font, T(TXT_GAME_PAUSED), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/5.0f}, 40 * scale, WHITE, false, gameState->time, 2.0f, 5.0f, 0.5f);
 	// Draw a window box
 	const float boxWidth = 475.0f * scale;
 	const float boxHeight = 350.0f * scale;
@@ -1822,13 +1861,13 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 	const float sliderHeight = 20 * scale;
 	const float checkboxWidth = 20 * scale;
 	const float checkboxHeight = 20 * scale;
-	GuiLabel((Rectangle){ boxPosX-labelWidth/2-boxWidth/6, 
+	GuiLabel((Rectangle){ boxPosX-labelWidth/2-boxWidth/4, 
 			boxPosY-labelHeight/2-boxHeight/6, 
 			labelWidth, labelHeight}, T(TXT_LANGUAGE));
-	GuiLabel((Rectangle){ boxPosX-labelWidth/2-boxWidth/6, 
+	GuiLabel((Rectangle){ boxPosX-labelWidth/2-boxWidth/4, 
 			boxPosY-labelHeight/2-boxHeight/6+1*boxHeight/12, 
 			labelWidth, labelHeight}, T(TXT_MUSICVOLUME));
-	GuiLabel((Rectangle){ boxPosX-labelWidth/2-boxWidth/6, 
+	GuiLabel((Rectangle){ boxPosX-labelWidth/2-boxWidth/4, 
 			boxPosY-labelHeight/2-boxHeight/6+2*boxHeight/12, 
 			labelWidth, labelHeight}, T(TXT_FXVOLUME));
 	// int GuiSliderBar(Rectangle bounds, const char *textLeft, const char *textRight, float *value, float minValue, float maxValue)
@@ -1848,18 +1887,18 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 			options->fxVolumeChanged = true;
 		}
 	}
-	GuiCheckBox((Rectangle){ boxPosX-labelWidth/2-boxWidth/6, 
+	GuiCheckBox((Rectangle){ boxPosX-labelWidth/2-boxWidth/4, 
 							 boxPosY-sliderHeight/2-boxHeight/6+3*boxHeight/12, 
 							 checkboxWidth, checkboxHeight }, T(TXT_SHOW_DEBUG_INFO), &options->showDebugInfo);
 
-	if (GuiButton((Rectangle){ boxPosX-boxWidth/4-buttonWidth/2+checkboxWidth, 
+	if (GuiButton((Rectangle){ boxPosX-boxWidth/3-buttonWidth/2+checkboxWidth, 
 							   boxPosY-buttonHeight/4+boxHeight/6+checkboxHeight, 
 							   buttonWidth, buttonHeight }, T(TXT_CONTINUE))) 
 	{
 		gameState->state = gameState->lastState;
 		gameState->stateChanged = true;
 	}
-	if (GuiButton((Rectangle){ boxPosX+boxWidth/4-buttonWidth/2+checkboxWidth, 
+	if (GuiButton((Rectangle){ boxPosX+boxWidth/5-buttonWidth/2+checkboxWidth, 
 							   boxPosY-buttonHeight/4+boxHeight/6+checkboxHeight, 
 							   buttonWidth, buttonHeight }, T(TXT_QUIT))) 
 	{
@@ -1889,7 +1928,15 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 			case LANG_ZH: LocSetLanguage(LANG_ZH); break;
 		}
 		UnloadFont(options->font);
-		options->font = LoadLanguageFont("./assets/fonts/UnifontExMono.ttf", options->maxFontSize, options->language);
+		// options->font = LoadLanguageFont("./assets/fonts/UnifontExMono.ttf", options->maxFontSize, options->language);
+		if(options->language == LANG_EN || 
+		   options->language == LANG_DE) 
+		{
+			// options->font = LoadLanguageFont("./assets/fonts/Thin Sans.ttf", options->maxFontSize, options->language);
+		    options->font = LoadLanguageFont("./assets/fonts/m6x11plus.ttf", options->maxFontSize, options->language); 
+		} else if(options->language == LANG_ZH) {
+			options->font = LoadLanguageFont("./assets/fonts/NotoSansSC-ExtraBold.ttf", options->maxFontSize, options->language);
+		}
 		GuiSetFont(options->font);
 		options->lastLanguage = options->language;
 	}
@@ -1899,8 +1946,9 @@ void DrawFPSInViewport(Rectangle viewport)
 {
     float offsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
     float offsetY = (GetRenderHeight() - viewport.height) / 2.0f;
+	float scale = viewport.width / VIRTUAL_WIDTH;
 
-    DrawFPS(offsetX + 15, offsetY + 50);
+    DrawFPS(offsetX + 25*scale, offsetY + 65*scale);
 }
 
 void DrawEnemyHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader) 
@@ -1946,9 +1994,9 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader*
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
 				DrawTextWave(options->titleFont, T(TXT_GAME_TITLE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f}, 90 * scale, WHITE, false, gameState->time, 2.0f, 5.0f, 0.5f);
-				DrawTextCentered(options->titleFont, T(TXT_INSTRUCTIONS), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 90}, 20 * scale, WHITE);
-				DrawTextCentered(options->titleFont, T(TXT_PRESS_TO_PLAY), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 120}, 20 * scale, WHITE);
-				DrawTextCentered(options->titleFont, "v0.1", (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height - 15}, 15 * scale, WHITE);
+				DrawTextCentered(options->font, T(TXT_INSTRUCTIONS), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 90 * scale}, 40 * scale, WHITE);
+				DrawTextCentered(options->font, T(TXT_PRESS_TO_PLAY), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 120 * scale}, 40 * scale, WHITE);
+				DrawTextCentered(options->font, "v0.1", (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height - 15}, 25 * scale, WHITE);
 
 				break;
 			}

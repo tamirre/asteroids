@@ -1,7 +1,7 @@
 # TODO list: 
 
-- [ ] add ini file for settings
 - [ ] add particle effects
+- [ ] add ini file for settings
 - [ ] make score and leaderboard system
 - [ ] rework sprite system to use arbitrary animation frame position in texture atlas (non-continuous animation sprite sheets in atlas)
 - [x] native windows build (with mingw for now)
