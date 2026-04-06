@@ -4,6 +4,7 @@
 - [ ] add ini file for settings
 - [ ] make score and leaderboard system
 - [ ] rework sprite system to use arbitrary animation frame position in texture atlas (non-continuous animation sprite sheets in atlas)
+- [x] add outline shader
 - [x] native windows build (with mingw for now)
 - [x] fix music loop
 - [x] add destruction/explotion shader to asteroids
