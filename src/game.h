@@ -106,6 +106,7 @@ typedef struct Asteroid {
 	Rectangle collider;
 	bool dying;
 	float deathTime;
+	bool selected;
 } Asteroid;
 
 typedef struct Boost {
@@ -251,6 +252,7 @@ typedef struct GameMemory
     Shader* shader;
     Shader* lightShader;
     Shader* explosionShader;
+	Shader* outlineShader;
 } GameMemory;
 
 

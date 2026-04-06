@@ -6,6 +6,7 @@ void Cleanup(GameMemory* gameMemory)
 	UnloadShader(*gameMemory->shader);
 	UnloadShader(*gameMemory->lightShader);
 	UnloadShader(*gameMemory->explosionShader);
+	UnloadShader(*gameMemory->outlineShader);
 	for (int i = 0; i < ANIMATION_COUNT; i++)
 	{
 		FreeSpriteAnimation(gameMemory->atlas->animations[i]);
@@ -233,6 +234,7 @@ void InitGame(GameMemory* gameMemory)
 	*gameMemory->shader = LoadShader(0, TextFormat("./src/shaders/default.glsl", GLSL_VERSION));
 	*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
 	*gameMemory->explosionShader = LoadShader(0, TextFormat("./src/shaders/explode.glsl", GLSL_VERSION));
+	*gameMemory->outlineShader = LoadShader(0, TextFormat("./src/shaders/outline.glsl", GLSL_VERSION));
 #endif
 	printf("InitGame done!\n");
 }
@@ -1085,6 +1087,31 @@ void UpdateGame(GameMemory* gameMemory)
 						}
 					}
 				}
+				// Collision asteroid mouse
+				Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+				float scale = viewport.width / VIRTUAL_WIDTH;
+				float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
+				float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
+				// Raw mouse (screen space)
+				Vector2 mouse = GetMousePosition();
+				// Convert to virtual space
+				Vector2 mouseVirtual = {
+					(mouse.x - letterBoxOffsetX) / scale,
+					(mouse.y - letterBoxOffsetY) / scale
+				};
+				for (int asteroidIndex = 0; asteroidIndex < gameState->asteroidCount; asteroidIndex++)
+				{
+					Asteroid* asteroid = &gameState->asteroids[asteroidIndex];
+					if (CheckCollisionPointRec(mouseVirtual, asteroid->collider))
+					{
+						asteroid->selected = true;
+					} 
+					else 
+					{
+						asteroid->selected = false;
+					}
+				}
+
 				// Update explosions
 				{
 					for (int explosionIndex = 0; explosionIndex < gameState->explosionCount; explosionIndex++)
@@ -1277,6 +1304,7 @@ void UpdateGame(GameMemory* gameMemory)
 					*gameMemory->shader = LoadShader(0, TextFormat("./src/shaders/default_web.glsl", GLSL_VERSION));
 					*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
 					*gameMemory->explosionShader = LoadShader(0, TextFormat("./src/shaders/explode_web.glsl", GLSL_VERSION));
+					*gameMemory->outlineShader = LoadShader(0, TextFormat("./src/shaders/outline_web.glsl", GLSL_VERSION));
 					gameMemory->gameState->state = STATE_RUNNING;
 					gameMemory->gameState->stateChanged = true;
 #else
@@ -1326,7 +1354,7 @@ void UpdateGame(GameMemory* gameMemory)
 	}
 }
 
-void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, RenderTexture2D* scene, Shader* shader, Shader* explosionShader)
+void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, RenderTexture2D* scene, Shader* shader, Shader* explosionShader, Shader* outlineShader)
 {
 	int texSizeLoc = GetShaderLocation(*shader, "textureSize");
 	int progressLoc = GetShaderLocation(*explosionShader, "progress");
@@ -1414,9 +1442,47 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 							EndBlendMode();
 							EndShaderMode();
 						} else {
-							SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
-							DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
-									(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
+							if (asteroid->selected) {
+
+								// Get shader locations
+								int outlineSizeLoc = GetShaderLocation(*outlineShader, "outlineSize");
+								int outlineColorLoc = GetShaderLocation(*outlineShader, "outlineColor");
+								int textureSizeLoc = GetShaderLocation(*outlineShader, "textureSize");
+								// For drawing outline
+								float outlineSize = 1.0f;
+								Color color = WHITE;
+								float outlineColor[4] = { 
+									color.r / 255.0f, 
+									color.g / 255.0f, 
+									color.b / 255.0f, 
+									color.a / 255.0f 
+								};
+								float textureSize[2] = {
+									atlas->textureAtlas.width,
+									atlas->textureAtlas.height 
+								};
+
+								SetShaderValue(*outlineShader,
+										outlineSizeLoc,
+										&outlineSize, SHADER_UNIFORM_FLOAT);
+
+								SetShaderValue(*outlineShader,
+										outlineColorLoc,
+										outlineColor, SHADER_UNIFORM_VEC4);
+
+								SetShaderValue(*outlineShader,
+										textureSizeLoc,
+										textureSize, SHADER_UNIFORM_VEC2);
+
+								BeginShaderMode(*outlineShader);
+								DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
+										(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
+								EndShaderMode();
+							} else {
+								SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+								DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
+										(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
+							}
 						}
 						// SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 						// DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
@@ -1639,7 +1705,7 @@ void DrawLightmap(GameState* gameState, Options* options, RenderTexture2D* litSc
 	EndTextureMode();
 }
 
-void DrawHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader)
+void DrawHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* outlineShader)
 {
 	// Draw player health
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
@@ -1647,25 +1713,57 @@ void DrawHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas, 
 	scale *= 1.5f;
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-	int texSizeLoc = GetShaderLocation(*shader, "textureSize");
-	Vector2 texSize = { getSprite(SPRITE_HEART).coords.width * scale,
-						getSprite(SPRITE_HEART).coords.height * scale};
+	
+	// For drawing outline
+	float outlineSize = 1.0f;
+	Color color = GREEN;
+	float outlineColor[4] = { 
+		color.r / 255.0f, 
+		color.g / 255.0f, 
+		color.b / 255.0f, 
+		color.a / 255.0f 
+	};
+	float textureSize[2] = {
+		atlas->textureAtlas.width,
+		atlas->textureAtlas.height 
+	};
 
-	SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+    // Get shader locations
+	//    int outlineSizeLoc = GetShaderLocation(*outlineShader, "outlineSize");
+	//    int outlineColorLoc = GetShaderLocation(*outlineShader, "outlineColor");
+	//    int textureSizeLoc = GetShaderLocation(*outlineShader, "textureSize");
+	// SetShaderValue(*outlineShader,
+	// 		outlineSizeLoc,
+	// 		&outlineSize, SHADER_UNIFORM_FLOAT);
+	//
+	// SetShaderValue(*outlineShader,
+	// 		outlineColorLoc,
+	// 		outlineColor, SHADER_UNIFORM_VEC4);
+	//
+	// SetShaderValue(*outlineShader,
+	// 		textureSizeLoc,
+	// 		textureSize, SHADER_UNIFORM_VEC2);
+	//
+	// BeginShaderMode(*outlineShader);
 	for (int i = 1; i <= gameState->player.health; i++)
 	{
 		const int texture_x = letterBoxOffsetX + i * 16 * scale;
 		const int texture_y = letterBoxOffsetY + getSprite(SPRITE_HEART).coords.height * scale;
+
 		const Rectangle heartRect = {
 			.x = texture_x,
 			.y = texture_y,
-			.width = texSize.x,
-			.height = texSize.y,
+		    .width = (float)getSprite(SPRITE_HEART).coords.width * scale,
+		    .height = (float)getSprite(SPRITE_HEART).coords.height * scale,
 		};
-		// DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_HEART).coords, (Vector2){texture_x, texture_y}, WHITE);
-		DrawTexturePro(atlas->textureAtlas, getSprite(SPRITE_HEART).coords, 
-				       heartRect, (Vector2){0,0}, 0, WHITE);
+		DrawTexturePro(atlas->textureAtlas, 
+					   getSprite(SPRITE_HEART).coords, 
+					   heartRect, 
+					   (Vector2){0,0}, 
+					   0, 
+					   WHITE);
 	}
+	// EndShaderMode();
 }
 
 void DrawShieldText(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader)
@@ -1704,40 +1802,63 @@ void DrawScore(GameState* gameState, Options* options, TextureAtlas* atlas)
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
 	// Draw Experience
+	float fontSize = 30.0f*scale;
 	float recHeight = 30.0f * scale;
 	float recWidth = 100.0f * scale;
-	float recPosX = letterBoxOffsetX + VIRTUAL_WIDTH * scale - recWidth - 20.0f * scale;
+	float recPosX = letterBoxOffsetX + VIRTUAL_WIDTH * scale - recWidth - fontSize;
 	float recPosY = letterBoxOffsetY + recHeight - 5.0f * scale;
 
 	DrawRectangle(recPosX, recPosY, gameState->experience*scale / ((float)gameState->player.level*1.5f) / 5.0f, recHeight, ColorAlpha(BLUE, 0.5));
 	DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
 	Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), 
-			                         20.0f*scale, GetDefaultSpacing(20.0f*scale));
+			                         fontSize, GetDefaultSpacing(fontSize));
+
+
+
+	// Draw shadow
+	Vector2 shadowPos = (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, 
+								  recPosY + recHeight / 2.0f - textSize.y / 2.0f};
+	shadowPos.x += (int)(fontSize / 10);
+	shadowPos.y += (int)(fontSize / 10);
+	DrawTextEx(options->font, T(TXT_EXPERIENCE), 
+			   shadowPos,
+			   fontSize, GetDefaultSpacing(fontSize), SHADOW_COLOR);
 	DrawTextEx(options->font, T(TXT_EXPERIENCE), 
 			   (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, 
 			             recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 
-			   20.0f*scale, GetDefaultSpacing(20.0f*scale), WHITE);
+			   fontSize, GetDefaultSpacing(fontSize), WHITE);
 
 	// Draw Score
 	recPosX = letterBoxOffsetX + VIRTUAL_WIDTH * 0.5 * scale;
 	recPosY = letterBoxOffsetY + VIRTUAL_HEIGHT * 0.05 * scale;
 	textSize = MeasureTextEx(options->font, TF(TXT_SCORE, gameState->score), 
-							 20.0f*scale, GetDefaultSpacing(20.0f*scale));
+							 fontSize, GetDefaultSpacing(fontSize));
+
+
+	// Draw shadow
+	shadowPos = (Vector2){recPosX - textSize.x / 2.0f,
+								  recPosY - textSize.y / 2.0f}; 
+
+	shadowPos.x += (int)(fontSize / 10);
+	shadowPos.y += (int)(fontSize / 10);
+	DrawTextEx(options->font, TF(TXT_SCORE, gameState->score),
+			   shadowPos,
+			   fontSize, GetDefaultSpacing(fontSize), SHADOW_COLOR);
 	DrawTextEx(options->font, TF(TXT_SCORE, gameState->score),
 			  (Vector2){recPosX - textSize.x / 2.0f,
 			            recPosY - textSize.y / 2.0f}, 
-			   20.0f*scale, GetDefaultSpacing(20.0f * scale), WHITE);
+			   fontSize, GetDefaultSpacing(fontSize), WHITE);
 }
 
-void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader)
+void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader, Shader* outlineShader)
 {
 	int texSizeLoc = GetShaderLocation(*shader, "textureSize");
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	float scale = viewport.width / VIRTUAL_WIDTH;
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-	DrawTextWave(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 100.0f*scale}, 40*scale, WHITE, true, gameState->time, 3.0f, 3.0f, 0.5f);
-	DrawTextWave(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 55.0f*scale}, 40*scale, WHITE, true, gameState->time, 3.0f, 3.0f, 0.5f);
+	DrawTextWave(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 100.0f*scale}, 40*scale, WHITE, true, gameState->time, 3.0f, 3.0f, 0.5f, true);
+	DrawTextWave(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 55.0f*scale}, 40*scale, WHITE, true, gameState->time, 3.0f, 3.0f, 0.5f, true);
 	float scaling = 3.0f;
 	const float width  = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width;
 	const float height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height;
@@ -1815,10 +1936,48 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 		Vector2 textOffset = { 9.0f * scaling * scale, 45.0f * scaling * scale };
 		Vector2 textPos    = { upgradeRect.x + textOffset.x, upgradeRect.y + textOffset.y };
 
-		// Draw the upgrade sprite
-		DrawTexturePro(atlas->textureAtlas, getSprite(upgradeToSprite[i]).coords, 
-				       upgradeRect, pivot, rotation, WHITE);
+		if (gameState->pickedUpgrade == i) {
+			// Get shader locations
+			int outlineSizeLoc = GetShaderLocation(*outlineShader, "outlineSize");
+			int outlineColorLoc = GetShaderLocation(*outlineShader, "outlineColor");
+			int textureSizeLoc = GetShaderLocation(*outlineShader, "textureSize");
+			// For drawing outline
+			float outlineSize = 1.0f;
+			Color color = WHITE;
+			float outlineColor[4] = { 
+				color.r / 255.0f, 
+				color.g / 255.0f, 
+				color.b / 255.0f, 
+				color.a / 255.0f 
+			};
+			float textureSize[2] = {
+				atlas->textureAtlas.width,
+				atlas->textureAtlas.height 
+			};
 
+			SetShaderValue(*outlineShader,
+					outlineSizeLoc,
+					&outlineSize, SHADER_UNIFORM_FLOAT);
+
+			SetShaderValue(*outlineShader,
+					outlineColorLoc,
+					outlineColor, SHADER_UNIFORM_VEC4);
+
+			SetShaderValue(*outlineShader,
+					textureSizeLoc,
+					textureSize, SHADER_UNIFORM_VEC2);
+
+			BeginShaderMode(*outlineShader);
+			// Draw the upgrade sprite
+			DrawTexturePro(atlas->textureAtlas, getSprite(upgradeToSprite[i]).coords, 
+					upgradeRect, pivot, rotation, WHITE);
+			EndShaderMode();
+
+		} else {
+			// Draw the upgrade sprite
+			DrawTexturePro(atlas->textureAtlas, getSprite(upgradeToSprite[i]).coords, 
+					upgradeRect, pivot, rotation, WHITE);
+		}
 		// Draw the upgrade text
 		DrawTextWrapped(options->font, T(upgradeToText[i]), 
 				        upgradeBuffer, 2048,
@@ -1843,7 +2002,7 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 	GuiSetStyle(DEFAULT, TEXT_SPACING, GetDefaultSpacing(24*scale));
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-	DrawTextWave(options->font, T(TXT_GAME_PAUSED), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/5.0f}, 40 * scale, WHITE, false, gameState->time, 2.0f, 5.0f, 0.5f);
+	DrawTextWave(options->font, T(TXT_GAME_PAUSED), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/5.0f}, 40 * scale, WHITE, false, gameState->time, 2.0f, 5.0f, 0.5f, true);
 	// Draw a window box
 	const float boxWidth = 475.0f * scale;
 	const float boxHeight = 350.0f * scale;
@@ -1968,18 +2127,16 @@ void DrawEnemyHealthBar(GameState* gameState, Options* options, TextureAtlas* at
 	}
 }
 
-void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader)
+void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader, Shader* outlineShader)
 {
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	switch (gameState->state) {
 		case STATE_RUNNING:
 			{
-				DrawHealthBar(gameState, options, atlas, shader);
+				DrawHealthBar(gameState, options, atlas, outlineShader);
 				DrawEnemyHealthBar(gameState, options, atlas, shader);
 				DrawScore(gameState, options, atlas);
 
-				// DrawCircleV(gameState->player.position, 5.0f, RED);
-				// DrawCircleV((Vector2){texture_x, texture_y}, 5.0f, RED);
 				if (gameState->player.shieldEnabled)
 				{
 					DrawShieldText(gameState, options, atlas, shader);
@@ -1993,7 +2150,7 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader*
 				float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
-				DrawTextWave(options->titleFont, T(TXT_GAME_TITLE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f}, 90 * scale, WHITE, false, gameState->time, 2.0f, 5.0f, 0.5f);
+				DrawTextWave(options->titleFont, T(TXT_GAME_TITLE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f}, 90 * scale, WHITE, false, gameState->time, 2.0f, 5.0f, 0.5f, true);
 				DrawTextCentered(options->font, T(TXT_INSTRUCTIONS), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 90 * scale}, 40 * scale, WHITE);
 				DrawTextCentered(options->font, T(TXT_PRESS_TO_PLAY), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 120 * scale}, 40 * scale, WHITE);
 				DrawTextCentered(options->font, "v0.1", (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height - 15}, 25 * scale, WHITE);
@@ -2014,14 +2171,14 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader*
 			}
 		case STATE_UPGRADE:
 			{
-				DrawHealthBar(gameState, options, atlas, shader);
+				DrawHealthBar(gameState, options, atlas, outlineShader);
 				DrawScore(gameState, options, atlas);
-				DrawUpgrades(gameState, options, atlas, shader);
+				DrawUpgrades(gameState, options, atlas, shader, outlineShader);
 				break;
 			}
 		case STATE_PAUSED:
 			{
-				DrawHealthBar(gameState, options, atlas, shader);
+				DrawHealthBar(gameState, options, atlas, outlineShader);
 				DrawEnemyHealthBar(gameState, options, atlas, shader);
 				DrawScore(gameState, options, atlas);
 				if (gameState->lastState == STATE_RUNNING) 
@@ -2029,7 +2186,7 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader*
 				}
 				else if (gameState->lastState == STATE_UPGRADE) 
 				{
-					DrawUpgrades(gameState, options, atlas, shader);
+					DrawUpgrades(gameState, options, atlas, shader, outlineShader);
 				}
 				DrawPauseMenu(gameState, options, atlas);
 				break;
@@ -2066,15 +2223,16 @@ void DrawGame(GameMemory* gameMemory)
 	Shader* shader = gameMemory->shader;
 	Shader* lightShader = gameMemory->lightShader;
 	Shader* explosionShader = gameMemory->explosionShader;
+	Shader* outlineShader = gameMemory->outlineShader;
 
 	DrawLightmap(gameState, options, litScene, lightShader);
-	DrawScene(gameState, options, atlas, scene, shader, explosionShader);
+	DrawScene(gameState, options, atlas, scene, shader, explosionShader, outlineShader);
 
 	BeginDrawing();
 	{
 		ClearBackground(BLACK);
 		DrawComposite(scene, options, litScene, gameState, lightShader);
-		DrawUI(gameState, options, atlas, shader);
+		DrawUI(gameState, options, atlas, shader, outlineShader);
 	}
 	EndDrawing();
 }

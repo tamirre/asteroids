@@ -26,15 +26,13 @@ local function normalizeFrameName(filename)
 end
 
 -- ------------------- setup paths -------------------
-local BASE_DIR  = app.fs.filePath("./assets/textures")
+local BASE_DIR  = app.fs.joinPath("./assets", "textures")
 local ATLAS_DIR = app.fs.joinPath(BASE_DIR, "atlas")
 ensureDir(ATLAS_DIR)
--- print(BASE_DIR)
--- print(ATLAS_DIR)
 
 local ATLAS_IMAGE = app.fs.joinPath(ATLAS_DIR, "atlas.png")
 local TEMP_JSON   = app.fs.joinPath(ATLAS_DIR, "_temp.json")
-local H_FILE      = app.fs.joinPath(ATLAS_DIR, "../../src/assetsData.h")
+local H_FILE      = app.fs.joinPath(ATLAS_DIR, "../../../src/assetsData.h")
 local SHAPE_PADDING = 1
 
 -- ------------------- collect .aseprite files -------------------

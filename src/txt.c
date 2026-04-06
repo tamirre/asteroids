@@ -1,8 +1,11 @@
 #pragma once
+#define SHADOW_COLOR ((Color){255.0f, 255.0f, 255.0f, 50.0f})
+
 #include "txt.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "localization.h"
+
 
 static inline Color GetRainbowColor(float time)
 {
@@ -20,7 +23,7 @@ static inline Color GetRainbowColor(float time)
     };
 }
 
-static inline void DrawTextWave(Font font, const char* text, Vector2 center, float fontSize, Color color, bool rainbow, float time, float amplitude, float frequency, float phase)
+static inline void DrawTextWave(Font font, const char* text, Vector2 center, float fontSize, Color color, bool rainbow, float time, float amplitude, float frequency, float phase, bool drawShadow)
 {
     float spacing = GetDefaultSpacing(fontSize);
 
@@ -73,7 +76,21 @@ static inline void DrawTextWave(Font font, const char* text, Vector2 center, flo
 		{
 			fontColor = GetRainbowColor(time + i * 0.3f);
 		} 
-        // Draw using codepoint version
+		
+		if (drawShadow)
+		{
+			// Draw shadow
+			Vector2 shadowPos = (Vector2){x, center.y + yOffset};
+			shadowPos.x += (int)(fontSize / 10);
+			shadowPos.y += (int)(fontSize / 10);
+			DrawTextCodepoint(font,
+							  codepoint,
+							  shadowPos,
+							  fontSize,
+							  SHADOW_COLOR);
+		}
+
+		// Draw codepoint
         DrawTextCodepoint(font,
                           codepoint,
                           (Vector2){x, center.y + yOffset},
@@ -93,8 +110,14 @@ static inline void DrawTextCentered(Font font, const char* text, Vector2 pos, in
 	const Vector2 textSize = MeasureTextEx(font, text, fontSize, fontSpacing);
     pos.x -= textSize.x / 2.0f;
     pos.y -= textSize.y / 2.0f;
+
+	Vector2 shadowPos = pos;
+	shadowPos.x += (int)(fontSize / 10);
+	shadowPos.y += (int)(fontSize / 10);
+	DrawTextEx(font, text, shadowPos, fontSize, fontSpacing, SHADOW_COLOR);
 	DrawTextEx(font, text, (Vector2){pos.x, pos.y}, fontSize, fontSpacing, color);
 }
+
 static inline void DrawTextWrapped(Font font,
                      const char *text,
                      char *wrapped,
@@ -141,6 +164,18 @@ static inline void DrawTextWrapped(Font font,
                 pivot.x,
                 pivot.y - yOffset
             };
+
+			// Vector2 shadowPos = (Vector2){x, y};
+			// shadowPos.x += (int)(fontSize / 10);
+			// shadowPos.y += (int)(fontSize / 10);
+			// Color shadowColor = (Color){130.0f, 130.0f, 130.0f, 50.0f};
+			//          DrawTextPro(font, line,
+			//                      shadowPos,
+			//                      linePivot,
+			//                      rotation,
+			//                      fontSize,
+			//                      spacing,
+			//                      shadowColor);
 
             DrawTextPro(font, line,
                         (Vector2){ x, y },

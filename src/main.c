@@ -40,6 +40,7 @@ int main()
 	Shader shader = {0};
 	Shader explosionShader = {0};
 	Shader lightShader = {0};
+	Shader outlineShader = {0};
 
 	GameMemory gameMemory = {0}; 
 	gameMemory.gameState = &gameState;
@@ -52,6 +53,7 @@ int main()
 	gameMemory.shader = &shader;
 	gameMemory.explosionShader = &explosionShader;
 	gameMemory.lightShader = &lightShader;
+	gameMemory.outlineShader = &outlineShader;
 
 	// InitAudioDevice();
 #if defined(PLATFORM_WEB)
@@ -62,6 +64,7 @@ int main()
 	*g_memory->shader = LoadShader(0, TextFormat("./src/shaders/default_web.glsl", GLSL_VERSION));
 	*g_memory->lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
 	*g_memory->explosionShader = LoadShader(0, TextFormat("./src/shaders/explode_web.glsl", GLSL_VERSION));
+	*g_memory->outlineShader = LoadShader(0, TextFormat("./src/shaders/outline_web.glsl", GLSL_VERSION));
 	emscripten_set_main_loop(WebWrapper, TARGET_FPS, 1);
 #else
 	GameCode game = LoadGameCode();
@@ -83,6 +86,7 @@ int main()
 
 			shader = LoadShader(0, TextFormat("./src/shaders/default.glsl", GLSL_VERSION));
 			lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
+			outlineShader = LoadShader(0, TextFormat("./src/shaders/outline.glsl", GLSL_VERSION));
 
 			// CloseAudioDevice();
 			UnloadGameCode(&game);
