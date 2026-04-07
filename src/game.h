@@ -46,6 +46,8 @@
 #define MAX_STARS (50)
 #define MAX_BOOSTS (1)
 #define MAX_ENEMIES (3)
+#define MAX_PARTICLES (1000)
+#define MAX_PARTICLE_EMITTERS (10)
 
 #ifdef PLATFORM_WEB
 	#define TARGET_FPS (60)
@@ -80,6 +82,36 @@ typedef enum Upgrade
     UPGRADE_FIRERATE,
     UPGRADE_COUNT,
 } Upgrade;
+
+typedef struct Particle {
+	Sprite sprite;
+	Vector2 position;
+	Vector2 velocity;
+	Vector2 acceleration;
+	float startSize;
+	float endSize;
+	float rotation;
+	float angularVelocity;
+	float age;
+	float lifetime;
+	Color startColor;
+	Color endColor;
+	bool active;
+} Particle;
+
+typedef struct ParticleEmitter {
+	Particle* particles;
+	Vector2 position;
+	int particleCount;
+	int maxParticleCount;
+	Vector2 spawnMin;
+	Vector2 spawnMax;
+	float spawnRate;
+	float spawnTimer;
+	float lifetime;
+	bool active;
+	float emitterTime;
+} ParticleEmitter;
 
 typedef struct UpgradeCard {
 	Rectangle rect;
@@ -238,6 +270,8 @@ typedef struct GameState {
     Rectangle currentCollision;
 	bool stateChanged;
 	GifRecorder gifRecorder;
+	ParticleEmitter particleEmitters[MAX_PARTICLE_EMITTERS];
+	int particleEmitterCount;
 } GameState;
 
 typedef struct GameMemory

@@ -73,6 +73,103 @@ void InitializeAudio(Audio* audio, Options* options)
 	SetFxVolume(audio, options->fxVolume);
 }
 
+void SpawnEmitter(GameState* gameState, Vector2 pos)
+{
+    if (gameState->particleEmitterCount >= MAX_PARTICLE_EMITTERS) return;
+
+    ParticleEmitter* e = &gameState->particleEmitters[gameState->particleEmitterCount++];
+    *e = (ParticleEmitter){0};
+    e->position = pos;
+    e->spawnRate = 10.0f;
+    e->lifetime = 1.0f; 
+    e->active = true;
+}
+static void EmitParticle(ParticleEmitter* e)
+{
+    if (e->particleCount >= MAX_PARTICLES) return;
+
+    Particle* p = &e->particles[e->particleCount++];
+    float angle = GetRandomValue(0, 360) * DEG2RAD;
+    float speed = (float)GetRandomValue(50, 300);
+
+    Vector2 dir = { cosf(angle), sinf(angle) };
+
+    p->position = e->position;
+    p->velocity = Vector2Scale(dir, speed);
+    p->acceleration = (Vector2){0, 50}; 
+    p->startSize = 4.0f;
+    p->rotation = 0.0f;
+    p->angularVelocity = GetRandomValue(-5, 5);
+    p->age = 0.0f;
+    p->lifetime = 0.5f + (float)GetRandomValue(0, 50) / 100.0f;
+    p->startColor = RED;
+}
+
+void UpdateEmitter(ParticleEmitter* e, float dt)
+{
+    // --- EMISSION ---
+    if (e->active)
+    {
+        e->spawnTimer += dt;
+        float spawnInterval = 1.0f / e->spawnRate;
+
+        while (e->spawnTimer >= spawnInterval)
+        {
+            e->spawnTimer -= spawnInterval;
+            EmitParticle(e);
+        }
+
+        e->emitterTime += dt;
+
+        // stop spawning after lifetime
+        if (e->lifetime > 0.0f &&
+            e->emitterTime >= e->lifetime)
+        {
+            e->active = false;
+        }
+    }
+
+    // --- PARTICLES ---
+    for (int i = 0; i < e->particleCount;)
+    {
+        Particle* p = &e->particles[i];
+
+        p->age += dt;
+
+        if (p->age >= p->lifetime)
+        {
+            // swap-remove (same as bullets)
+            e->particles[i] = e->particles[--e->particleCount];
+            continue;
+        }
+
+        // integrate
+        p->velocity = Vector2Add(p->velocity, Vector2Scale(p->acceleration, dt));
+        p->position = Vector2Add(p->position, Vector2Scale(p->velocity, dt));
+        p->rotation += p->angularVelocity * dt;
+
+        i++;
+    }
+}
+
+void UpdateEmitters(GameState* gameState, float dt)
+{
+    for (int i = 0; i < gameState->particleEmitterCount;)
+    {
+        ParticleEmitter* e = &gameState->particleEmitters[i];
+
+        UpdateEmitter(e, dt);
+
+        if (!e->active && e->particleCount == 0)
+        {
+            gameState->particleEmitters[i] = gameState->particleEmitters[--gameState->particleEmitterCount];
+            continue;
+        }
+
+        i++;
+    }
+}
+
 void InitializeGameState(GameState* gameState) 
 {
     *gameState = (GameState) {
@@ -110,6 +207,7 @@ void InitializeGameState(GameState* gameState)
 		.shouldExit = false,
 		.currentCollision = {0},
 		.stateChanged = true,
+		.particleEmitterCount = 0,
     };
 
 	MsfGifState gifState = { 0 };
@@ -210,6 +308,7 @@ void InitGame(GameMemory* gameMemory)
 	
 	// Disable Exit on ESC
     SetExitKey(KEY_NULL);
+	SetMousePosition(VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2);
 
 	// Options options = {0};
 	GameState gameState = {0};
@@ -1197,6 +1296,24 @@ void UpdateGame(GameMemory* gameMemory)
 						} 
 					}
 				}
+				// Test particle emitter
+				{
+					if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+
+						Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+						float scale = viewport.width / VIRTUAL_WIDTH;
+						float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
+						float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
+						Vector2 mouse = GetMousePosition();
+						Vector2 mousePosition = {
+							(mouse.x - letterBoxOffsetX) / scale,
+							(mouse.y - letterBoxOffsetY) / scale
+						};
+						// SpawnEmitter(gameState, mousePosition);
+					}
+				}
+				// Update emitters
+				// UpdateEmitters(gameState, gameState->dt);
 				break;
 			}
 		case STATE_UPGRADE:
@@ -1352,6 +1469,20 @@ void UpdateGame(GameMemory* gameMemory)
 				break;
 			}
 	}
+}
+void DrawEmitter(const ParticleEmitter* e)
+{
+    for (int i = 0; i < e->particleCount; i++)
+    {
+        const Particle* p = &e->particles[i];
+        float t = p->age / p->lifetime;
+        Color c = p->startColor;
+        c.a = (unsigned char)(255 * (1.0f - t)); // fade out
+		if (p->sprite.spriteID == -1)
+        {
+            DrawCircleV(p->position, p->startSize, c);
+        }
+    }
 }
 
 void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, RenderTexture2D* scene, Shader* shader, Shader* explosionShader, Shader* outlineShader)
@@ -1600,6 +1731,11 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_SHIELD]], playerDestination, origin, 0, WHITE, *shader, false, false);
 					}
 				}
+				// Draw particle emitters
+				for (int i = 0; i < gameState->particleEmitterCount; i++)
+				{
+					DrawEmitter(&gameState->particleEmitters[i]);
+				}	
 				EndShaderMode();
 				break;
 			}
@@ -1701,23 +1837,6 @@ void DrawHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas, 
 		atlas->textureAtlas.height 
 	};
 
-    // Get shader locations
-	//    int outlineSizeLoc = GetShaderLocation(*outlineShader, "outlineSize");
-	//    int outlineColorLoc = GetShaderLocation(*outlineShader, "outlineColor");
-	//    int textureSizeLoc = GetShaderLocation(*outlineShader, "textureSize");
-	// SetShaderValue(*outlineShader,
-	// 		outlineSizeLoc,
-	// 		&outlineSize, SHADER_UNIFORM_FLOAT);
-	//
-	// SetShaderValue(*outlineShader,
-	// 		outlineColorLoc,
-	// 		outlineColor, SHADER_UNIFORM_VEC4);
-	//
-	// SetShaderValue(*outlineShader,
-	// 		textureSizeLoc,
-	// 		textureSize, SHADER_UNIFORM_VEC2);
-	//
-	// BeginShaderMode(*outlineShader);
 	for (int i = 1; i <= gameState->player.health; i++)
 	{
 		const int texture_x = letterBoxOffsetX + i * 16 * scale;
@@ -1736,7 +1855,6 @@ void DrawHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas, 
 					   0, 
 					   WHITE);
 	}
-	// EndShaderMode();
 }
 
 void DrawShieldText(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader)
@@ -2169,6 +2287,39 @@ void DrawComposite(RenderTexture2D* scene, Options* options, RenderTexture2D* li
     if (!options->disableShaders) EndShaderMode();
 }
 
+void DrawCursor(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader, Shader* outlineShader) 
+{
+	HideCursor();
+	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+	float scale = viewport.width / VIRTUAL_WIDTH;
+	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
+	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
+	Vector2 mouse = GetMousePosition();
+	Vector2 mousePosition = {
+		(mouse.x - letterBoxOffsetX) / scale,
+		(mouse.y - letterBoxOffsetY) / scale
+	};
+	Rectangle sourceRect = {
+		.x = getSprite(SPRITE_CURSOR).coords.x,
+		.y = getSprite(SPRITE_CURSOR).coords.y,
+		.width = getSprite(SPRITE_CURSOR).coords.width * scale,
+		.height = getSprite(SPRITE_CURSOR).coords.height * scale,
+	};
+	float cursorScale = 1.0f;
+	Rectangle destRect = {
+		.x = mousePosition.x + letterBoxOffsetX,	
+		.y = mousePosition.y + letterBoxOffsetY,
+		.width = (float)getSprite(SPRITE_CURSOR).coords.width * cursorScale,
+		.height = (float)getSprite(SPRITE_CURSOR).coords.height * cursorScale,
+	};
+	DrawTexturePro(atlas->textureAtlas, 
+				   sourceRect,
+				   destRect,
+				   (Vector2){0,0}, 
+				   0, 
+				   WHITE);
+}
+
 void DrawGame(GameMemory* gameMemory)
 {
 	GameState* gameState = gameMemory->gameState;
@@ -2189,6 +2340,7 @@ void DrawGame(GameMemory* gameMemory)
 		ClearBackground(BLACK);
 		DrawComposite(scene, options, litScene, gameState, lightShader);
 		DrawUI(gameState, options, atlas, shader, outlineShader);
+		DrawCursor(gameState, options, atlas, shader, outlineShader);
 	}
 	EndDrawing();
 }
