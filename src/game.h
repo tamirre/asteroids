@@ -84,7 +84,6 @@ typedef enum Upgrade
 } Upgrade;
 
 typedef struct Particle {
-	Sprite sprite;
 	Vector2 position;
 	Vector2 velocity;
 	Vector2 acceleration;
@@ -101,6 +100,7 @@ typedef struct Particle {
 
 typedef struct ParticleEmitter {
 	Particle particles[MAX_PARTICLES];
+	Sprite sprite;
 	Vector2 position;
 	int particleCount;
 	int maxParticleCount;

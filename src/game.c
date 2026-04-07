@@ -73,35 +73,36 @@ void InitializeAudio(Audio* audio, Options* options)
 	SetFxVolume(audio, options->fxVolume);
 }
 
-void SpawnEmitter(GameState* gameState, Vector2 pos)
+void SpawnEmitter(GameState* gameState, Vector2 pos, Sprite sprite)
 {
     if (gameState->particleEmitterCount >= MAX_PARTICLE_EMITTERS) return;
 
     ParticleEmitter* e = &gameState->particleEmitters[gameState->particleEmitterCount++];
     *e = (ParticleEmitter){0};
     e->position = pos;
+	e->sprite = sprite;
 	e->particleCount = 0;
 	e->maxParticleCount = 10;
     e->spawnRate = 10.0f;
 	e->spawnTimer = 0.0f;
     e->active = true;
 	e->emitterTime = 0.0f;
-	e->lifetime = 1.0f; 
+	e->lifetime = 0.5f; 
 }
 static void EmitParticle(ParticleEmitter* e)
 {
     if (e->particleCount >= MAX_PARTICLES) return;
     float angle = GetRandomValue(0, 360) * DEG2RAD;
-    float speed = (float)GetRandomValue(50, 300);
+    float speed = (float)GetRandomValue(50, 100);
     Vector2 dir = { cosf(angle), sinf(angle) };
 	Particle particle = {
 		.position = e->position,
 		.velocity = Vector2Scale(dir, speed),
-		.acceleration = (Vector2){0, 50}, 
-		.startSize = 4.0f,
-		.endSize = 4.0f,
+		.acceleration = (Vector2){0, 500}, 
+		.startSize = 0.3f,
+		.endSize = 0.1f,
 		.rotation = 0.0f,
-		.angularVelocity = GetRandomValue(-5, 5),
+		.angularVelocity = GetRandomValue(-300, 300),
 		.age = 0.0f,
 		.lifetime = 0.5f + (float)GetRandomValue(0, 50) / 100.0f,
 		.startColor = RED,
@@ -1066,7 +1067,7 @@ void UpdateGame(GameMemory* gameMemory)
 							asteroid->position.y += asteroid->velocity.y * gameState->dt;
 							asteroid->rotation   += asteroid->angularVelocity * gameState->dt;
 						} else {
-							asteroid->position.y -= 20.0 * gameState->dt;
+							// asteroid->position.y -= 20.0 * gameState->dt;
 						}
 
 						float width  = asteroid->sprite.coords.width * asteroid->size;
@@ -1078,7 +1079,6 @@ void UpdateGame(GameMemory* gameMemory)
 							.height = height, 
 						};
 						if (asteroid->dying) {
-							// printf("dying: %f\n", asteroid->deathTime);
 							asteroid->deathTime += gameState->dt;
 						}
 						if (asteroid->deathTime > 0.5f) {
@@ -1121,10 +1121,10 @@ void UpdateGame(GameMemory* gameMemory)
 										}
 										asteroid->health -= bullet->damage;
 										// Replace with last bullet
-										*bullet = gameState->bullets[--gameState->bulletCount];
 
 										if (asteroid->health <= 0.0f && !asteroid->dying) {
 											asteroid->dying = true;
+											SpawnEmitter(gameState, bullet->position, asteroid->sprite);
 											asteroid->deathTime = 0.0f;
 											gameState->experience += MAX((int)(asteroid->size * 100),1);
 											gameState->score += MAX((int)(asteroid->size * 100),1);
@@ -1133,8 +1133,7 @@ void UpdateGame(GameMemory* gameMemory)
 												explosion->velocity.y = 0.0f;
 											}
 										}
-
-										
+										*bullet = gameState->bullets[--gameState->bulletCount];
 										// if (asteroid->health <= 0.0)
 										// {
 										// 	gameState->experience += MAX((int)(asteroid->size * 100),1);
@@ -1305,7 +1304,7 @@ void UpdateGame(GameMemory* gameMemory)
 							(mouse.x - letterBoxOffsetX) / scale,
 							(mouse.y - letterBoxOffsetY) / scale
 						};
-						SpawnEmitter(gameState, mousePosition);
+						SpawnEmitter(gameState, mousePosition, getSprite(SPRITE_HEART));
 					}
 				}
 				// Update emitters
@@ -1466,7 +1465,7 @@ void UpdateGame(GameMemory* gameMemory)
 			}
 	}
 }
-void DrawEmitter(const ParticleEmitter* e)
+void DrawEmitter(TextureAtlas* atlas, const ParticleEmitter* e)
 {
     for (int i = 0; i < e->particleCount; i++)
     {
@@ -1474,7 +1473,19 @@ void DrawEmitter(const ParticleEmitter* e)
         float t = p->age / p->lifetime;
         Color c = p->startColor;
         c.a = (unsigned char)(255 * (1.0f - t)); // fade out
-		DrawCircleV(p->position, p->startSize, c);
+		float scale = p->startSize + t * (p->endSize - p->startSize);
+		DrawTexturePro(atlas->textureAtlas, 
+					   e->sprite.coords, 
+					   (Rectangle){
+						   .x = p->position.x - e->sprite.coords.width/2.0f,
+						   .y = p->position.y - e->sprite.coords.height/2.0f,
+						   .width = e->sprite.coords.width * scale,
+						   .height = e->sprite.coords.height * scale,
+					   },
+					   (Vector2){0,0}, 
+					   p->rotation, 
+					   WHITE);
+		// DrawCircleV(p->position, p->startSize, c);
     }
 }
 
@@ -1728,7 +1739,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 				// Draw particle emitters
 				for (int i = 0; i < gameState->particleEmitterCount; i++)
 				{
-					DrawEmitter(&gameState->particleEmitters[i]);
+					DrawEmitter(atlas, &gameState->particleEmitters[i]);
 				}	
 				break;
 			}
@@ -2287,21 +2298,21 @@ void DrawCursor(GameState* gameState, Options* options, TextureAtlas* atlas, Sha
 	float scale = viewport.width / VIRTUAL_WIDTH;
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-	Vector2 mouse = GetMousePosition();
-	Vector2 mousePosition = {
-		(mouse.x - letterBoxOffsetX) / scale,
-		(mouse.y - letterBoxOffsetY) / scale
-	};
+	Vector2 mousePosition = GetMousePosition();
+	// Vector2 mousePosition = {
+	// 	(mouse.x + letterBoxOffsetX) / scale,
+	// 	(mouse.y + letterBoxOffsetY) / scale
+	// };
 	Rectangle sourceRect = {
 		.x = getSprite(SPRITE_CURSOR).coords.x,
 		.y = getSprite(SPRITE_CURSOR).coords.y,
-		.width = getSprite(SPRITE_CURSOR).coords.width * scale,
-		.height = getSprite(SPRITE_CURSOR).coords.height * scale,
+		.width = getSprite(SPRITE_CURSOR).coords.width,
+		.height = getSprite(SPRITE_CURSOR).coords.height,
 	};
 	float cursorScale = 1.0f;
 	Rectangle destRect = {
-		.x = mousePosition.x + letterBoxOffsetX,	
-		.y = mousePosition.y + letterBoxOffsetY,
+		.x = mousePosition.x,	
+		.y = mousePosition.y,
 		.width = (float)getSprite(SPRITE_CURSOR).coords.width * cursorScale,
 		.height = (float)getSprite(SPRITE_CURSOR).coords.height * cursorScale,
 	};
