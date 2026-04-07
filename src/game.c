@@ -80,29 +80,35 @@ void SpawnEmitter(GameState* gameState, Vector2 pos)
     ParticleEmitter* e = &gameState->particleEmitters[gameState->particleEmitterCount++];
     *e = (ParticleEmitter){0};
     e->position = pos;
+	e->particleCount = 0;
+	e->maxParticleCount = 10;
     e->spawnRate = 10.0f;
-    e->lifetime = 1.0f; 
+	e->spawnTimer = 0.0f;
     e->active = true;
+	e->emitterTime = 0.0f;
+	e->lifetime = 1.0f; 
 }
 static void EmitParticle(ParticleEmitter* e)
 {
     if (e->particleCount >= MAX_PARTICLES) return;
-
-    Particle* p = &e->particles[e->particleCount++];
     float angle = GetRandomValue(0, 360) * DEG2RAD;
     float speed = (float)GetRandomValue(50, 300);
-
     Vector2 dir = { cosf(angle), sinf(angle) };
-
-    p->position = e->position;
-    p->velocity = Vector2Scale(dir, speed);
-    p->acceleration = (Vector2){0, 50}; 
-    p->startSize = 4.0f;
-    p->rotation = 0.0f;
-    p->angularVelocity = GetRandomValue(-5, 5);
-    p->age = 0.0f;
-    p->lifetime = 0.5f + (float)GetRandomValue(0, 50) / 100.0f;
-    p->startColor = RED;
+	Particle particle = {
+		.position = e->position,
+		.velocity = Vector2Scale(dir, speed),
+		.acceleration = (Vector2){0, 50}, 
+		.startSize = 4.0f,
+		.endSize = 4.0f,
+		.rotation = 0.0f,
+		.angularVelocity = GetRandomValue(-5, 5),
+		.age = 0.0f,
+		.lifetime = 0.5f + (float)GetRandomValue(0, 50) / 100.0f,
+		.startColor = RED,
+		.endColor = RED,
+		.active = true,
+	};
+    e->particles[e->particleCount++] = particle;
 }
 
 void UpdateEmitter(ParticleEmitter* e, float dt)
@@ -113,7 +119,7 @@ void UpdateEmitter(ParticleEmitter* e, float dt)
         e->spawnTimer += dt;
         float spawnInterval = 1.0f / e->spawnRate;
 
-        while (e->spawnTimer >= spawnInterval)
+        if (e->spawnTimer >= spawnInterval)
         {
             e->spawnTimer -= spawnInterval;
             EmitParticle(e);
@@ -130,16 +136,15 @@ void UpdateEmitter(ParticleEmitter* e, float dt)
     }
 
     // --- PARTICLES ---
-    for (int i = 0; i < e->particleCount;)
+    for (int i = 0; i < e->particleCount; i++)
     {
         Particle* p = &e->particles[i];
 
         p->age += dt;
-
         if (p->age >= p->lifetime)
         {
             // swap-remove (same as bullets)
-            e->particles[i] = e->particles[--e->particleCount];
+			*p = e->particles[--e->particleCount];
             continue;
         }
 
@@ -147,26 +152,20 @@ void UpdateEmitter(ParticleEmitter* e, float dt)
         p->velocity = Vector2Add(p->velocity, Vector2Scale(p->acceleration, dt));
         p->position = Vector2Add(p->position, Vector2Scale(p->velocity, dt));
         p->rotation += p->angularVelocity * dt;
-
-        i++;
     }
 }
 
 void UpdateEmitters(GameState* gameState, float dt)
 {
-    for (int i = 0; i < gameState->particleEmitterCount;)
+    for (int i = 0; i < gameState->particleEmitterCount; i++)
     {
         ParticleEmitter* e = &gameState->particleEmitters[i];
-
+		if (!e->active && e->particleCount == 0)
+		{
+			gameState->particleEmitters[i] = gameState->particleEmitters[--gameState->particleEmitterCount];
+			continue;
+		}
         UpdateEmitter(e, dt);
-
-        if (!e->active && e->particleCount == 0)
-        {
-            gameState->particleEmitters[i] = gameState->particleEmitters[--gameState->particleEmitterCount];
-            continue;
-        }
-
-        i++;
     }
 }
 
@@ -1309,11 +1308,11 @@ void UpdateGame(GameMemory* gameMemory)
 							(mouse.x - letterBoxOffsetX) / scale,
 							(mouse.y - letterBoxOffsetY) / scale
 						};
-						// SpawnEmitter(gameState, mousePosition);
+						SpawnEmitter(gameState, mousePosition);
 					}
 				}
 				// Update emitters
-				// UpdateEmitters(gameState, gameState->dt);
+				UpdateEmitters(gameState, gameState->dt);
 				break;
 			}
 		case STATE_UPGRADE:
@@ -1478,10 +1477,7 @@ void DrawEmitter(const ParticleEmitter* e)
         float t = p->age / p->lifetime;
         Color c = p->startColor;
         c.a = (unsigned char)(255 * (1.0f - t)); // fade out
-		if (p->sprite.spriteID == -1)
-        {
-            DrawCircleV(p->position, p->startSize, c);
-        }
+		DrawCircleV(p->position, p->startSize, c);
     }
 }
 
@@ -1731,12 +1727,12 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_SHIELD]], playerDestination, origin, 0, WHITE, *shader, false, false);
 					}
 				}
+				EndShaderMode();
 				// Draw particle emitters
 				for (int i = 0; i < gameState->particleEmitterCount; i++)
 				{
 					DrawEmitter(&gameState->particleEmitters[i]);
 				}	
-				EndShaderMode();
 				break;
 			}
 		case STATE_UPGRADE:

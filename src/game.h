@@ -46,7 +46,7 @@
 #define MAX_STARS (50)
 #define MAX_BOOSTS (1)
 #define MAX_ENEMIES (3)
-#define MAX_PARTICLES (1000)
+#define MAX_PARTICLES (10)
 #define MAX_PARTICLE_EMITTERS (10)
 
 #ifdef PLATFORM_WEB
@@ -100,7 +100,7 @@ typedef struct Particle {
 } Particle;
 
 typedef struct ParticleEmitter {
-	Particle* particles;
+	Particle particles[MAX_PARTICLES];
 	Vector2 position;
 	int particleCount;
 	int maxParticleCount;
