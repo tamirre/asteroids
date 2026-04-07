@@ -1434,7 +1434,6 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						if (asteroid->dying) {
 							BeginShaderMode(*explosionShader);
 							BeginBlendMode(BLEND_ALPHA);
-							// float progress = Clamp(asteroid->deathTime/4.0,0.0f,1.0f);		
 							float progress = Remap(asteroid->deathTime,0.0f,0.5f,0.0f,1.0f);		
 							SetShaderValue(*explosionShader, progressLoc, &progress, SHADER_UNIFORM_FLOAT);
 							DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
@@ -1443,53 +1442,27 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 							EndShaderMode();
 						} else {
 							if (asteroid->selected) {
-
-								// Get shader locations
-								int outlineSizeLoc = GetShaderLocation(*outlineShader, "outlineSize");
-								int outlineColorLoc = GetShaderLocation(*outlineShader, "outlineColor");
-								int textureSizeLoc = GetShaderLocation(*outlineShader, "textureSize");
-								// For drawing outline
-								float outlineSize = 1.0f;
-								Color color = WHITE;
-								float outlineColor[4] = { 
-									color.r / 255.0f, 
-									color.g / 255.0f, 
-									color.b / 255.0f, 
-									color.a / 255.0f 
-								};
-								float textureSize[2] = {
-									atlas->textureAtlas.width,
-									atlas->textureAtlas.height 
-								};
-
-								SetShaderValue(*outlineShader,
-										outlineSizeLoc,
-										&outlineSize, SHADER_UNIFORM_FLOAT);
-
-								SetShaderValue(*outlineShader,
-										outlineColorLoc,
-										outlineColor, SHADER_UNIFORM_VEC4);
-
-								SetShaderValue(*outlineShader,
-										textureSizeLoc,
-										textureSize, SHADER_UNIFORM_VEC2);
-
-								BeginShaderMode(*outlineShader);
-								DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
-										(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
-								EndShaderMode();
+								Color outlineColor = WHITE;
+								float outlineWidth = 1.0f;
+								DrawTextureWithOutlinePro(atlas->textureAtlas,
+														  asteroid->sprite.coords,
+														  asteroidDrawRect, 
+														  (Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, 
+														  asteroid->rotation,
+														  WHITE, 
+														  outlineColor,
+														  outlineWidth, 
+														  outlineShader);
 							} else {
 								SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
-								DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
-										(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
+								DrawTexturePro(atlas->textureAtlas, 
+										       asteroid->sprite.coords, 
+											   asteroidDrawRect, 
+										       (Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, 
+											   asteroid->rotation, 
+											   WHITE);
 							}
 						}
-						// SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
-						// DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
-						// 		(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
-
-						// DrawRectangleLines(asteroidDrawRect.x, asteroidDrawRect.y,
-						// 		asteroidDrawRect.width, asteroidDrawRect.height, GREEN);
 					}
 				}
 				// Draw Bullets
@@ -1936,45 +1909,28 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 		Vector2 textOffset = { 9.0f * scaling * scale, 45.0f * scaling * scale };
 		Vector2 textPos    = { upgradeRect.x + textOffset.x, upgradeRect.y + textOffset.y };
 
-		if (gameState->pickedUpgrade == i) {
-			// Get shader locations
-			int outlineSizeLoc = GetShaderLocation(*outlineShader, "outlineSize");
-			int outlineColorLoc = GetShaderLocation(*outlineShader, "outlineColor");
-			int textureSizeLoc = GetShaderLocation(*outlineShader, "textureSize");
-			// For drawing outline
-			float outlineSize = 1.0f;
-			Color color = WHITE;
-			float outlineColor[4] = { 
-				color.r / 255.0f, 
-				color.g / 255.0f, 
-				color.b / 255.0f, 
-				color.a / 255.0f 
+		// Draw the upgrade sprite (with outline when selected)
+		if (gameState->pickedUpgrade == i) 
+		{
+			Color outlineColor = (Color){ 
+				225.0f, 
+				200.0f, 
+				255.0f, 
+				255.0f 
 			};
-			float textureSize[2] = {
-				atlas->textureAtlas.width,
-				atlas->textureAtlas.height 
-			};
+			DrawTextureWithOutlinePro(atlas->textureAtlas,
+									  getSprite(upgradeToSprite[i]).coords,
+									  upgradeRect, 
+									  pivot, 
+									  rotation, 
+									  WHITE, 
+									  outlineColor, 
+									  1.0f, 
+									  outlineShader);
 
-			SetShaderValue(*outlineShader,
-					outlineSizeLoc,
-					&outlineSize, SHADER_UNIFORM_FLOAT);
-
-			SetShaderValue(*outlineShader,
-					outlineColorLoc,
-					outlineColor, SHADER_UNIFORM_VEC4);
-
-			SetShaderValue(*outlineShader,
-					textureSizeLoc,
-					textureSize, SHADER_UNIFORM_VEC2);
-
-			BeginShaderMode(*outlineShader);
-			// Draw the upgrade sprite
-			DrawTexturePro(atlas->textureAtlas, getSprite(upgradeToSprite[i]).coords, 
-					upgradeRect, pivot, rotation, WHITE);
-			EndShaderMode();
-
-		} else {
-			// Draw the upgrade sprite
+		} 
+		else 
+		{
 			DrawTexturePro(atlas->textureAtlas, getSprite(upgradeToSprite[i]).coords, 
 					upgradeRect, pivot, rotation, WHITE);
 		}

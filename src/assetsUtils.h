@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "raylib.h"
 #include "assetsData.h"
+#include "stdio.h"
 
 // #define internal static inline
 #define SHAPE_PADDING 1
@@ -170,6 +171,47 @@ static inline TextureAtlas initTextureAtlas(SpriteMask spriteMasks[])
 
     UnloadImage(atlasImage);
     return atlas;
+}
+
+static inline void DrawTextureWithOutlinePro(Texture2D texture, 
+		                                     Rectangle source, 
+											 Rectangle destination,
+											 Vector2 origin, 
+											 float rotation, 
+											 Color tint, 
+											 Color outlineColor, 
+											 float outlineSize, 
+											 Shader* outlineShader)
+{
+	int outlineSizeLoc = GetShaderLocation(*outlineShader, "outlineSize");
+	int outlineColorLoc = GetShaderLocation(*outlineShader, "outlineColor");
+	int textureSizeLoc = GetShaderLocation(*outlineShader, "textureSize");
+
+	float color[4] = { 
+		outlineColor.r / 255.0f, 
+		outlineColor.g / 255.0f, 
+		outlineColor.b / 255.0f, 
+		outlineColor.a / 255.0f 
+	};
+	float textureSize[2] = {
+		(float)texture.width,
+		(float)texture.height 
+	};
+
+	SetShaderValue(*outlineShader, outlineSizeLoc, &outlineSize, SHADER_UNIFORM_FLOAT);
+	SetShaderValue(*outlineShader, outlineColorLoc, color, SHADER_UNIFORM_VEC4);
+	SetShaderValue(*outlineShader, textureSizeLoc, textureSize, SHADER_UNIFORM_VEC2);
+
+	BeginShaderMode(*outlineShader);
+	BeginBlendMode(BLEND_ALPHA);
+	DrawTexturePro(texture, 
+			       source, 
+				   destination, 
+				   origin, 
+				   rotation, 
+				   tint);
+	EndBlendMode();
+	EndShaderMode();
 }
 
 static inline float EaseOutBack(float t)
