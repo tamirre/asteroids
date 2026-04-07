@@ -113,7 +113,6 @@ static void EmitParticle(ParticleEmitter* e)
 
 void UpdateEmitter(ParticleEmitter* e, float dt)
 {
-    // --- EMISSION ---
     if (e->active)
     {
         e->spawnTimer += dt;
@@ -135,7 +134,6 @@ void UpdateEmitter(ParticleEmitter* e, float dt)
         }
     }
 
-    // --- PARTICLES ---
     for (int i = 0; i < e->particleCount; i++)
     {
         Particle* p = &e->particles[i];
@@ -143,7 +141,6 @@ void UpdateEmitter(ParticleEmitter* e, float dt)
         p->age += dt;
         if (p->age >= p->lifetime)
         {
-            // swap-remove (same as bullets)
 			*p = e->particles[--e->particleCount];
             continue;
         }
