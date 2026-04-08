@@ -87,20 +87,24 @@ typedef struct Particle {
 	Vector2 position;
 	Vector2 velocity;
 	Vector2 acceleration;
-	float startSize;
-	float endSize;
-	float rotation;
 	float angularVelocity;
-	float age;
-	float lifetime;
+	float rotation;
+	Sprite sprite;
+	Vector4 positionRange;
+	Vector4 velocityRange;
+	Vector4 accelerationRange;
+	Vector2 angleRange;
+	Vector2 angularVelocityRange;
+	Vector2 sizeRange;
 	Color startColor;
 	Color endColor;
-	bool active;
+	float age;
+	float lifetime;
 } Particle;
 
 typedef struct ParticleEmitter {
 	Particle particles[MAX_PARTICLES];
-	Sprite sprite;
+	Particle templateParticle;
 	Vector2 position;
 	int particleCount;
 	int maxParticleCount;
@@ -108,9 +112,8 @@ typedef struct ParticleEmitter {
 	Vector2 spawnMax;
 	float spawnRate;
 	float spawnTimer;
+	float age;
 	float lifetime;
-	bool active;
-	float emitterTime;
 } ParticleEmitter;
 
 typedef struct UpgradeCard {

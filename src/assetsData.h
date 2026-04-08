@@ -52,21 +52,21 @@ static inline Sprite getSprite(SpriteID spriteID) {
     Sprite s = {0};
     switch(spriteID) {
         case SPRITE_ASTEROID1: { s.coords = (Rectangle){2142, 0, 64, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_ASTEROID1; break; }
-        case SPRITE_ASTEROID2: { s.coords = (Rectangle){2256, 0, 64, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_ASTEROID2; break; }
-        case SPRITE_ASTEROID3: { s.coords = (Rectangle){2321, 0, 96, 96}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_ASTEROID3; break; }
+        case SPRITE_ASTEROID2: { s.coords = (Rectangle){2248, 0, 64, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_ASTEROID2; break; }
+        case SPRITE_ASTEROID3: { s.coords = (Rectangle){2313, 0, 96, 96}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_ASTEROID3; break; }
         case SPRITE_BULLET: { s.coords = (Rectangle){5, 0, 192, 48}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 6; s.spriteID = SPRITE_BULLET; break; }
-        case SPRITE_CURSOR: { s.coords = (Rectangle){2207, 0, 48, 48}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_CURSOR; break; }
+        case SPRITE_CURSOR: { s.coords = (Rectangle){2207, 0, 40, 40}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_CURSOR; break; }
         case SPRITE_ENEMY: { s.coords = (Rectangle){0, 97, 64, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_ENEMY; break; }
-        case SPRITE_EXPLOSION: { s.coords = (Rectangle){2607, 0, 704, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 11; s.spriteID = SPRITE_EXPLOSION; break; }
-        case SPRITE_HEART: { s.coords = (Rectangle){2418, 0, 19, 19}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_HEART; break; }
+        case SPRITE_EXPLOSION: { s.coords = (Rectangle){2599, 0, 704, 64}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 11; s.spriteID = SPRITE_EXPLOSION; break; }
+        case SPRITE_HEART: { s.coords = (Rectangle){2410, 0, 19, 19}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_HEART; break; }
         case SPRITE_PLAYER: { s.coords = (Rectangle){69, 97, 190, 64}; s.pivotOffset = (Vector2){-1, -24}; s.numFrames = 5; s.spriteID = SPRITE_PLAYER; break; }
-        case SPRITE_SCRAPMETAL: { s.coords = (Rectangle){3327, 0, 768, 48}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 16; s.spriteID = SPRITE_SCRAPMETAL; break; }
+        case SPRITE_SCRAPMETAL: { s.coords = (Rectangle){3319, 0, 768, 48}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 16; s.spriteID = SPRITE_SCRAPMETAL; break; }
         case SPRITE_SHIELD: { s.coords = (Rectangle){221, 0, 1920, 96}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 20; s.spriteID = SPRITE_SHIELD; break; }
-        case SPRITE_STAR1: { s.coords = (Rectangle){2489, 0, 5, 5}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_STAR1; break; }
+        case SPRITE_STAR1: { s.coords = (Rectangle){2481, 0, 5, 5}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_STAR1; break; }
         case SPRITE_STAR2: { s.coords = (Rectangle){198, 0, 3, 3}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_STAR2; break; }
-        case SPRITE_UPGRADEDAMAGE: { s.coords = (Rectangle){2546, 0, 50, 69}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_UPGRADEDAMAGE; break; }
-        case SPRITE_UPGRADEFIRERATE: { s.coords = (Rectangle){2438, 0, 50, 69}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_UPGRADEFIRERATE; break; }
-        case SPRITE_UPGRADEMULTISHOT: { s.coords = (Rectangle){2495, 0, 50, 69}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_UPGRADEMULTISHOT; break; }
+        case SPRITE_UPGRADEDAMAGE: { s.coords = (Rectangle){2538, 0, 50, 69}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_UPGRADEDAMAGE; break; }
+        case SPRITE_UPGRADEFIRERATE: { s.coords = (Rectangle){2430, 0, 50, 69}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_UPGRADEFIRERATE; break; }
+        case SPRITE_UPGRADEMULTISHOT: { s.coords = (Rectangle){2487, 0, 50, 69}; s.pivotOffset = (Vector2){0, 0}; s.numFrames = 1; s.spriteID = SPRITE_UPGRADEMULTISHOT; break; }
         default: break;
     }
     return s;

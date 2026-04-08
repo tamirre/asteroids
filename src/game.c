@@ -73,49 +73,67 @@ void InitializeAudio(Audio* audio, Options* options)
 	SetFxVolume(audio, options->fxVolume);
 }
 
-void SpawnEmitter(GameState* gameState, Vector2 pos, Sprite sprite)
+void SpawnEmitter(GameState* gameState, 
+		          Vector2 pos, 
+				  int maxParticleCount,
+				  float spawnRate,
+				  float lifetime,
+				  Particle templateParticle)
 {
     if (gameState->particleEmitterCount >= MAX_PARTICLE_EMITTERS) return;
 
     ParticleEmitter* e = &gameState->particleEmitters[gameState->particleEmitterCount++];
     *e = (ParticleEmitter){0};
-    e->position = pos;
-	e->sprite = sprite;
 	e->particleCount = 0;
-	e->maxParticleCount = 10;
-    e->spawnRate = 10.0f;
 	e->spawnTimer = 0.0f;
-    e->active = true;
-	e->emitterTime = 0.0f;
-	e->lifetime = 0.5f; 
+	e->age = 0.0f;
+	e->position = pos;
+	e->maxParticleCount = maxParticleCount;
+    e->spawnRate = spawnRate;
+	e->lifetime = lifetime;
+	e->templateParticle = templateParticle;
 }
+
 static void EmitParticle(ParticleEmitter* e)
 {
     if (e->particleCount >= MAX_PARTICLES) return;
-    float angle = GetRandomValue(0, 360) * DEG2RAD;
-    float speed = (float)GetRandomValue(50, 100);
+	Particle particle = e->templateParticle;
+    float angle = GetRandomValue(e->templateParticle.angleRange.x, e->templateParticle.angleRange.y) * DEG2RAD;
+    Vector2 acceleration = (Vector2){GetRandomValue(e->templateParticle.accelerationRange.x, e->templateParticle.accelerationRange.y),
+									 GetRandomValue(e->templateParticle.accelerationRange.z, e->templateParticle.accelerationRange.w)};
+
+	Vector2 position = (Vector2) {GetRandomValue(e->templateParticle.positionRange.x, e->templateParticle.positionRange.y),
+	                         GetRandomValue(e->templateParticle.positionRange.z, e->templateParticle.positionRange.w)};
+
+	float angularVelocity = GetRandomValue(e->templateParticle.angularVelocityRange.x, e->templateParticle.angularVelocityRange.y);
+    float speed = (float)GetRandomValue(e->templateParticle.velocityRange.x, e->templateParticle.velocityRange.y);
     Vector2 dir = { cosf(angle), sinf(angle) };
-	Particle particle = {
-		.position = e->position,
-		.velocity = Vector2Scale(dir, speed),
-		.acceleration = (Vector2){0, 500}, 
-		.startSize = 0.3f,
-		.endSize = 0.1f,
-		.rotation = 0.0f,
-		.angularVelocity = GetRandomValue(-300, 300),
-		.age = 0.0f,
-		.lifetime = 0.5f + (float)GetRandomValue(0, 50) / 100.0f,
-		.startColor = RED,
-		.endColor = RED,
-		.active = true,
-	};
+	float size = GetRandomValue(e->templateParticle.sizeRange.x, e->templateParticle.sizeRange.y);
+
+	particle.position = position;
+	particle.velocity = Vector2Scale(dir, speed);
+	particle.acceleration = acceleration;
+	particle.angularVelocity = angularVelocity;
+	particle.rotation = (float)GetRandomValue(0, 360);
+	particle.age = 0.0f;
+	particle.lifetime = 0.5f + (float)GetRandomValue(0, 50) / 100.0f;
+
     e->particles[e->particleCount++] = particle;
 }
 
 void UpdateEmitter(ParticleEmitter* e, float dt)
 {
-    if (e->active)
+    if (e->lifetime > 0.0f && e->age >= 0.0f)
     {
+		// stop spawning after lifetime
+		if (e->age >= e->lifetime)
+		{
+			e->age = -1.0f;
+			return;
+		} else {
+			e->age += dt;
+		}
+
         e->spawnTimer += dt;
         float spawnInterval = 1.0f / e->spawnRate;
 
@@ -123,15 +141,6 @@ void UpdateEmitter(ParticleEmitter* e, float dt)
         {
             e->spawnTimer -= spawnInterval;
             EmitParticle(e);
-        }
-
-        e->emitterTime += dt;
-
-        // stop spawning after lifetime
-        if (e->lifetime > 0.0f &&
-            e->emitterTime >= e->lifetime)
-        {
-            e->active = false;
         }
     }
 
@@ -158,7 +167,7 @@ void UpdateEmitters(GameState* gameState, float dt)
     for (int i = 0; i < gameState->particleEmitterCount; i++)
     {
         ParticleEmitter* e = &gameState->particleEmitters[i];
-		if (!e->active && e->particleCount == 0)
+		if (e->age < 0.0f && e->particleCount == 0)
 		{
 			gameState->particleEmitters[i] = gameState->particleEmitters[--gameState->particleEmitterCount];
 			continue;
@@ -1124,7 +1133,23 @@ void UpdateGame(GameMemory* gameMemory)
 
 										if (asteroid->health <= 0.0f && !asteroid->dying) {
 											asteroid->dying = true;
-											SpawnEmitter(gameState, bullet->position, asteroid->sprite);
+											Vector2 pos = asteroid->position;
+											pos.y += asteroid->sprite.coords.height / 2.0f;
+											pos.x += asteroid->sprite.coords.width  / 2.0f;
+											Particle templateParticle = {
+												.sprite = asteroid->sprite,
+												.positionRange = (Vector4){pos.x, pos.x, pos.y, pos.y},
+												.velocityRange = (Vector4){50, 200, 50, 200},
+												.angleRange = (Vector2){0, 360},
+												.sizeRange = (Vector2){0.3, 0.1},
+												.accelerationRange = (Vector4){0, 0, 0, 0}, 
+												.angularVelocityRange = (Vector2){-300, 300},
+												.startColor = WHITE,
+												.endColor = WHITE,
+												.age = 0.0f,
+												.lifetime = 0.5f + (float)GetRandomValue(0, 50) / 100.0f,
+											};
+											SpawnEmitter(gameState, pos, 30, 120.0f, 0.25f, templateParticle);
 											asteroid->deathTime = 0.0f;
 											gameState->experience += MAX((int)(asteroid->size * 100),1);
 											gameState->score += MAX((int)(asteroid->size * 100),1);
@@ -1304,7 +1329,7 @@ void UpdateGame(GameMemory* gameMemory)
 							(mouse.x - letterBoxOffsetX) / scale,
 							(mouse.y - letterBoxOffsetY) / scale
 						};
-						SpawnEmitter(gameState, mousePosition, getSprite(SPRITE_HEART));
+						// SpawnEmitter(gameState, mousePosition, getSprite(SPRITE_HEART));
 					}
 				}
 				// Update emitters
@@ -1467,24 +1492,25 @@ void UpdateGame(GameMemory* gameMemory)
 }
 void DrawEmitter(TextureAtlas* atlas, const ParticleEmitter* e)
 {
+	// Draw particles 
     for (int i = 0; i < e->particleCount; i++)
     {
         const Particle* p = &e->particles[i];
         float t = p->age / p->lifetime;
         Color c = p->startColor;
         c.a = (unsigned char)(255 * (1.0f - t)); // fade out
-		float scale = p->startSize + t * (p->endSize - p->startSize);
+		float scale = p->sizeRange.x + t * ( p->sizeRange.y - p->sizeRange.x);
 		DrawTexturePro(atlas->textureAtlas, 
-					   e->sprite.coords, 
+					   p->sprite.coords,
 					   (Rectangle){
-						   .x = p->position.x - e->sprite.coords.width/2.0f,
-						   .y = p->position.y - e->sprite.coords.height/2.0f,
-						   .width = e->sprite.coords.width * scale,
-						   .height = e->sprite.coords.height * scale,
+						   .x = p->position.x - p->sprite.coords.width/2.0f,
+						   .y = p->position.y - p->sprite.coords.height/2.0f,
+						   .width = p->sprite.coords.width * scale,
+						   .height = p->sprite.coords.height * scale,
 					   },
 					   (Vector2){0,0}, 
 					   p->rotation, 
-					   WHITE);
+					   c);
 		// DrawCircleV(p->position, p->startSize, c);
     }
 }
@@ -1598,6 +1624,7 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 											   WHITE);
 							}
 						}
+						// DrawCircleV(asteroid->position, 10.0f, RED);
 					}
 				}
 				// Draw Bullets
@@ -1736,7 +1763,6 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					}
 				}
 				EndShaderMode();
-				// Draw particle emitters
 				for (int i = 0; i < gameState->particleEmitterCount; i++)
 				{
 					DrawEmitter(atlas, &gameState->particleEmitters[i]);
