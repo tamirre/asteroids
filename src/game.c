@@ -144,6 +144,7 @@ void UpdateEmitter(ParticleEmitter* e, float dt)
         }
     }
 
+	// Update particles
     for (int i = 0; i < e->particleCount; i++)
     {
         Particle* p = &e->particles[i];
@@ -515,14 +516,74 @@ void UpdateGame(GameMemory* gameMemory)
 	{
 		case STATE_MAIN_MENU:
 			{
+				if (gameState->particleEmitterCount < 2) {
+					SpawnEmitter(
+						gameState, 
+						(Vector2){VIRTUAL_WIDTH/2.0f, VIRTUAL_HEIGHT/2.0f},
+						100,
+						20.0f,
+						10.0f,
+						(Particle){
+							.sprite = getSprite(SPRITE_STAR1),
+							.positionRange = (Vector4){0, VIRTUAL_WIDTH, 0, VIRTUAL_HEIGHT},
+							.velocityRange = (Vector4){0, 0, 0, 0},
+							.angleRange = (Vector2){0, 0},
+							.sizeRange = (Vector2){1.0f, 1.0f},
+							.accelerationRange = (Vector4){0, 0, -50, -100}, 
+							.angularVelocityRange = (Vector2){0, 0},
+							.startColor = WHITE,
+							.endColor = WHITE,
+							.age = 0.0f,
+							.lifetime = 3.0f,
+						}
+					);
+					SpawnEmitter(
+						gameState, 
+						(Vector2){VIRTUAL_WIDTH/2.0f, VIRTUAL_HEIGHT/2.0f},
+						100,
+						20.0f,
+						20.0f,
+						(Particle){
+							.sprite = getSprite(SPRITE_STAR2),
+							.positionRange = (Vector4){0, VIRTUAL_WIDTH, 0, VIRTUAL_HEIGHT},
+							.velocityRange = (Vector4){0, 0, 0, 0},
+							.angleRange = (Vector2){0, 0},
+							.sizeRange = (Vector2){1.0f, 1.0f},
+							.accelerationRange = (Vector4){0, 0, -50, -100}, 
+							.angularVelocityRange = (Vector2){0, 0},
+							.startColor = WHITE,
+							.endColor = WHITE,
+							.age = 0.0f,
+							.lifetime = 3.0f,
+						}
+					);
+				}
+				// Update emitters
+				UpdateEmitters(gameState, gameState->dt);
 				if (IsKeyPressed(KEY_ENTER)) {                    
 					gameState->state = STATE_RUNNING;
 					gameState->stateChanged = true;
 				}
+				if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) {
+					gameState->state = STATE_PAUSED;
+					gameState->lastState = STATE_MAIN_MENU;
+					gameState->stateChanged = true;
+				}
+#ifndef PLATFORM_WEB
+				if (IsKeyPressed(KEY_F)) 
+				{
+					ToggleFullscreen();
+				}
+#endif
 				break;
 			}
 		case STATE_RUNNING:
 			{
+
+				if (gameState->lastState == STATE_MAIN_MENU) {
+					gameState->lastState = STATE_RUNNING;
+					gameState->particleEmitterCount = 0;
+				}
 				float viewportScale = viewport.width / VIRTUAL_WIDTH;
 				const Rectangle screenRect = {
 					.height = VIRTUAL_HEIGHT,
@@ -1150,7 +1211,7 @@ void UpdateGame(GameMemory* gameMemory)
 												.age = 0.0f,
 												.lifetime = 0.5f + (float)GetRandomValue(0, 50) / 100.0f,
 											};
-											SpawnEmitter(gameState, pos, 30, 120.0f, 0.25f, templateParticle);
+											SpawnEmitter(gameState, pos, 15, 120.0f, 0.25f, templateParticle);
 											asteroid->deathTime = 0.0f;
 											gameState->experience += MAX((int)(asteroid->size * 100),1);
 											gameState->score += MAX((int)(asteroid->size * 100),1);
@@ -1334,7 +1395,9 @@ void UpdateGame(GameMemory* gameMemory)
 							.age = 0.0f,
 							.lifetime = 1.0f + (float)GetRandomValue(0, 50) / 100.0f,
 						};
+#ifndef PLATFORM_WEB
 						SpawnEmitter(gameState, mousePosition, 20, 30.0f, 0.5f, templateParticle);
+#endif
 					}
 				}
 				// Update emitters
@@ -1467,7 +1530,9 @@ void UpdateGame(GameMemory* gameMemory)
 				}
 #endif
 				// PauseMusicStream(audio->music);
-				LoopSoundtrack(&audio->music[audio->currentSongtrackID]);
+				if (gameState->lastState != STATE_MAIN_MENU) {
+					LoopSoundtrack(&audio->music[audio->currentSongtrackID]);
+				}
 				if(IsSoundPlaying(audio->sounds[SOUND_SHIELD]))
 				{
 					PauseSound(audio->sounds[SOUND_SHIELD]);
@@ -1516,7 +1581,6 @@ void DrawEmitter(TextureAtlas* atlas, const ParticleEmitter* e)
 					   (Vector2){0,0}, 
 					   p->rotation, 
 					   c);
-		// DrawCircleV(p->position, p->startSize, c);
     }
 }
 
@@ -1529,12 +1593,12 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 	switch (gameState->state) {
 		case STATE_MAIN_MENU:
 			{
-#ifndef PLATFORM_WEB
-				if (IsKeyPressed(KEY_F)) 
+				Color backgroundColor = ColorFromHSV(258, 1, 0.07);
+				ClearBackground(backgroundColor);
+				for (int i = 0; i < gameState->particleEmitterCount; i++)
 				{
-					ToggleFullscreen();
+					DrawEmitter(atlas, &gameState->particleEmitters[i]);
 				}
-#endif
 				break;
 			}
 		case STATE_RUNNING:

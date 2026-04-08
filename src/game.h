@@ -46,7 +46,7 @@
 #define MAX_STARS (50)
 #define MAX_BOOSTS (1)
 #define MAX_ENEMIES (3)
-#define MAX_PARTICLES (10)
+#define MAX_PARTICLES (200)
 #define MAX_PARTICLE_EMITTERS (10)
 
 #ifdef PLATFORM_WEB
