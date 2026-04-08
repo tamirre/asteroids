@@ -12,28 +12,32 @@ typedef struct GifRecorder {
 	MsfGifState* gifState;
 	bool recording;
 	unsigned int frameCounter;
+	float timeAccumulator;
 } GifRecorder;
 
 void static inline GifRecordUpdate(GifRecorder* rec) 
 {
-	if (!rec->recording) return;
-    int centiSeconds = (int)(GetFrameTime() * 100.0f / GIF_NUMBER_FRAMES);
+    if (!rec->recording) return;
 
-    // Only write a frame when we have at least 1 centisecond
+    rec->timeAccumulator += GetFrameTime();
+
+    int centiSeconds = (int)(rec->timeAccumulator * 100.0f);
+
     if (centiSeconds <= 0) return;
 
-    // capture screen (slow but simple)
+    rec->timeAccumulator -= centiSeconds / 100.0f;
+
     Image img = LoadImageFromScreen();
 
     msf_gif_frame(
         rec->gifState,
         (uint8_t*)img.data,
         centiSeconds,
-        16,                 // quality (lower = faster)
+        16,
         img.width * 4
     );
 
-	UnloadImage(img);
+    UnloadImage(img);
 }
 
 void static inline GifRecordStart(GifRecorder* rec) 

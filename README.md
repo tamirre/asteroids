@@ -7,7 +7,7 @@ The player controls a spaceship and must dodge or destroy incoming asteroids to 
 
 ## Gameplay
 
-![](assets/scrn-rec-2026-04-01-22-36.gif)
+![](assets/scrn-rec-2026-04-08-13-15.gif)
 
 ## Getting Started
 
