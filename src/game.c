@@ -1133,6 +1133,7 @@ void UpdateGame(GameMemory* gameMemory)
 
 										if (asteroid->health <= 0.0f && !asteroid->dying) {
 											asteroid->dying = true;
+											// Spawn asteroid fragments via particle emitter
 											Vector2 pos = asteroid->position;
 											pos.y += asteroid->sprite.coords.height / 2.0f;
 											pos.x += asteroid->sprite.coords.width  / 2.0f;
@@ -1158,17 +1159,8 @@ void UpdateGame(GameMemory* gameMemory)
 												explosion->velocity.y = 0.0f;
 											}
 										}
+										// Remove bullet
 										*bullet = gameState->bullets[--gameState->bulletCount];
-										// if (asteroid->health <= 0.0)
-										// {
-										// 	gameState->experience += MAX((int)(asteroid->size * 100),1);
-										// 	gameState->score += MAX((int)(asteroid->size * 100),1);
-										// 	*asteroid = gameState->asteroids[--gameState->asteroidCount];
-										// 	if(explosion != NULL)
-										// 	{
-										// 		explosion->velocity.y = 0.0f;
-										// 	}
-										// }
 									}
 								}
 							}
@@ -1329,7 +1321,20 @@ void UpdateGame(GameMemory* gameMemory)
 							(mouse.x - letterBoxOffsetX) / scale,
 							(mouse.y - letterBoxOffsetY) / scale
 						};
-						// SpawnEmitter(gameState, mousePosition, getSprite(SPRITE_HEART));
+						Particle templateParticle = {
+							.sprite = getSprite(SPRITE_HEART),
+							.positionRange = (Vector4){mousePosition.x, mousePosition.x, mousePosition.y, mousePosition.y},
+							.velocityRange = (Vector4){50, 100, 50, 100},
+							.angleRange = (Vector2){0, 360},
+							.sizeRange = (Vector2){1.0f, 0.5f},
+							.accelerationRange = (Vector4){0, 0, 0, 0}, 
+							.angularVelocityRange = (Vector2){-300, 300},
+							.startColor = WHITE,
+							.endColor = WHITE,
+							.age = 0.0f,
+							.lifetime = 1.0f + (float)GetRandomValue(0, 50) / 100.0f,
+						};
+						SpawnEmitter(gameState, mousePosition, 20, 30.0f, 0.5f, templateParticle);
 					}
 				}
 				// Update emitters
