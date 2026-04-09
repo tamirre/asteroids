@@ -535,6 +535,45 @@ void UpdateGame(GameMemory* gameMemory)
 	static bool stepOnce = false;
 	const Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 
+#ifndef PLATFORM_WEB
+	if (IsKeyPressed(KEY_F)) 
+	{
+		ToggleFullscreen();
+	}
+	if (IsKeyPressed(KEY_F2)) 
+	{
+		writeSaveState(gameMemory);
+	}
+	if (IsKeyPressed(KEY_T)) 
+	{
+		loadSaveState(gameMemory);
+	}
+	if (IsKeyPressed(KEY_V)) {
+		if (IsWindowState(FLAG_VSYNC_HINT))
+		{
+			ClearWindowState(FLAG_VSYNC_HINT);
+		} else {
+			SetWindowState(FLAG_VSYNC_HINT);
+		}
+	}
+	// Start-Stop GIF recording on CTRL+R
+	if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_R))
+	{
+		if (gameState->gifRecorder.recording)
+		{
+			GifRecordStop(&gameState->gifRecorder);
+		}
+		else
+		{
+			GifRecordStart(&gameState->gifRecorder);
+		}
+	}
+	// Take Screenshot
+	if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_M))
+	{
+		ScreenShot();
+	}
+#endif
 	// gameState->stateChanged = false;
 	switch (gameState->state) 
 	{
@@ -584,6 +623,7 @@ void UpdateGame(GameMemory* gameMemory)
 				}
 				// Update emitters
 				UpdateEmitters(gameState, gameState->dt);
+
 				if (IsKeyPressed(KEY_ENTER)) {                    
 					gameState->state = STATE_RUNNING;
 					gameState->stateChanged = true;
@@ -593,12 +633,6 @@ void UpdateGame(GameMemory* gameMemory)
 					gameState->lastState = STATE_MAIN_MENU;
 					gameState->stateChanged = true;
 				}
-#ifndef PLATFORM_WEB
-				if (IsKeyPressed(KEY_F)) 
-				{
-					ToggleFullscreen();
-				}
-#endif
 				break;
 			}
 		case STATE_RUNNING:
@@ -640,51 +674,6 @@ void UpdateGame(GameMemory* gameMemory)
 						gameState->timeScale += 0.1f;
 					}
 					if (IsKeyPressed(KEY_O)) options->disableShaders = !options->disableShaders;
-#ifndef PLATFORM_WEB
-					if (IsKeyPressed(KEY_F)) 
-					{
-						ToggleFullscreen();
-					}
-					if (IsKeyPressed(KEY_F2)) 
-					{
-						writeSaveState(gameMemory);
-					}
-					if (IsKeyPressed(KEY_T)) 
-					{
-						loadSaveState(gameMemory);
-					}
-					if (IsKeyPressed(KEY_TAB)) // press Tab to toggle cursor
-					{
-						// if (cursorHidden) EnableCursor();
-						// else DisableCursor();
-						// cursorHidden = !cursorHidden;
-					}
-					if (IsKeyPressed(KEY_V)) {
-						if (IsWindowState(FLAG_VSYNC_HINT))
-						{
-							ClearWindowState(FLAG_VSYNC_HINT);
-						} else {
-							SetWindowState(FLAG_VSYNC_HINT);
-						}
-					}
-					// Start-Stop GIF recording on CTRL+R
-					if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_R))
-					{
-						if (gameState->gifRecorder.recording)
-						{
-							GifRecordStop(&gameState->gifRecorder);
-						}
-						else
-						{
-							GifRecordStart(&gameState->gifRecorder);
-						}
-					}
-					// Take Screenshot
-					if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_M))
-					{
-						ScreenShot();
-					}
-#endif
 					if (stepMode && !stepOnce) return;
 					stepOnce = false;
 				}
@@ -1500,6 +1489,11 @@ void UpdateGame(GameMemory* gameMemory)
 		case STATE_GAME_OVER:
 			{
 				LoopSoundtrack(&audio->music[audio->currentSongtrackID]);
+				if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) {
+					gameState->state = STATE_PAUSED;
+					gameState->lastState = STATE_GAME_OVER;
+					gameState->stateChanged = true;
+				}
 				if (IsKeyPressed(KEY_ENTER)) {
 #ifdef PLATFORM_WEB
 					GameState gameState = {0};
@@ -1538,12 +1532,6 @@ void UpdateGame(GameMemory* gameMemory)
 			}
 		case STATE_PAUSED:
 			{
-#ifndef PLATFORM_WEB
-				if (IsKeyPressed(KEY_F)) 
-				{
-					ToggleFullscreen();
-				}
-#endif
 				// PauseMusicStream(audio->music);
 				if (gameState->lastState != STATE_MAIN_MENU) {
 					LoopSoundtrack(&audio->music[audio->currentSongtrackID]);
@@ -2347,12 +2335,6 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader*
 			}
 		case STATE_GAME_OVER:
 			{
-#ifndef PLATFORM_WEB
-				if (IsKeyPressed(KEY_F)) 
-				{
-					ToggleFullscreen();
-				}
-#endif
 				float scale = viewport.width / VIRTUAL_WIDTH;
 				float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 				float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
@@ -2360,8 +2342,8 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader*
 				ClearBackground(backgroundColor);
 				DrawTextCentered(options->font, T(TXT_GAME_OVER), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f}, 70.0f * scale, WHITE);
 				char scoreText[100] = {0};
-				DrawTextCentered(options->font, TF(TXT_SCORE, gameState->score), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 45.0f*scale}, 40.0f * scale, WHITE);
-				DrawTextCentered(options->font, T(TXT_TRY_AGAIN), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 85.0f*scale}, 40.0f * scale, WHITE);
+				DrawTextCentered(options->font, TF(TXT_SCORE, gameState->score), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 45.0f * scale}, 40.0f * scale, WHITE);
+				DrawTextCentered(options->font, T(TXT_TRY_AGAIN), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 85.0f * scale}, 40.0f * scale, WHITE);
 				break;
 			}
 		case STATE_UPGRADE:
@@ -2373,13 +2355,13 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader*
 			}
 		case STATE_PAUSED:
 			{
-				DrawHealthBar(gameState, options, atlas, outlineShader);
-				DrawEnemyHealthBar(gameState, options, atlas, shader);
-				DrawScore(gameState, options, atlas);
-				if (gameState->lastState == STATE_RUNNING) 
+				if (gameState->lastState == STATE_RUNNING || gameState->lastState == STATE_UPGRADE)
 				{
+					DrawHealthBar(gameState, options, atlas, outlineShader);
+					DrawEnemyHealthBar(gameState, options, atlas, shader);
+					DrawScore(gameState, options, atlas);
 				}
-				else if (gameState->lastState == STATE_UPGRADE) 
+				if (gameState->lastState == STATE_UPGRADE) 
 				{
 					DrawUpgrades(gameState, options, atlas, shader, outlineShader);
 				}
