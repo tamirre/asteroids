@@ -1,6 +1,37 @@
 #include "game.h"
 #include <raylib.h>
 
+Rectangle GetScaledViewport(int winW, int winH)
+{
+    float scale = fminf(
+        (float)winW / VIRTUAL_WIDTH,
+        (float)winH / VIRTUAL_HEIGHT
+    );
+
+    float w = VIRTUAL_WIDTH  * scale;
+    float h = VIRTUAL_HEIGHT * scale;
+
+    return (Rectangle){
+        (winW - w) / 2.0f,
+        (winH - h) / 2.0f,
+        w,
+        h
+    };
+}
+
+Vector2 GetVirtualMousePosition()
+{
+	Vector2 mouse = GetMousePosition();
+	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+	float scale = viewport.width / VIRTUAL_WIDTH;
+	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
+	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
+	Vector2 mouseVirtual = {
+		(mouse.x - letterBoxOffsetX) / scale,
+		(mouse.y - letterBoxOffsetY) / scale
+	};
+	return mouseVirtual;
+}
 void Cleanup(GameMemory* gameMemory) 
 {
 	UnloadShader(*gameMemory->shader);
@@ -114,7 +145,7 @@ static void EmitParticle(ParticleEmitter* e)
 	particle.velocity = Vector2Scale(dir, speed);
 	particle.acceleration = acceleration;
 	particle.angularVelocity = angularVelocity;
-	particle.rotation = (float)GetRandomValue(0, 360);
+	particle.rotation = 0.0f;
 	particle.age = 0.0f;
 	particle.lifetime = 0.5f + (float)GetRandomValue(0, 50) / 100.0f;
 
@@ -315,7 +346,17 @@ void InitGame(GameMemory* gameMemory)
 	
 	// Disable Exit on ESC
     SetExitKey(KEY_NULL);
-	SetMousePosition(VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2);
+	// Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+	// float scale = viewport.width / VIRTUAL_WIDTH;
+	// float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
+	// float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
+	// Vector2 mouse = GetMousePosition();
+	// // Convert to virtual space
+	// Vector2 mouseVirtual = {
+	// 	(mouse.x - letterBoxOffsetX) / scale,
+	// 	(mouse.y - letterBoxOffsetY) / scale
+	// };
+	// SetMousePosition(mouse.x, mouse.y);
 
 	// Options options = {0};
 	GameState gameState = {0};
@@ -458,23 +499,6 @@ bool pixelPerfectCollision(
     return false;
 }
 
-Rectangle GetScaledViewport(int winW, int winH)
-{
-    float scale = fminf(
-        (float)winW / VIRTUAL_WIDTH,
-        (float)winH / VIRTUAL_HEIGHT
-    );
-
-    float w = VIRTUAL_WIDTH  * scale;
-    float h = VIRTUAL_HEIGHT * scale;
-
-    return (Rectangle){
-        (winW - w) / 2.0f,
-        (winH - h) / 2.0f,
-        w,
-        h
-    };
-}
 
 void HandleResize(Options* options)
 {
@@ -1260,17 +1284,8 @@ void UpdateGame(GameMemory* gameMemory)
 					}
 				}
 				// Collision asteroid mouse
-				Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
-				float scale = viewport.width / VIRTUAL_WIDTH;
-				float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
-				float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-				// Raw mouse (screen space)
-				Vector2 mouse = GetMousePosition();
-				// Convert to virtual space
-				Vector2 mouseVirtual = {
-					(mouse.x - letterBoxOffsetX) / scale,
-					(mouse.y - letterBoxOffsetY) / scale
-				};
+				Vector2 mouseVirtual = GetVirtualMousePosition();
+				// Vector2 mouseVirtual = GetMousePosition();
 				for (int asteroidIndex = 0; asteroidIndex < gameState->asteroidCount; asteroidIndex++)
 				{
 					Asteroid* asteroid = &gameState->asteroids[asteroidIndex];
@@ -2047,8 +2062,8 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 	float scale = viewport.width / VIRTUAL_WIDTH;
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-	DrawTextWave(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 100.0f*scale}, 40*scale, WHITE, true, gameState->time, 3.0f, 3.0f, 0.5f, true);
-	DrawTextWave(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 55.0f*scale}, 40*scale, WHITE, true, gameState->time, 3.0f, 3.0f, 0.5f, true);
+	DrawTextWave(options->font, T(TXT_LEVEL_UP), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 110.0f*scale}, 40*scale, WHITE, true, gameState->time, 3.0f, 3.0f, 0.5f, true);
+	DrawTextWave(options->font, T(TXT_CHOOSE_UPGRADE), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f - 65.0f*scale}, 40*scale, WHITE, true, gameState->time, 3.0f, 3.0f, 0.5f, true);
 	float scaling = 3.0f;
 	const float width  = getSprite(SPRITE_UPGRADEMULTISHOT).coords.width;
 	const float height = getSprite(SPRITE_UPGRADEMULTISHOT).coords.height;
@@ -2332,14 +2347,21 @@ void DrawUI(GameState* gameState, Options* options, TextureAtlas* atlas, Shader*
 			}
 		case STATE_GAME_OVER:
 			{
+#ifndef PLATFORM_WEB
+				if (IsKeyPressed(KEY_F)) 
+				{
+					ToggleFullscreen();
+				}
+#endif
+				float scale = viewport.width / VIRTUAL_WIDTH;
 				float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 				float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
 				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
 				ClearBackground(backgroundColor);
-				DrawTextCentered(options->font, T(TXT_GAME_OVER), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f}, 40, WHITE);
+				DrawTextCentered(options->font, T(TXT_GAME_OVER), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f}, 70.0f * scale, WHITE);
 				char scoreText[100] = {0};
-				DrawTextCentered(options->font, TF(TXT_SCORE, gameState->score), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 30.0f}, 20.0f, WHITE);
-				DrawTextCentered(options->font, T(TXT_TRY_AGAIN), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 60.0f}, 20.0f, WHITE);
+				DrawTextCentered(options->font, TF(TXT_SCORE, gameState->score), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 45.0f*scale}, 40.0f * scale, WHITE);
+				DrawTextCentered(options->font, T(TXT_TRY_AGAIN), (Vector2){letterBoxOffsetX + viewport.width/2.0f, letterBoxOffsetY + viewport.height/2.0f + 85.0f*scale}, 40.0f * scale, WHITE);
 				break;
 			}
 		case STATE_UPGRADE:
@@ -2389,15 +2411,7 @@ void DrawComposite(RenderTexture2D* scene, Options* options, RenderTexture2D* li
 void DrawCursor(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader, Shader* outlineShader) 
 {
 	HideCursor();
-	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
-	float scale = viewport.width / VIRTUAL_WIDTH;
-	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
-	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
 	Vector2 mousePosition = GetMousePosition();
-	// Vector2 mousePosition = {
-	// 	(mouse.x + letterBoxOffsetX) / scale,
-	// 	(mouse.y + letterBoxOffsetY) / scale
-	// };
 	Rectangle sourceRect = {
 		.x = getSprite(SPRITE_CURSOR).coords.x,
 		.y = getSprite(SPRITE_CURSOR).coords.y,
