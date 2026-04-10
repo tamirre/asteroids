@@ -32,6 +32,7 @@ Vector2 GetVirtualMousePosition()
 	};
 	return mouseVirtual;
 }
+
 void Cleanup(GameMemory* gameMemory) 
 {
 	UnloadShader(*gameMemory->shader);
@@ -1274,7 +1275,6 @@ void UpdateGame(GameMemory* gameMemory)
 				}
 				// Collision asteroid mouse
 				Vector2 mouseVirtual = GetVirtualMousePosition();
-				// Vector2 mouseVirtual = GetMousePosition();
 				for (int asteroidIndex = 0; asteroidIndex < gameState->asteroidCount; asteroidIndex++)
 				{
 					Asteroid* asteroid = &gameState->asteroids[asteroidIndex];
@@ -2454,5 +2454,3 @@ void UpdateDrawFrame(GameMemory* gameMemory)
 	}
 #endif
 }
-
-

@@ -13,7 +13,7 @@ The player controls a spaceship and must dodge or destroy incoming asteroids to 
 
 ### Prerequisites
 
-- A C compiler (e.g., msvc or gcc)
+- A C compiler (e.g., msvc or gcc, mingw for cross-compiling)
 - [raylib](https://www.raylib.com/) library installed
 
 ### Installing raylib
@@ -30,10 +30,14 @@ cd asteroids
 ```bash
 ./src/tools/build.sh
 ```
-### Running the Game (Windows)
+### Running the Game (Linux)
 ```bash
 ./src/tools/run.sh
 ```
+### Building the Game (Windows)
+If you are running the build.sh on WSL under Windows the executable will be cross-compiled to `/bin/asteroids.exe` using the mingw compiler.
+Make sure the mingw compiler is installed and in your path. Refer to the build.sh script for more details.
+You can also compile using msvc on Windows, hoewer the build script is not set up for that (yet).
 
 ## How to Play
 
@@ -43,7 +47,7 @@ cd asteroids
 - Avoid or destroy asteroids to keep playing.
 - The game ends if the player loses all hearts.
 
-All assets are created using [Aseprite](https://www.aseprite.org/).
+All pixel art assets are created using [Aseprite](https://www.aseprite.org/).
 
 ## License
 
