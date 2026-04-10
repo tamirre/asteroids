@@ -110,7 +110,7 @@ static inline bool DrawSpriteAnimationOnce(Texture2D atlas,
     Rectangle source = animation.rectangles[frame];
 
     Vector2 texSize = { source.width, source.height };
-    SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+    // SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
 
     DrawTexturePro(atlas, source, destination, origin, rotation, tint);
 
@@ -125,7 +125,7 @@ static inline void DrawSpriteAnimationPro(Texture2D* atlas, SpriteAnimation* ani
 		TraceLog(LOG_WARNING, "No animation frames for sprite");
 		return;
 	}
-	int texSizeLoc = GetShaderLocation(shader, "textureSize");
+	// int texSizeLoc = GetShaderLocation(shader, "textureSize");
     int index = (int)(GetTime() * animation->framesPerSecond) % animation->rectanglesLength;
     Rectangle source = animation->rectangles[index];
 	if (flipX == 1) { 
@@ -134,8 +134,12 @@ static inline void DrawSpriteAnimationPro(Texture2D* atlas, SpriteAnimation* ani
 	if (flipY == 1) {
 		source.height = -source.height;
 	}
-	Vector2 texSize = { animation->rectangles->width, animation->rectangles->height };
-	SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
+	// Vector2 texSize = { animation->rectangles->width, animation->rectangles->height };
+	// Vector2 texSize = {source.width, source.height};
+	// Vector2 texSize = {atlas->width, atlas->height};
+	// float texSize[2] = {atlas->width, atlas->height};
+	// float texSize[2] = {source.width, atlas->height};
+	// SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
     DrawTexturePro(*atlas, source, destination, origin, rotation, tint);
 }
 
@@ -149,7 +153,7 @@ static inline TextureAtlas initTextureAtlas(SpriteMask spriteMasks[])
     TextureAtlas atlas;
     atlas.textureAtlas = LoadTexture("./assets/textures/atlas/atlas.png");
 	// SetTextureFilter(atlas.textureAtlas, TEXTURE_FILTER_POINT);
-	// SetTextureFilter(atlas.textureAtlas, TEXTURE_FILTER_BILINEAR);
+	SetTextureFilter(atlas.textureAtlas, TEXTURE_FILTER_BILINEAR);
 	// SetTextureFilter(atlas.textureAtlas, TEXTURE_FILTER_ANISOTROPIC_8X);
 
 	Image atlasImage = LoadImageFromTexture(atlas.textureAtlas);
@@ -202,16 +206,16 @@ static inline void DrawTextureWithOutlinePro(Texture2D texture,
 	SetShaderValue(*outlineShader, outlineColorLoc, color, SHADER_UNIFORM_VEC4);
 	SetShaderValue(*outlineShader, textureSizeLoc, textureSize, SHADER_UNIFORM_VEC2);
 
-	BeginShaderMode(*outlineShader);
-	BeginBlendMode(BLEND_ALPHA);
+	// BeginShaderMode(*outlineShader);
+	// BeginBlendMode(BLEND_ALPHA);
 	DrawTexturePro(texture, 
 			       source, 
 				   destination, 
 				   origin, 
 				   rotation, 
 				   tint);
-	EndBlendMode();
-	EndShaderMode();
+	// EndBlendMode();
+	// EndShaderMode();
 }
 
 static inline float EaseOutBack(float t)
