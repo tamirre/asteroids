@@ -37,6 +37,20 @@ void LoadIniFile(Options* options)
     fclose(file);
 }
 
+void WriteIniFile(Options* options)
+{
+	FILE* file = fopen("bin/config.ini", "w");
+	if (file == NULL)
+	{
+		printf("Error: could not open config.ini file\n");
+		return;
+	}
+	// fprintf(file, "windowPosition=%d\n", options->previousWidth);
+	fprintf(file, "musicVolume %f\n", options->musicVolume);
+	fprintf(file, "fxVolume %f\n", options->fxVolume);
+	fclose(file);
+}
+
 Rectangle GetScaledViewport(int winW, int winH)
 {
     float scale = fminf(
@@ -2275,6 +2289,8 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 							   buttonWidth, buttonHeight }, T(TXT_QUIT))) 
 	{
 		gameState->shouldExit = true;
+		WriteIniFile(options);
+
 	}
 	// Draw dropdown box
 	const float dropdownWidth = 160.0f * scale;

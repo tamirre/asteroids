@@ -1,5 +1,5 @@
 #!/bin/bash
-SECONDS=0
+# SECONDS=0
 PLATFORM=""
 REGENERATE_ATLAS=0
 REGENERATE_LOCALIZATION=0
@@ -143,19 +143,20 @@ elif [ "$PLATFORM" == "windows" ]; then
 	# ---------------------------
 	# build DLL (game)
 	# ---------------------------
-	$CC $SRC_DIR/game.c \
+	time $CC $SRC_DIR/game.c \
 		-shared -o $SRC_DIR/game_tmp.dll \
 		$DEFINES \
 		$DEBUG_FLAGS \
 		$INCLUDE_FLAGS \
 		$LINK_FLAGS 
 
+	echo "Built game.dll"
 	# ---------------------------
 	# build EXE (main)
 	# ---------------------------
 	OUT_EXE="$BIN_DIR/${GAME_NAME}.exe"
 
-	$CC $SRC_DIR/main.c \
+	time $CC $SRC_DIR/main.c \
 		-o $OUT_EXE \
 		$DEFINES \
 		$DEBUG_FLAGS \
@@ -165,7 +166,6 @@ elif [ "$PLATFORM" == "windows" ]; then
 	# ensure replace
 	mv $SRC_DIR/game_tmp.dll $SRC_DIR/game.dll
 	rm ./*.obj 2> /dev/null
-	echo "Built game.dll"
 	echo "Built Windows executable: $OUT_EXE"
 else
 	if [ "$DEBUG" == "1" ]; then
@@ -182,7 +182,7 @@ else
 	# We need to do this because otherwise main.c will
 	# try to load the .so before it is fully written, since we only
 	# check the timestamp
-	$CC $DEBUG_FLAGS -shared -fPIC $SRC_DIR/game.c -o $SRC_DIR/game_tmp.so \
+	time $CC $DEBUG_FLAGS -shared -fPIC $SRC_DIR/game.c -o $SRC_DIR/game_tmp.so \
 		$INCLUDE_FLAGS \
 		$LINK_FLAGS
 
@@ -190,13 +190,13 @@ else
 	# game.so is then copied by main.c to load into the game
 	mv $SRC_DIR/game_tmp.so $SRC_DIR/game.so
 
-	$CC $DEBUG_FLAGS $SRC_DIR/main.c -o $BIN_DIR/$GAME_NAME \
+	time $CC $DEBUG_FLAGS $SRC_DIR/main.c -o $BIN_DIR/$GAME_NAME \
 		$INCLUDE_FLAGS \
 		$LINK_FLAGS \
 		-rdynamic
 
 fi
 
-seconds=$SECONDS
-ELAPSED="Total time: $(($seconds / 3600))hrs $((($seconds / 60) % 60))min $(($seconds % 60))sec"
-echo $ELAPSED
+# seconds=$SECONDS
+# ELAPSED="Total time: $(($seconds / 3600))hrs $((($seconds / 60) % 60))min $(($seconds % 60))sec"
+# echo $ELAPSED
