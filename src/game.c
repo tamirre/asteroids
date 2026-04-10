@@ -1,6 +1,42 @@
 #include "game.h"
 #include <raylib.h>
 
+void LoadIniFile(Options* options)
+{
+    FILE* file = fopen("bin/config.ini", "r");
+
+    if (!file) {
+        printf("Error: could not open config.ini file\n");
+        return;
+    }
+
+    char key[64];
+    float v1, v2;
+
+    char line[256];
+    while (fgets(line, sizeof(line), file)) {
+
+        // Try parsing 3 values (for things like windowPosition)
+        if (sscanf(line, "%63s %f %f", key, &v1, &v2) == 3) {
+            if (strcmp(key, "windowPosition") == 0) {
+                // options->windowX = v1;
+                // options->windowY = v2;
+            }
+        }
+        // Try parsing 2 values (for single floats)
+        else if (sscanf(line, "%63s %f", key, &v1) == 2) {
+            if (strcmp(key, "musicVolume") == 0) {
+                options->musicVolume = v1;
+				// printf("DEBUG: musicVolume: %f\n", options->musicVolume);
+            } else if (strcmp(key, "fxVolume") == 0) {
+                options->fxVolume = v1;
+				// printf("DEBUG: fxVolume: %f\n", options->fxVolume);
+            }
+        }
+    }
+    fclose(file);
+}
+
 Rectangle GetScaledViewport(int winW, int winH)
 {
     float scale = fminf(
@@ -363,6 +399,7 @@ void InitGame(GameMemory* gameMemory)
 	GameState gameState = {0};
 	Audio audio = {0};
 	InitializeOptions(gameMemory->options);
+	LoadIniFile(gameMemory->options);
 	InitializeGameState(gameMemory->gameState);
 	InitializeAudio(gameMemory->audio, gameMemory->options);
 	// gameMemory->options = &options;

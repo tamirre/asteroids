@@ -1,7 +1,6 @@
 # TODO list: 
 
 - [ ] add ini file for settings
-- [ ] make score and leaderboard system
 - [ ] rework sprite system to use arbitrary animation frame position in texture atlas (non-continuous animation sprite sheets in atlas)
 - [x] add particle effects
 - [x] add outline shader
@@ -26,3 +25,7 @@
 - [x] add sound effects
 - [x] add music
 - [x] subpixel rendering
+
+# Backlog:
+
+- [ ] make score and leaderboard system (maybe once we use steam api)
