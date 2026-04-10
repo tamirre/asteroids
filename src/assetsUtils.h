@@ -134,12 +134,6 @@ static inline void DrawSpriteAnimationPro(Texture2D* atlas, SpriteAnimation* ani
 	if (flipY == 1) {
 		source.height = -source.height;
 	}
-	// Vector2 texSize = { animation->rectangles->width, animation->rectangles->height };
-	// Vector2 texSize = {source.width, source.height};
-	// Vector2 texSize = {atlas->width, atlas->height};
-	// float texSize[2] = {atlas->width, atlas->height};
-	// float texSize[2] = {source.width, atlas->height};
-	// SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
     DrawTexturePro(*atlas, source, destination, origin, rotation, tint);
 }
 
@@ -189,7 +183,7 @@ static inline void DrawTextureWithOutlinePro(Texture2D texture,
 {
 	int outlineSizeLoc = GetShaderLocation(*outlineShader, "outlineSize");
 	int outlineColorLoc = GetShaderLocation(*outlineShader, "outlineColor");
-	int textureSizeLoc = GetShaderLocation(*outlineShader, "textureSize");
+	// int textureSizeLoc = GetShaderLocation(*outlineShader, "textureSize");
 
 	float color[4] = { 
 		outlineColor.r / 255.0f, 
@@ -204,18 +198,18 @@ static inline void DrawTextureWithOutlinePro(Texture2D texture,
 
 	SetShaderValue(*outlineShader, outlineSizeLoc, &outlineSize, SHADER_UNIFORM_FLOAT);
 	SetShaderValue(*outlineShader, outlineColorLoc, color, SHADER_UNIFORM_VEC4);
-	SetShaderValue(*outlineShader, textureSizeLoc, textureSize, SHADER_UNIFORM_VEC2);
+	// SetShaderValue(*outlineShader, textureSizeLoc, textureSize, SHADER_UNIFORM_VEC2);
 
-	// BeginShaderMode(*outlineShader);
-	// BeginBlendMode(BLEND_ALPHA);
+	BeginShaderMode(*outlineShader);
+	BeginBlendMode(BLEND_ALPHA);
 	DrawTexturePro(texture, 
 			       source, 
 				   destination, 
 				   origin, 
 				   rotation, 
 				   tint);
-	// EndBlendMode();
-	// EndShaderMode();
+	EndBlendMode();
+	EndShaderMode();
 }
 
 static inline float EaseOutBack(float t)

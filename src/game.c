@@ -437,6 +437,9 @@ void InitGame(GameMemory* gameMemory)
 	*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
 	*gameMemory->explosionShader = LoadShader(0, TextFormat("./src/shaders/explode.glsl", GLSL_VERSION));
 	*gameMemory->outlineShader = LoadShader(0, TextFormat("./src/shaders/outline.glsl", GLSL_VERSION));
+	texSizeLoc = GetShaderLocation(*gameMemory->outlineShader, "textureSize");
+	texSize = (Vector2){(float)atlas.textureAtlas.width, (float)atlas.textureAtlas.height};
+	SetShaderValue(*gameMemory->outlineShader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
 #endif
 	printf("InitGame done!\n");
 }
@@ -2099,7 +2102,7 @@ void DrawScore(GameState* gameState, Options* options, TextureAtlas* atlas)
 
 void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader, Shader* outlineShader)
 {
-	int texSizeLoc = GetShaderLocation(*shader, "textureSize");
+	// int texSizeLoc = GetShaderLocation(*shader, "textureSize");
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	float scale = viewport.width / VIRTUAL_WIDTH;
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
@@ -2132,7 +2135,7 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 	float yOff = 0.0f;
 	float rotation = 0.0f;
 
-	BeginShaderMode(*shader);
+	// BeginShaderMode(*shader);
 	for (int i = 0; i < UPGRADE_COUNT; i++) {
 		Rectangle upgradeRect = 
 		{
@@ -2206,8 +2209,10 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 		} 
 		else 
 		{
+			BeginShaderMode(*shader);
 			DrawTexturePro(atlas->textureAtlas, getSprite(upgradeToSprite[i]).coords, 
 					upgradeRect, pivot, rotation, WHITE);
+			EndShaderMode();
 		}
 		// Draw the upgrade text
 		DrawTextWrapped(options->font, T(upgradeToText[i]), 
@@ -2222,7 +2227,7 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 						WHITE);
 
 	}
-	EndShaderMode();
+	// EndShaderMode();
 }
 
 void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
@@ -2391,93 +2396,102 @@ void DrawEnemyHealthBar(GameState *gameState, Options *options,
 
 void DrawUI(GameState *gameState, Options *options, TextureAtlas *atlas,
             Shader *shader, Shader *outlineShader) {
-  Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
-  switch (gameState->state) {
-  case STATE_RUNNING: {
-    DrawHealthBar(gameState, options, atlas, outlineShader);
-    DrawEnemyHealthBar(gameState, options, atlas, shader);
-    DrawScore(gameState, options, atlas);
+	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+	// BeginShaderMode(*shader);
+	// BeginBlendMode(BLEND_ALPHA);
+	switch (gameState->state) {
+		case STATE_RUNNING: 
+			{
+				DrawHealthBar(gameState, options, atlas, outlineShader);
+				DrawEnemyHealthBar(gameState, options, atlas, shader);
+				DrawScore(gameState, options, atlas);
 
-    if (gameState->player.shieldEnabled) {
-      DrawShieldText(gameState, options, atlas, shader);
-    }
-    break;
-  }
-  case STATE_MAIN_MENU: {
-    float scale = viewport.width / VIRTUAL_WIDTH;
-    float letterBoxOffsetX = (GetRenderWidth() - viewport.width) / 2.0f;
-    float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-    Color backgroundColor = ColorFromHSV(259, 1, 0.07);
-    ClearBackground(backgroundColor);
-    DrawTextWave(options->titleFont, T(TXT_GAME_TITLE),
-                 (Vector2){letterBoxOffsetX + viewport.width / 2.0f,
-                           letterBoxOffsetY + viewport.height / 2.0f},
-                 90 * scale, WHITE, false, gameState->time, 2.0f, 5.0f, 0.5f,
-                 true);
-    DrawTextCentered(
-        options->font, T(TXT_INSTRUCTIONS),
-        (Vector2){letterBoxOffsetX + viewport.width / 2.0f,
-                  letterBoxOffsetY + viewport.height / 2.0f + 90 * scale},
-        40 * scale, WHITE);
-    DrawTextCentered(
-        options->font, T(TXT_PRESS_TO_PLAY),
-        (Vector2){letterBoxOffsetX + viewport.width / 2.0f,
-                  letterBoxOffsetY + viewport.height / 2.0f + 120 * scale},
-        40 * scale, WHITE);
-    DrawTextCentered(options->font, "v0.1",
-                     (Vector2){letterBoxOffsetX + viewport.width / 2.0f,
-                               letterBoxOffsetY + viewport.height - 15},
-                     25 * scale, WHITE);
+				if (gameState->player.shieldEnabled) {
+					DrawShieldText(gameState, options, atlas, shader);
+				}
+				break;
+			}
+		case STATE_MAIN_MENU: 
+			{
+				float scale = viewport.width / VIRTUAL_WIDTH;
+				float letterBoxOffsetX = (GetRenderWidth() - viewport.width) / 2.0f;
+				float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
+				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
+				ClearBackground(backgroundColor);
+				DrawTextWave(options->titleFont, T(TXT_GAME_TITLE),
+						(Vector2){letterBoxOffsetX + viewport.width / 2.0f,
+						letterBoxOffsetY + viewport.height / 2.0f},
+						90 * scale, WHITE, false, gameState->time, 2.0f, 5.0f, 0.5f,
+						true);
+				DrawTextCentered(
+						options->font, T(TXT_INSTRUCTIONS),
+						(Vector2){letterBoxOffsetX + viewport.width / 2.0f,
+						letterBoxOffsetY + viewport.height / 2.0f + 90 * scale},
+						40 * scale, WHITE);
+				DrawTextCentered(
+						options->font, T(TXT_PRESS_TO_PLAY),
+						(Vector2){letterBoxOffsetX + viewport.width / 2.0f,
+						letterBoxOffsetY + viewport.height / 2.0f + 120 * scale},
+						40 * scale, WHITE);
+				DrawTextCentered(options->font, "v0.1",
+						(Vector2){letterBoxOffsetX + viewport.width / 2.0f,
+						letterBoxOffsetY + viewport.height - 15},
+						25 * scale, WHITE);
 
-    break;
-  }
-  case STATE_GAME_OVER: {
-    float scale = viewport.width / VIRTUAL_WIDTH;
-    float letterBoxOffsetX = (GetRenderWidth() - viewport.width) / 2.0f;
-    float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-    Color backgroundColor = ColorFromHSV(259, 1, 0.07);
-    ClearBackground(backgroundColor);
-    DrawTextCentered(options->font, T(TXT_GAME_OVER),
-                     (Vector2){letterBoxOffsetX + viewport.width / 2.0f,
-                               letterBoxOffsetY + viewport.height / 2.0f},
-                     70.0f * scale, WHITE);
-    char scoreText[100] = {0};
-    DrawTextCentered(
-        options->font, TF(TXT_SCORE, gameState->score),
-        (Vector2){letterBoxOffsetX + viewport.width / 2.0f,
-                  letterBoxOffsetY + viewport.height / 2.0f + 45.0f * scale},
-        40.0f * scale, WHITE);
-    DrawTextCentered(
-        options->font, T(TXT_TRY_AGAIN),
-        (Vector2){letterBoxOffsetX + viewport.width / 2.0f,
-                  letterBoxOffsetY + viewport.height / 2.0f + 85.0f * scale},
-        40.0f * scale, WHITE);
-    break;
-  }
-  case STATE_UPGRADE: {
-    DrawHealthBar(gameState, options, atlas, outlineShader);
-    DrawScore(gameState, options, atlas);
-    DrawUpgrades(gameState, options, atlas, shader, outlineShader);
-    break;
-  }
-  case STATE_PAUSED: {
-    if (gameState->lastState == STATE_RUNNING ||
-        gameState->lastState == STATE_UPGRADE) {
-      DrawHealthBar(gameState, options, atlas, outlineShader);
-      DrawEnemyHealthBar(gameState, options, atlas, shader);
-      DrawScore(gameState, options, atlas);
-    }
-    if (gameState->lastState == STATE_UPGRADE) {
-      DrawUpgrades(gameState, options, atlas, shader, outlineShader);
-    }
-    DrawPauseMenu(gameState, options, atlas);
-    break;
-  }
-  }
+				break;
+			}
+		case STATE_GAME_OVER: 
+			{
+				float scale = viewport.width / VIRTUAL_WIDTH;
+				float letterBoxOffsetX = (GetRenderWidth() - viewport.width) / 2.0f;
+				float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
+				Color backgroundColor = ColorFromHSV(259, 1, 0.07);
+				ClearBackground(backgroundColor);
+				DrawTextCentered(options->font, T(TXT_GAME_OVER),
+						(Vector2){letterBoxOffsetX + viewport.width / 2.0f,
+						letterBoxOffsetY + viewport.height / 2.0f},
+						70.0f * scale, WHITE);
+				char scoreText[100] = {0};
+				DrawTextCentered(
+						options->font, TF(TXT_SCORE, gameState->score),
+						(Vector2){letterBoxOffsetX + viewport.width / 2.0f,
+						letterBoxOffsetY + viewport.height / 2.0f + 45.0f * scale},
+						40.0f * scale, WHITE);
+				DrawTextCentered(
+						options->font, T(TXT_TRY_AGAIN),
+						(Vector2){letterBoxOffsetX + viewport.width / 2.0f,
+						letterBoxOffsetY + viewport.height / 2.0f + 85.0f * scale},
+						40.0f * scale, WHITE);
+				break;
+			}
+		case STATE_UPGRADE: 
+			{
+				DrawHealthBar(gameState, options, atlas, outlineShader);
+				DrawScore(gameState, options, atlas);
+				DrawUpgrades(gameState, options, atlas, shader, outlineShader);
+				break;
+			}
+		case STATE_PAUSED: 
+			{
+				if (gameState->lastState == STATE_RUNNING ||
+						gameState->lastState == STATE_UPGRADE) {
+					DrawHealthBar(gameState, options, atlas, outlineShader);
+					DrawEnemyHealthBar(gameState, options, atlas, shader);
+					DrawScore(gameState, options, atlas);
+				}
+				if (gameState->lastState == STATE_UPGRADE) {
+					DrawUpgrades(gameState, options, atlas, shader, outlineShader);
+				}
+				DrawPauseMenu(gameState, options, atlas);
+				break;
+			}
+	}
 
-  if (options->showDebugInfo) {
-    DrawFPSInViewport(viewport);
-  }
+	// EndBlendMode();
+	// EndShaderMode();
+	if (options->showDebugInfo) {
+		DrawFPSInViewport(viewport);
+	}
 }
 
 void DrawComposite(RenderTexture2D *scene, Options *options,
