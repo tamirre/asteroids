@@ -3,6 +3,7 @@
 #include "raylib.h"
 #include "assetsData.h"
 #include "stdio.h"
+#include <math.h>
 
 // #define internal static inline
 #define SHAPE_PADDING 1
@@ -95,10 +96,9 @@ static inline bool DrawSpriteAnimationOnce(Texture2D atlas,
                              Vector2 origin,
                              float rotation,
                              Color tint,
-                             Shader shader,
                              float startTime)
 {
-    int texSizeLoc = GetShaderLocation(shader, "textureSize");
+    // int texSizeLoc = GetShaderLocation(shader, "textureSize");
 
     float elapsed = GetTime() - startTime;
 
@@ -109,15 +109,12 @@ static inline bool DrawSpriteAnimationOnce(Texture2D atlas,
 
     Rectangle source = animation.rectangles[frame];
 
-    Vector2 texSize = { source.width, source.height };
-    // SetShaderValue(shader, texSizeLoc, &texSize, SHADER_UNIFORM_IVEC2);
-
     DrawTexturePro(atlas, source, destination, origin, rotation, tint);
 
     return false; // still playing
 }
 
-static inline void DrawSpriteAnimationPro(Texture2D* atlas, SpriteAnimation* animation, Rectangle destination, Vector2 origin, float rotation, Color tint, Shader shader, int flipX, int flipY)
+static inline void DrawSpriteAnimationPro(Texture2D* atlas, SpriteAnimation* animation, Rectangle destination, Vector2 origin, float rotation, Color tint, int flipX, int flipY)
 {
 	if (!atlas || !animation) return;
 	if (animation->framesPerSecond <= 0) return;
@@ -191,14 +188,9 @@ static inline void DrawTextureWithOutlinePro(Texture2D texture,
 		outlineColor.b / 255.0f, 
 		outlineColor.a / 255.0f 
 	};
-	float textureSize[2] = {
-		(float)texture.width,
-		(float)texture.height 
-	};
 
 	SetShaderValue(*outlineShader, outlineSizeLoc, &outlineSize, SHADER_UNIFORM_FLOAT);
 	SetShaderValue(*outlineShader, outlineColorLoc, color, SHADER_UNIFORM_VEC4);
-	// SetShaderValue(*outlineShader, textureSizeLoc, textureSize, SHADER_UNIFORM_VEC2);
 
 	BeginShaderMode(*outlineShader);
 	BeginBlendMode(BLEND_ALPHA);
@@ -211,7 +203,10 @@ static inline void DrawTextureWithOutlinePro(Texture2D texture,
 	EndBlendMode();
 	EndShaderMode();
 }
-
+static inline float EaseInOutCubic(float t)
+{
+    return t < 0.5f ? 4.0f * t * t * t : 1.0f - pow(-2.0f * t + 2.0f, 3.0f) / 2.0f;
+}
 static inline float EaseOutBack(float t)
 {
     // t must be 0 → 1

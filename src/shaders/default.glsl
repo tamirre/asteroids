@@ -1,6 +1,7 @@
 #version 330
 
 in vec2 fragTexCoord;
+in vec4 fragColor;
 
 out vec4 finalColor;
 
@@ -28,13 +29,7 @@ void main()
 {
     vec2 uv = aa(fragTexCoord, vec2(textureSize));
     // vec2 uv = uv_klems(fragTexCoord, textureSize);
-
-    vec4 tmp = texture(texture0, uv);
-    // vec4 tmp = texture(texture0, fragTexCoord);
-	// discard;
-	// tmp.r = 1.0;
-	finalColor = tmp;
-	// finalColor = vec4(1.0, 0.0, 0.0, 1.0);
-
+	// finalColor = texture(texture0, uv);
+	finalColor = texture(texture0, uv) * fragColor;
 }
 

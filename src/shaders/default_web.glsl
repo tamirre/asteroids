@@ -5,9 +5,10 @@ precision mediump int;
 #extension GL_OES_standard_derivatives : enable
 
 varying vec2 fragTexCoord;
+varying vec4 fragColor;
 
 uniform sampler2D texture0;
-uniform ivec2 textureSize;
+uniform vec2 textureSize;
 
 vec2 uv_klems(vec2 uv, ivec2 textureSize)
 {
@@ -21,10 +22,15 @@ vec2 uv_klems(vec2 uv, ivec2 textureSize)
 
     return (fl + fr - 0.5) / vec2(textureSize);
 }
-
+vec2 aa(vec2 uv, vec2 size) {
+    vec2 pixels = uv * size;
+	pixels = floor(pixels) + min(fract(pixels) / fwidth(pixels), 1.0) - 0.5;
+	// pixels = floor(pixels) + 0.5;
+	return pixels / size;
+}
 void main()
 {
-    vec2 uv = uv_klems(fragTexCoord, textureSize);
-    gl_FragColor = texture2D(texture0, uv);
+    vec2 uv = aa(fragTexCoord, textureSize);
+	gl_FragColor = texture2D(texture0, uv) * fragColor;
 }
 

@@ -2,6 +2,8 @@
 precision mediump float;
 precision mediump int;
 
+#extension GL_OES_standard_derivatives : enable
+
 // Input vertex attributes (from vertex shader)
 varying vec2 fragTexCoord;
 varying vec4 fragColor;
@@ -14,10 +16,17 @@ uniform vec2 textureSize;
 uniform float outlineSize;
 uniform vec4 outlineColor;
 
+vec2 aa(vec2 uv, vec2 size) {
+    vec2 pixels = uv * size;
+	pixels = floor(pixels) + min(fract(pixels) / fwidth(pixels), 1.0) - 0.5;
+	// pixels = floor(pixels) + 0.5;
+	return pixels / size;
+}
 void main()
 {
-    vec4 texel = texture2D(texture0, fragTexCoord);   // Get texel color
-    vec2 texelScale = vec2(0.0);
+    vec2 uv = aa(fragTexCoord, vec2(textureSize));
+    vec4 texel = texture2D(texture0, uv); 
+	vec2 texelScale = vec2(0.0);
     texelScale.x = outlineSize/float(textureSize.x);
     texelScale.y = outlineSize/float(textureSize.y);
 

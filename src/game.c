@@ -3,38 +3,38 @@
 
 void LoadIniFile(Options* options)
 {
-    FILE* file = fopen("bin/config.ini", "r");
+	FILE* file = fopen("bin/config.ini", "r");
 
-    if (!file) {
-        printf("Error: could not open config.ini file\n");
-        return;
-    }
+	if (!file) {
+		printf("Error: could not open config.ini file\n");
+		return;
+	}
 
-    char key[64];
-    float v1, v2;
+	char key[64];
+	float v1, v2;
 
-    char line[256];
-    while (fgets(line, sizeof(line), file)) {
+	char line[256];
+	while (fgets(line, sizeof(line), file)) {
 
-        // Try parsing 3 values (for things like windowPosition)
-        if (sscanf(line, "%63s %f %f", key, &v1, &v2) == 3) {
-            if (strcmp(key, "windowPosition") == 0) {
-                // options->windowX = v1;
-                // options->windowY = v2;
-            }
-        }
-        // Try parsing 2 values (for single floats)
-        else if (sscanf(line, "%63s %f", key, &v1) == 2) {
-            if (strcmp(key, "musicVolume") == 0) {
-                options->musicVolume = v1;
+		// Try parsing 3 values (for things like windowPosition)
+		if (sscanf(line, "%63s %f %f", key, &v1, &v2) == 3) {
+			if (strcmp(key, "windowPosition") == 0) {
+				// options->windowX = v1;
+				// options->windowY = v2;
+			}
+		}
+		// Try parsing 2 values (for single floats)
+		else if (sscanf(line, "%63s %f", key, &v1) == 2) {
+			if (strcmp(key, "musicVolume") == 0) {
+				options->musicVolume = v1;
 				// printf("DEBUG: musicVolume: %f\n", options->musicVolume);
-            } else if (strcmp(key, "fxVolume") == 0) {
-                options->fxVolume = v1;
+			} else if (strcmp(key, "fxVolume") == 0) {
+				options->fxVolume = v1;
 				// printf("DEBUG: fxVolume: %f\n", options->fxVolume);
-            }
-        }
-    }
-    fclose(file);
+			}
+		}
+	}
+	fclose(file);
 }
 
 void WriteIniFile(Options* options)
@@ -53,20 +53,20 @@ void WriteIniFile(Options* options)
 
 Rectangle GetScaledViewport(int winW, int winH)
 {
-    float scale = fminf(
-        (float)winW / VIRTUAL_WIDTH,
-        (float)winH / VIRTUAL_HEIGHT
-    );
+	float scale = fminf(
+			(float)winW / VIRTUAL_WIDTH,
+			(float)winH / VIRTUAL_HEIGHT
+			);
 
-    float w = VIRTUAL_WIDTH  * scale;
-    float h = VIRTUAL_HEIGHT * scale;
+	float w = VIRTUAL_WIDTH  * scale;
+	float h = VIRTUAL_HEIGHT * scale;
 
-    return (Rectangle){
-        (winW - w) / 2.0f,
-        (winH - h) / 2.0f,
-        w,
-        h
-    };
+	return (Rectangle){
+		(winW - w) / 2.0f,
+			(winH - h) / 2.0f,
+			w,
+			h
+	};
 }
 
 Vector2 GetVirtualMousePosition()
@@ -93,8 +93,8 @@ void Cleanup(GameMemory* gameMemory)
 	{
 		FreeSpriteAnimation(gameMemory->atlas->animations[i]);
 	}
-    UnloadFont(gameMemory->options->font);
-    UnloadFont(gameMemory->options->titleFont);
+	UnloadFont(gameMemory->options->font);
+	UnloadFont(gameMemory->options->titleFont);
 	for (int i = 0; i < SPRITE_COUNT; i++)
 	{
 		UnloadImageColors(gameMemory->spriteMasks[i].pixels);
@@ -108,8 +108,8 @@ void Cleanup(GameMemory* gameMemory)
 		UnloadSound(gameMemory->audio->sounds[i]);
 	}
 	// De-Initialization of gif recording
-    //--------------------------------------------------------------------------------------
-    // If still recording a GIF on close window, just finish
+	//--------------------------------------------------------------------------------------
+	// If still recording a GIF on close window, just finish
 	if(gameMemory->gameState->gifRecorder.recording)
 	{
 		GifRecordStop(&gameMemory->gameState->gifRecorder);
@@ -156,57 +156,57 @@ void InitializeAudio(Audio* audio, Options* options)
 }
 
 void SpawnEmitter(GameState* gameState, 
-		          Vector2 pos, 
-				  int maxParticleCount,
-				  float spawnRate,
-				  float lifetime,
-				  Particle templateParticle)
+		Vector2 pos, 
+		int maxParticleCount,
+		float spawnRate,
+		float lifetime,
+		Particle templateParticle)
 {
-    if (gameState->particleEmitterCount >= MAX_PARTICLE_EMITTERS) return;
+	if (gameState->particleEmitterCount >= MAX_PARTICLE_EMITTERS) return;
 
-    ParticleEmitter* e = &gameState->particleEmitters[gameState->particleEmitterCount++];
-    *e = (ParticleEmitter){0};
+	ParticleEmitter* e = &gameState->particleEmitters[gameState->particleEmitterCount++];
+	*e = (ParticleEmitter){0};
 	e->particleCount = 0;
 	e->spawnTimer = 0.0f;
 	e->age = 0.0f;
 	e->position = pos;
 	e->maxParticleCount = maxParticleCount;
-    e->spawnRate = spawnRate;
+	e->spawnRate = spawnRate;
 	e->lifetime = lifetime;
 	e->templateParticle = templateParticle;
 }
 
 static void EmitParticle(ParticleEmitter* e)
 {
-    if (e->particleCount >= MAX_PARTICLES) return;
+	if (e->particleCount >= e->maxParticleCount) return;
 	Particle particle = e->templateParticle;
-    float angle = GetRandomValue(e->templateParticle.angleRange.x, e->templateParticle.angleRange.y) * DEG2RAD;
-    Vector2 acceleration = (Vector2){GetRandomValue(e->templateParticle.accelerationRange.x, e->templateParticle.accelerationRange.y),
-									 GetRandomValue(e->templateParticle.accelerationRange.z, e->templateParticle.accelerationRange.w)};
+	float angle = GetRandomValue(e->templateParticle.angleRange.x, e->templateParticle.angleRange.y);
+	Vector2 acceleration = (Vector2){GetRandomValue(e->templateParticle.accelerationRange.x, e->templateParticle.accelerationRange.y),
+		GetRandomValue(e->templateParticle.accelerationRange.z, e->templateParticle.accelerationRange.w)};
 
 	Vector2 position = (Vector2) {GetRandomValue(e->templateParticle.positionRange.x, e->templateParticle.positionRange.y),
-	                         GetRandomValue(e->templateParticle.positionRange.z, e->templateParticle.positionRange.w)};
+		GetRandomValue(e->templateParticle.positionRange.z, e->templateParticle.positionRange.w)};
 
 	float angularVelocity = GetRandomValue(e->templateParticle.angularVelocityRange.x, e->templateParticle.angularVelocityRange.y);
-    float speed = (float)GetRandomValue(e->templateParticle.velocityRange.x, e->templateParticle.velocityRange.y);
-    Vector2 dir = { cosf(angle), sinf(angle) };
+	float velocityX = (float)GetRandomValue(e->templateParticle.velocityRange.x, e->templateParticle.velocityRange.y);
+	float velocityY = (float)GetRandomValue(e->templateParticle.velocityRange.z, e->templateParticle.velocityRange.w);
 	float size = GetRandomValue(e->templateParticle.sizeRange.x, e->templateParticle.sizeRange.y);
 
 	particle.position = position;
-	particle.velocity = Vector2Scale(dir, speed);
+	particle.velocity = (Vector2){velocityX, velocityY};
 	particle.acceleration = acceleration;
 	particle.angularVelocity = angularVelocity;
-	particle.rotation = 0.0f;
+	particle.rotation = angle;
 	particle.age = 0.0f;
 	particle.lifetime = 0.5f + (float)GetRandomValue(0, 50) / 100.0f;
 
-    e->particles[e->particleCount++] = particle;
+	e->particles[e->particleCount++] = particle;
 }
 
 void UpdateEmitter(ParticleEmitter* e, float dt)
 {
-    if (e->lifetime > 0.0f && e->age >= 0.0f)
-    {
+	if (e->lifetime > 0.0f && e->age >= 0.0f)
+	{
 		// stop spawning after lifetime
 		if (e->age >= e->lifetime)
 		{
@@ -216,94 +216,94 @@ void UpdateEmitter(ParticleEmitter* e, float dt)
 			e->age += dt;
 		}
 
-        e->spawnTimer += dt;
-        float spawnInterval = 1.0f / e->spawnRate;
+		e->spawnTimer += dt;
+		float spawnInterval = 1.0f / e->spawnRate;
 
-        if (e->spawnTimer >= spawnInterval)
-        {
-            e->spawnTimer -= spawnInterval;
-            EmitParticle(e);
-        }
-    }
+		if (e->spawnTimer >= spawnInterval)
+		{
+			e->spawnTimer -= spawnInterval;
+			EmitParticle(e);
+		}
+	}
 
 	// Update particles
-    for (int i = 0; i < e->particleCount; i++)
-    {
-        Particle* p = &e->particles[i];
+	for (int i = 0; i < e->particleCount; i++)
+	{
+		Particle* p = &e->particles[i];
 
-        p->age += dt;
-        if (p->age >= p->lifetime)
-        {
+		p->age += dt;
+		if (p->age >= p->lifetime)
+		{
 			*p = e->particles[--e->particleCount];
-            continue;
-        }
+			continue;
+		}
 
-        // integrate
-        p->velocity = Vector2Add(p->velocity, Vector2Scale(p->acceleration, dt));
-        p->position = Vector2Add(p->position, Vector2Scale(p->velocity, dt));
-        p->rotation += p->angularVelocity * dt;
-    }
+		// integrate
+		p->velocity = Vector2Add(p->velocity, Vector2Scale(p->acceleration, dt));
+		p->position = Vector2Add(p->position, Vector2Scale(p->velocity, dt));
+		p->rotation += p->angularVelocity * dt;
+	}
 }
 
 void UpdateEmitters(GameState* gameState, float dt)
 {
-    for (int i = 0; i < gameState->particleEmitterCount; i++)
-    {
-        ParticleEmitter* e = &gameState->particleEmitters[i];
+	for (int i = 0; i < gameState->particleEmitterCount; i++)
+	{
+		ParticleEmitter* e = &gameState->particleEmitters[i];
 		if (e->age < 0.0f && e->particleCount == 0)
 		{
 			gameState->particleEmitters[i] = gameState->particleEmitters[--gameState->particleEmitterCount];
 			continue;
 		}
-        UpdateEmitter(e, dt);
-    }
+		UpdateEmitter(e, dt);
+	}
 }
 
 void InitializeGameState(GameState* gameState) 
 {
-    *gameState = (GameState) {
+	*gameState = (GameState) {
 		.experience = 0,
-		.score = 0,
-        .state = STATE_MAIN_MENU,
-		.lastState = STATE_MAIN_MENU,
-		.timeScale = 1.0f,
-		.player = {0},
-		.enemies = {0},
-		.enemyCount = 0,
-		.enemySpawnRate = 30.0f,
-		.enemySpawnTime = 25.0f,
-		.bullets = {0},
-        .bulletCount = 0,
-		.explosions = {0},
-		.explosionCount = 0,
-		.asteroids = {0},
-        .asteroidCount = 0,
-		.spawnTime = 0.0,
-        .asteroidSpawnRate = 0.2f,
-        .boostCount = 0,
-        .boostSpawnTime = 0.0f,
-        .boostSpawnRate = 10.0f,
-		.stars = {0},
-        .starCount = 0,
-        .starTime = 0,
-        .starSpawnRate = 0.25f,
-        .initStars = 0,
-        .pickedUpgrade = UPGRADE_MULTISHOT,
-		.maxPlayerBullets = 7,
-		.dt = 0.0f,
-		.time = 0.0f,
-		.upgradeCards = {0},
-		.shouldExit = false,
-		.currentCollision = {0},
-		.stateChanged = true,
-		.particleEmitterCount = 0,
-    };
+			.score = 0,
+			.state = STATE_MAIN_MENU,
+			.lastState = STATE_MAIN_MENU,
+			.timeScale = 1.0f,
+			.player = {0},
+			.enemies = {0},
+			.enemyCount = 0,
+			.enemySpawnRate = 30.0f,
+			.enemySpawnTime = 25.0f,
+			.bullets = {0},
+			.bulletCount = 0,
+			.explosions = {0},
+			.explosionCount = 0,
+			.asteroids = {0},
+			.asteroidCount = 0,
+			.spawnTime = 0.0,
+			.asteroidSpawnRate = 0.2f,
+			.boostCount = 0,
+			.boostSpawnTime = 0.0f,
+			.boostSpawnRate = 10.0f,
+			.stars = {0},
+			.starCount = 0,
+			.starTime = 0,
+			.starSpawnRate = 0.25f,
+			.initStars = 0,
+			.pickedUpgrade = UPGRADE_MULTISHOT,
+			.maxPlayerBullets = 7,
+			.dt = 0.0f,
+			.time = 0.0f,
+			.upgradeCards = {0},
+			.shouldExit = false,
+			.currentCollision = {0},
+			.stateChanged = true,
+			.particleEmitterCount = 0,
+	};
 
 	MsfGifState gifState = { 0 };
 	gameState->gifRecorder = (GifRecorder){ 
 		.gifState = &gifState,
-		.recording = false,
-		.frameCounter = 0,
+			.recording = false,
+			.frameCounter = 0,
 	};
 
 	for (int i = 0; i < UPGRADE_COUNT; i++)
@@ -312,24 +312,24 @@ void InitializeGameState(GameState* gameState)
 		gameState->upgradeCards[i].rect = (Rectangle){0};
 	}
 
-    gameState->player = (Player) {
-        .velocity = 350,
-        .position = (Vector2){VIRTUAL_WIDTH / 2.0f, VIRTUAL_HEIGHT / 2.0f},
-        .health = 7,
-        .bulletCount = 1,
-        .sprite = getSprite(SPRITE_PLAYER),
-        .size = 2,
-        .animationFrames = 5,
-        .invulTime = 0.0f,
-        .invulDuration = 3.0f,
-        .fireRate = 1.0f,
-        .shootTime = 1.0f,
-        .damageMulti = 1.5f,
-		.shieldEnabled = false,
-		.shieldTime = 5.25f,
-		.level = 1,
-		.collider = (Rectangle){0,0,0,0},
-    };
+	gameState->player = (Player) {
+		.velocity = 350,
+			.position = (Vector2){VIRTUAL_WIDTH / 2.0f, VIRTUAL_HEIGHT / 2.0f},
+			.health = 7,
+			.bulletCount = 1,
+			.sprite = getSprite(SPRITE_PLAYER),
+			.size = 2,
+			.animationFrames = 5,
+			.invulTime = 0.0f,
+			.invulDuration = 3.0f,
+			.fireRate = 1.0f,
+			.shootTime = 1.0f,
+			.damageMulti = 1.5f,
+			.shieldEnabled = false,
+			.shieldTime = 5.25f,
+			.level = 1,
+			.collider = (Rectangle){0,0,0,0},
+	};
 }
 
 void InitializeOptions(Options* options) 
@@ -338,27 +338,27 @@ void InitializeOptions(Options* options)
 	const int maxTitleFontSize = 100;
 	*options = (Options) {
 		.screenWidth = (float)VIRTUAL_WIDTH,
-		.screenHeight = (float)VIRTUAL_HEIGHT,
-		.previousWidth = (float)VIRTUAL_WIDTH,
-		.previousHeight = (float)VIRTUAL_HEIGHT,
-		.disableShaders = true,
-		// .font = LoadLanguageFont("./assets/fonts/UnifontExMono.ttf", maxFontSize, LANG_EN), 
-		// .font = LoadLanguageFont("./assets/fonts/Thin Sans.ttf", maxFontSize, LANG_EN), 
-		.font = LoadLanguageFont("./assets/fonts/m6x11plus.ttf", maxFontSize, LANG_EN), 
-		.titleFont = LoadLanguageFont("./assets/fonts/Ethnocentric-Regular.otf", maxTitleFontSize, LANG_EN), 
-		.fontSpacing = 1.0f,
-		.maxFontSize = maxFontSize,
-		.language = LANG_EN,
-		.lastLanguage = LANG_EN,
-		.languageEditMode = false,
-		.languageChanged = false,
-		.disableCursor = false,
-		.lastMousePos = (Vector2){0,0},
-		.musicVolume = 0.15f,
-		.fxVolume = 0.15f,
-		.musicVolumeChanged = false,
-		.fxVolumeChanged = false,
-		.showDebugInfo = false,
+			.screenHeight = (float)VIRTUAL_HEIGHT,
+			.previousWidth = (float)VIRTUAL_WIDTH,
+			.previousHeight = (float)VIRTUAL_HEIGHT,
+			.disableShaders = true,
+			// .font = LoadLanguageFont("./assets/fonts/UnifontExMono.ttf", maxFontSize, LANG_EN), 
+			// .font = LoadLanguageFont("./assets/fonts/Thin Sans.ttf", maxFontSize, LANG_EN), 
+			.font = LoadLanguageFont("./assets/fonts/m6x11plus.ttf", maxFontSize, LANG_EN), 
+			.titleFont = LoadLanguageFont("./assets/fonts/Ethnocentric-Regular.otf", maxTitleFontSize, LANG_EN), 
+			.fontSpacing = 1.0f,
+			.maxFontSize = maxFontSize,
+			.language = LANG_EN,
+			.lastLanguage = LANG_EN,
+			.languageEditMode = false,
+			.languageChanged = false,
+			.disableCursor = false,
+			.lastMousePos = (Vector2){0,0},
+			.musicVolume = 0.15f,
+			.fxVolume = 0.15f,
+			.musicVolumeChanged = false,
+			.fxVolumeChanged = false,
+			.showDebugInfo = false,
 	};
 	SetTextureFilter(options->font.texture, TEXTURE_FILTER_BILINEAR);
 	SetTextureFilter(options->titleFont.texture, TEXTURE_FILTER_BILINEAR);
@@ -377,7 +377,7 @@ void InitializeOptions(Options* options)
 
 void InitGame(GameMemory* gameMemory)
 {
-    SetTargetFPS(TARGET_FPS);
+	SetTargetFPS(TARGET_FPS);
 
 	// set default language
 	LocSetLanguage(LANG_EN);
@@ -385,18 +385,18 @@ void InitGame(GameMemory* gameMemory)
 	// LocSetLanguage(LANG_ZH);
 
 	ConfigFlags configFlags = FLAG_WINDOW_RESIZABLE | 
-		                      FLAG_VSYNC_HINT | 
-							  // FLAG_WINDOW_TOPMOST | 
-							  // FLAG_FULLSCREEN_MODE |
-							  // FLAG_WINDOW_UNDECORATED |
-							  FLAG_BORDERLESS_WINDOWED_MODE;
+		FLAG_VSYNC_HINT | 
+		// FLAG_WINDOW_TOPMOST | 
+		// FLAG_FULLSCREEN_MODE |
+		// FLAG_WINDOW_UNDECORATED |
+		FLAG_BORDERLESS_WINDOWED_MODE;
 	SetConfigFlags(configFlags);
 
 	InitWindow(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_TITLE);
 	SetWindowMinSize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
-	
+
 	// Disable Exit on ESC
-    SetExitKey(KEY_NULL);
+	SetExitKey(KEY_NULL);
 	// Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	// float scale = viewport.width / VIRTUAL_WIDTH;
 	// float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
@@ -413,14 +413,16 @@ void InitGame(GameMemory* gameMemory)
 	GameState gameState = {0};
 	Audio audio = {0};
 	InitializeOptions(gameMemory->options);
+#ifndef PLATFORM_WEB
 	LoadIniFile(gameMemory->options);
+#endif
 	InitializeGameState(gameMemory->gameState);
 	InitializeAudio(gameMemory->audio, gameMemory->options);
 	// gameMemory->options = &options;
 	RenderTexture2D scene = LoadRenderTexture(gameMemory->options->screenWidth, gameMemory->options->screenHeight);
 	RenderTexture2D litScene = LoadRenderTexture(gameMemory->options->screenWidth, gameMemory->options->screenHeight);
 	SpriteMask spriteMasks[SPRITE_COUNT];
-    TextureAtlas atlas = initTextureAtlas(spriteMasks);
+	TextureAtlas atlas = initTextureAtlas(spriteMasks);
 	gameMemory->scene = &scene;
 	gameMemory->litScene = &litScene;
 
@@ -431,16 +433,16 @@ void InitGame(GameMemory* gameMemory)
 	gameMemory->options->previousHeight = VIRTUAL_HEIGHT;
 #ifndef PLATFORM_WEB
 	*gameMemory->shader = LoadShader(0, TextFormat("./src/shaders/default.glsl", GLSL_VERSION));
+	*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light.glsl", GLSL_VERSION));
+	*gameMemory->explosionShader = LoadShader(0, TextFormat("./src/shaders/explode.glsl", GLSL_VERSION));
+	*gameMemory->outlineShader = LoadShader(0, TextFormat("./src/shaders/outline.glsl", GLSL_VERSION));
+#endif
 	int texSizeLoc = GetShaderLocation(*gameMemory->shader, "textureSize");
 	Vector2 texSize = {(float)atlas.textureAtlas.width, (float)atlas.textureAtlas.height};
 	SetShaderValue(*gameMemory->shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
-	*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
-	*gameMemory->explosionShader = LoadShader(0, TextFormat("./src/shaders/explode.glsl", GLSL_VERSION));
-	*gameMemory->outlineShader = LoadShader(0, TextFormat("./src/shaders/outline.glsl", GLSL_VERSION));
 	texSizeLoc = GetShaderLocation(*gameMemory->outlineShader, "textureSize");
 	texSize = (Vector2){(float)atlas.textureAtlas.width, (float)atlas.textureAtlas.height};
 	SetShaderValue(*gameMemory->outlineShader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
-#endif
 	printf("InitGame done!\n");
 }
 
@@ -469,92 +471,92 @@ void writeSaveState(GameMemory* gameMemory)
 }
 
 bool pixelPerfectCollision(
-    Color* pixel1,
-    Color* pixel2,
-    int width1, int width2,
-    int height1, int height2,
-    Rectangle dst1, Rectangle dst2,
-    Rectangle overlap,
-    float rotationDeg1,
-    float rotationDeg2
-)
+		Color* pixel1,
+		Color* pixel2,
+		int width1, int width2,
+		int height1, int height2,
+		Rectangle dst1, Rectangle dst2,
+		Rectangle overlap,
+		float rotationDeg1,
+		float rotationDeg2
+		)
 {
-    if (overlap.width <= 0 || overlap.height <= 0)
-        return false;
+	if (overlap.width <= 0 || overlap.height <= 0)
+		return false;
 
-    // Screen -> texture scale
-    const float sx1 = (float)width1  / dst1.width;
-    const float sy1 = (float)height1 / dst1.height;
-    const float sx2 = (float)width2  / dst2.width;
-    const float sy2 = (float)height2 / dst2.height;
+	// Screen -> texture scale
+	const float sx1 = (float)width1  / dst1.width;
+	const float sy1 = (float)height1 / dst1.height;
+	const float sx2 = (float)width2  / dst2.width;
+	const float sy2 = (float)height2 / dst2.height;
 
-    // Centers (screen space)
-    Vector2 center1 = {
-        dst1.x + dst1.width  * 0.5f,
-        dst1.y + dst1.height * 0.5f
-    };
-    Vector2 center2 = {
-        dst2.x + dst2.width  * 0.5f,
-        dst2.y + dst2.height * 0.5f
-    };
+	// Centers (screen space)
+	Vector2 center1 = {
+		dst1.x + dst1.width  * 0.5f,
+		dst1.y + dst1.height * 0.5f
+	};
+	Vector2 center2 = {
+		dst2.x + dst2.width  * 0.5f,
+		dst2.y + dst2.height * 0.5f
+	};
 
-    // Inverse rotations
-    float r1 = -rotationDeg1 * DEG2RAD;
-    float r2 = -rotationDeg2 * DEG2RAD;
+	// Inverse rotations
+	float r1 = -rotationDeg1 * DEG2RAD;
+	float r2 = -rotationDeg2 * DEG2RAD;
 
-    float cos1 = cosf(r1), sin1 = sinf(r1);
-    float cos2 = cosf(r2), sin2 = sinf(r2);
+	float cos1 = cosf(r1), sin1 = sinf(r1);
+	float cos2 = cosf(r2), sin2 = sinf(r2);
 
-    int ox = (int)floorf(overlap.x);
-    int oy = (int)floorf(overlap.y);
-    int ow = (int)ceilf(overlap.width);
-    int oh = (int)ceilf(overlap.height);
+	int ox = (int)floorf(overlap.x);
+	int oy = (int)floorf(overlap.y);
+	int ow = (int)ceilf(overlap.width);
+	int oh = (int)ceilf(overlap.height);
 
-    for (int y = 0; y < oh; y++) {
-        for (int x = 0; x < ow; x++) {
-            float sx = ox + x;
-            float sy = oy + y;
+	for (int y = 0; y < oh; y++) {
+		for (int x = 0; x < ow; x++) {
+			float sx = ox + x;
+			float sy = oy + y;
 
-            /* ---------- sprite 1 ---------- */
-            float rx1 = sx - center1.x;
-            float ry1 = sy - center1.y;
+			/* ---------- sprite 1 ---------- */
+			float rx1 = sx - center1.x;
+			float ry1 = sy - center1.y;
 
-            float lx1 = cos1 * rx1 - sin1 * ry1;
-            float ly1 = sin1 * rx1 + cos1 * ry1;
+			float lx1 = cos1 * rx1 - sin1 * ry1;
+			float ly1 = sin1 * rx1 + cos1 * ry1;
 
-            lx1 += dst1.width  * 0.5f;
-            ly1 += dst1.height * 0.5f;
+			lx1 += dst1.width  * 0.5f;
+			ly1 += dst1.height * 0.5f;
 
-            int u1 = (int)(lx1 * sx1);
-            int v1 = (int)(ly1 * sy1);
+			int u1 = (int)(lx1 * sx1);
+			int v1 = (int)(ly1 * sy1);
 
-            /* ---------- sprite 2 ---------- */
-            float rx2 = sx - center2.x;
-            float ry2 = sy - center2.y;
+			/* ---------- sprite 2 ---------- */
+			float rx2 = sx - center2.x;
+			float ry2 = sy - center2.y;
 
-            float lx2 = cos2 * rx2 - sin2 * ry2;
-            float ly2 = sin2 * rx2 + cos2 * ry2;
+			float lx2 = cos2 * rx2 - sin2 * ry2;
+			float ly2 = sin2 * rx2 + cos2 * ry2;
 
-            lx2 += dst2.width  * 0.5f;
-            ly2 += dst2.height * 0.5f;
+			lx2 += dst2.width  * 0.5f;
+			ly2 += dst2.height * 0.5f;
 
-            int u2 = (int)(lx2 * sx2);
-            int v2 = (int)(ly2 * sy2);
+			int u2 = (int)(lx2 * sx2);
+			int v2 = (int)(ly2 * sy2);
 
-            // Bounds check
-            if (u1 < 0 || v1 < 0 || u2 < 0 || v2 < 0) continue;
-            if (u1 >= width1 || v1 >= height1) continue;
-            if (u2 >= width2 || v2 >= height2) continue;
+			// Bounds check
+			if (u1 < 0 || v1 < 0 || u2 < 0 || v2 < 0) continue;
+			if (u1 >= width1 || v1 >= height1) continue;
+			if (u2 >= width2 || v2 >= height2) continue;
 			Color a = pixel1[v1 * width1 + u1];
-            Color b = pixel2[v2 * width2 + u2];
+			Color b = pixel2[v2 * width2 + u2];
 
-            if (a.a > 0 && b.a > 0) {
-                return true;
-            }
-        }
-    }
+			if (a.a > 0 && b.a > 0) {
+				return true;
+			}
+		}
+	}
 
-    return false;
+	return false;
 }
 
 
@@ -639,12 +641,12 @@ void UpdateGame(GameMemory* gameMemory)
 			{
 				if (gameState->particleEmitterCount < 2) {
 					SpawnEmitter(
-						gameState, 
-						(Vector2){VIRTUAL_WIDTH/2.0f, VIRTUAL_HEIGHT/2.0f},
-						100,
-						20.0f,
-						10.0f,
-						(Particle){
+							gameState, 
+							(Vector2){VIRTUAL_WIDTH/2.0f, VIRTUAL_HEIGHT/2.0f},
+							100,
+							20.0f,
+							10.0f,
+							(Particle){
 							.sprite = getSprite(SPRITE_STAR1),
 							.positionRange = (Vector4){0, VIRTUAL_WIDTH, 0, VIRTUAL_HEIGHT},
 							.velocityRange = (Vector4){0, 0, 0, 0},
@@ -656,15 +658,15 @@ void UpdateGame(GameMemory* gameMemory)
 							.endColor = WHITE,
 							.age = 0.0f,
 							.lifetime = 3.0f,
-						}
-					);
+							}
+							);
 					SpawnEmitter(
-						gameState, 
-						(Vector2){VIRTUAL_WIDTH/2.0f, VIRTUAL_HEIGHT/2.0f},
-						100,
-						20.0f,
-						20.0f,
-						(Particle){
+							gameState, 
+							(Vector2){VIRTUAL_WIDTH/2.0f, VIRTUAL_HEIGHT/2.0f},
+							100,
+							20.0f,
+							20.0f,
+							(Particle){
 							.sprite = getSprite(SPRITE_STAR2),
 							.positionRange = (Vector4){0, VIRTUAL_WIDTH, 0, VIRTUAL_HEIGHT},
 							.velocityRange = (Vector4){0, 0, 0, 0},
@@ -676,8 +678,8 @@ void UpdateGame(GameMemory* gameMemory)
 							.endColor = WHITE,
 							.age = 0.0f,
 							.lifetime = 3.0f,
-						}
-					);
+							}
+							);
 				}
 				// Update emitters
 				UpdateEmitters(gameState, gameState->dt);
@@ -806,12 +808,12 @@ void UpdateGame(GameMemory* gameMemory)
 					}
 				}
 				// Update stars
-                {
-                    for (int starIndex = 0; starIndex < gameState->starCount; starIndex++)
-                    {
-                        Star* star = &gameState->stars[starIndex];
-                        star->position.y += star->velocity * gameState->dt;
-                        if(!CheckCollisionPointRec(star->position, screenRect))
+				{
+					for (int starIndex = 0; starIndex < gameState->starCount; starIndex++)
+					{
+						Star* star = &gameState->stars[starIndex];
+						star->position.y += star->velocity * gameState->dt;
+						if(!CheckCollisionPointRec(star->position, screenRect))
 						{
 							// Replace with last star
 							if (gameState->starCount > 0)
@@ -821,8 +823,8 @@ void UpdateGame(GameMemory* gameMemory)
 								gameState->starCount = 0;
 							}
 						}
-                    }
-                }
+					}
+				}
 				// Update Player
 				// Player movement
 				{
@@ -895,8 +897,8 @@ void UpdateGame(GameMemory* gameMemory)
 				}
 				// Shoot bullets (player)
 				if (IsKeyDown(KEY_SPACE) 
-					&& gameState->player.shootTime >= 1.0f/gameState->player.fireRate
-					&& gameState->bulletCount <= MAX_BULLETS)
+						&& gameState->player.shootTime >= 1.0f/gameState->player.fireRate
+						&& gameState->bulletCount <= MAX_BULLETS)
 				{
 					const float random = (1.0f - (float)GetRandomValue(0, 2))/5.0f;
 					SetSoundPitch(audio->sounds[SOUND_GUN], 1.0f + random);
@@ -932,7 +934,7 @@ void UpdateGame(GameMemory* gameMemory)
 
 							// Adjust Y so bullet spawns at top of player
 							bullet.position.y -= gameState->player.sprite.coords.height * gameState->player.size / 2.0f
-								               - bullet.sprite.coords.height * bullet.size / 2.0f;
+								- bullet.sprite.coords.height * bullet.size / 2.0f;
 
 							gameState->bullets[gameState->bulletCount++] = bullet;
 						}
@@ -949,7 +951,7 @@ void UpdateGame(GameMemory* gameMemory)
 						float size = 2.0;
 						Vector2 velocity = (Vector2){0.1f + (float)GetRandomValue(3, 10)/20.0f,0};
 						float enemyXPosition = GetRandomValue(0            +getSprite(SPRITE_ENEMY).coords.width/2.0f, 
-								                              VIRTUAL_WIDTH-getSprite(SPRITE_ENEMY).coords.width/2.0f);
+								VIRTUAL_WIDTH-getSprite(SPRITE_ENEMY).coords.width/2.0f);
 						Enemy enemy =
 						{
 							.velocity = velocity,
@@ -964,9 +966,9 @@ void UpdateGame(GameMemory* gameMemory)
 						};
 						enemy.collider = (Rectangle){
 							.x = enemy.position.x - enemy.sprite.coords.width*enemy.size/2.0f,
-							.y = enemy.position.y - enemy.sprite.coords.height*enemy.size/2.0f,
-							.width = enemy.sprite.coords.width*enemy.size,
-							.height = enemy.sprite.coords.height*enemy.size,
+								.y = enemy.position.y - enemy.sprite.coords.height*enemy.size/2.0f,
+								.width = enemy.sprite.coords.width*enemy.size,
+								.height = enemy.sprite.coords.height*enemy.size,
 						};
 						gameState->enemies[gameState->enemyCount++] = enemy;
 						gameState->enemySpawnTime = 0.0f;
@@ -981,9 +983,9 @@ void UpdateGame(GameMemory* gameMemory)
 						enemy->position.x = 0.5 * enemy->sprite.coords.width*enemy->size + (VIRTUAL_WIDTH - enemy->sprite.coords.width*enemy->size) * 0.5f * (1.0f + sinf(enemy->phase));
 						enemy->collider = (Rectangle){
 							.x = enemy->position.x - enemy->sprite.coords.width*enemy->size/2.0f,
-							.y = enemy->position.y - enemy->sprite.coords.height*enemy->size/2.0f,
-							.width = enemy->sprite.coords.width*enemy->size,
-							.height = enemy->sprite.coords.height*enemy->size,
+								.y = enemy->position.y - enemy->sprite.coords.height*enemy->size/2.0f,
+								.width = enemy->sprite.coords.width*enemy->size,
+								.height = enemy->sprite.coords.height*enemy->size,
 						};
 					}
 					for (int enemyIndex = 0; enemyIndex < gameState->enemyCount; enemyIndex++)
@@ -1082,7 +1084,7 @@ void UpdateGame(GameMemory* gameMemory)
 
 									// Adjust Y so bullet spawns at top of player
 									bullet.position.y -= enemy->sprite.coords.height * enemy->size / 2.0f
-									                   - bullet.sprite.coords.height * bullet.size / 2.0f;
+										- bullet.sprite.coords.height * bullet.size / 2.0f;
 
 									gameState->bullets[gameState->bulletCount++] = bullet;
 								}
@@ -1093,10 +1095,10 @@ void UpdateGame(GameMemory* gameMemory)
 				}
 				// Update Bullets
 				{
-                    for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
-                    {
-                        Bullet* bullet = &gameState->bullets[bulletIndex];
-                        if(!CheckCollisionPointRec(bullet->position, screenRect))
+					for (int bulletIndex = 0; bulletIndex < gameState->bulletCount; bulletIndex++)
+					{
+						Bullet* bullet = &gameState->bullets[bulletIndex];
+						if(!CheckCollisionPointRec(bullet->position, screenRect))
 						{
 							// Replace with last projectile
 							if (gameState->bulletCount > 0)
@@ -1106,8 +1108,8 @@ void UpdateGame(GameMemory* gameMemory)
 								gameState->bulletCount = 0;
 							}
 						}
-                        bullet->position.x -= bullet->velocity.x * gameState->dt;
-                        bullet->position.y -= bullet->velocity.y * gameState->dt;
+						bullet->position.x -= bullet->velocity.x * gameState->dt;
+						bullet->position.y -= bullet->velocity.y * gameState->dt;
 						const int texture_x = bullet->position.x - bullet->sprite.coords.width * bullet->size / getSprite(SPRITE_BULLET).numFrames / 2.0;
 						const int texture_y = bullet->position.y - bullet->sprite.coords.height * bullet->size / 2.0;
 						const float width = bullet->sprite.coords.width / getSprite(SPRITE_BULLET).numFrames * bullet->size;
@@ -1125,9 +1127,9 @@ void UpdateGame(GameMemory* gameMemory)
 				{
 					Bullet* bullet = &gameState->bullets[bulletIndex];
 					if(CheckCollisionRecs(gameState->player.collider, bullet->collider) 
-						&& bullet->owner != &gameState->player 
-						&& gameState->player.invulTime <= 0.0f 
-						&& gameState->player.shieldEnabled == false)
+							&& bullet->owner != &gameState->player 
+							&& gameState->player.invulTime <= 0.0f 
+							&& gameState->player.shieldEnabled == false)
 					{
 						Rectangle collisionRec = GetCollisionRec(gameState->player.collider, bullet->collider);
 						gameState->currentCollision = collisionRec;
@@ -1206,7 +1208,7 @@ void UpdateGame(GameMemory* gameMemory)
 						Asteroid* asteroid = &gameState->asteroids[asteroidIndex];
 						if (!asteroid->dying) {
 							asteroid->position.y += asteroid->velocity.y * gameState->dt;
-							// asteroid->rotation   += asteroid->angularVelocity * gameState->dt;
+							asteroid->rotation   += asteroid->angularVelocity * gameState->dt;
 						} else {
 							// asteroid->position.y -= 20.0 * gameState->dt;
 						}
@@ -1215,9 +1217,9 @@ void UpdateGame(GameMemory* gameMemory)
 						float height = asteroid->sprite.coords.height * asteroid->size;
 						asteroid->collider = (Rectangle) {
 							.x = asteroid->position.x - width / 2.0f,
-							.y = asteroid->position.y - height / 2.0f, 
-							.width  = width,
-							.height = height, 
+								.y = asteroid->position.y - height / 2.0f, 
+								.width  = width,
+								.height = height, 
 						};
 						if (asteroid->dying) {
 							asteroid->deathTime += gameState->dt;
@@ -1272,15 +1274,15 @@ void UpdateGame(GameMemory* gameMemory)
 											Particle templateParticle = {
 												.sprite = asteroid->sprite,
 												.positionRange = (Vector4){pos.x, pos.x, pos.y, pos.y},
-												.velocityRange = (Vector4){50, 200, 50, 200},
+												.velocityRange = (Vector4){-100, 100, -100, 100},
 												.angleRange = (Vector2){0, 360},
-												.sizeRange = (Vector2){0.3, 0.1},
+												.sizeRange = (Vector2){0.20*asteroid->size, 0.1*asteroid->size},
 												.accelerationRange = (Vector4){0, 0, 0, 0}, 
-												.angularVelocityRange = (Vector2){-300, 300},
+												.angularVelocityRange = (Vector2){-200, 200},
 												.startColor = WHITE,
 												.endColor = WHITE,
 												.age = 0.0f,
-												.lifetime = 0.5f + (float)GetRandomValue(0, 50) / 100.0f,
+												.lifetime = 0.2f + (float)GetRandomValue(0, 50) / 100.0f,
 											};
 											SpawnEmitter(gameState, pos, 15, 120.0f, 0.25f, templateParticle);
 											asteroid->deathTime = 0.0f;
@@ -1395,9 +1397,9 @@ void UpdateGame(GameMemory* gameMemory)
 						float height = boost->sprite.coords.height * boost->size;
 						boost->collider = (Rectangle) {
 							.x = boost->position.x - width / 2.0f,
-							.y = boost->position.y - height / 2.0f,
-							.width = width,
-							.height = height, 
+								.y = boost->position.y - height / 2.0f,
+								.width = width,
+								.height = height, 
 						};
 						// Check if boost is off-screen
 						if (boost->position.y > VIRTUAL_HEIGHT + boost->sprite.coords.height * boost->size)
@@ -1473,12 +1475,6 @@ void UpdateGame(GameMemory* gameMemory)
 					gameState->lastState = STATE_UPGRADE;
 					gameState->stateChanged = true;
 				}
-#ifndef PLATFORM_WEB
-				if (IsKeyPressed(KEY_F)) 
-				{
-					ToggleFullscreen();
-				}
-#endif
 				if (IsSoundPlaying(audio->sounds[SOUND_SHIELD]))
 				{
 					StopSound(audio->sounds[SOUND_SHIELD]);
@@ -1573,7 +1569,7 @@ void UpdateGame(GameMemory* gameMemory)
 					gameMemory->options->previousWidth  = VIRTUAL_WIDTH;
 					gameMemory->options->previousHeight = VIRTUAL_HEIGHT;
 					*gameMemory->shader = LoadShader(0, TextFormat("./src/shaders/default_web.glsl", GLSL_VERSION));
-					*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
+					*gameMemory->lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.glsl", GLSL_VERSION));
 					*gameMemory->explosionShader = LoadShader(0, TextFormat("./src/shaders/explode_web.glsl", GLSL_VERSION));
 					*gameMemory->outlineShader = LoadShader(0, TextFormat("./src/shaders/outline_web.glsl", GLSL_VERSION));
 					gameMemory->gameState->state = STATE_RUNNING;
@@ -1623,30 +1619,30 @@ void UpdateGame(GameMemory* gameMemory)
 void DrawEmitter(TextureAtlas* atlas, const ParticleEmitter* e)
 {
 	// Draw particles 
-    for (int i = 0; i < e->particleCount; i++)
-    {
-        const Particle* p = &e->particles[i];
-        float t = p->age / p->lifetime;
-        Color c = p->startColor;
-        c.a = (unsigned char)(255 * (1.0f - t)); // fade out
+	for (int i = 0; i < e->particleCount; i++)
+	{
+		const Particle* p = &e->particles[i];
+		// float t = p->age / p->lifetime;
+		float t = EaseInOutCubic(p->age / p->lifetime);
+		Color c = p->startColor;
+		c.a = (unsigned char)(255 * (1.0f - t)); // fade out
 		float scale = p->sizeRange.x + t * ( p->sizeRange.y - p->sizeRange.x);
 		DrawTexturePro(atlas->textureAtlas, 
-					   p->sprite.coords,
-					   (Rectangle){
-						   .x = p->position.x - p->sprite.coords.width/2.0f,
-						   .y = p->position.y - p->sprite.coords.height/2.0f,
-						   .width = p->sprite.coords.width * scale,
-						   .height = p->sprite.coords.height * scale,
-					   },
-					   (Vector2){0,0}, 
-					   p->rotation, 
-					   c);
-    }
+				p->sprite.coords,
+				(Rectangle){
+				.x = p->position.x - p->sprite.coords.width/2.0f,
+				.y = p->position.y - p->sprite.coords.height/2.0f,
+				.width = p->sprite.coords.width * scale,
+				.height = p->sprite.coords.height * scale,
+				},
+				(Vector2){0,0}, 
+				p->rotation, 
+				c);
+	}
 }
 
 void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, RenderTexture2D* scene, Shader* shader, Shader* explosionShader, Shader* outlineShader)
 {
-	int texSizeLoc = GetShaderLocation(*shader, "textureSize");
 	int progressLoc = GetShaderLocation(*explosionShader, "progress");
 	BeginTextureMode(*scene);
 
@@ -1657,7 +1653,9 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 				ClearBackground(backgroundColor);
 				for (int i = 0; i < gameState->particleEmitterCount; i++)
 				{
+					BeginShaderMode(*shader);
 					DrawEmitter(atlas, &gameState->particleEmitters[i]);
+					EndShaderMode();
 				}
 				break;
 			}
@@ -1692,7 +1690,6 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 
 				// Draw Stars
 				{
-					BeginBlendMode(BLEND_ALPHA);
 					for (int starIndex = 0; starIndex < gameState->starCount; starIndex++)
 					{
 						Star* star = &gameState->stars[starIndex];
@@ -1702,10 +1699,8 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						Color starColor = ColorAlpha(WHITE, star->alpha);
 						DrawTextureRec(atlas->textureAtlas, getSprite(SPRITE_STAR1).coords, (Vector2) {texture_x, texture_y}, starColor);
 					}
-					EndBlendMode();
 				}
 				// Only after drawing stars with alpha values. Otherwise alpha needs to be passed to the shader?
-				BeginShaderMode(*shader);
 				// Draw asteroids
 				{
 					for (int asteroidIndex = 0; asteroidIndex < gameState->asteroidCount; asteroidIndex++)
@@ -1723,35 +1718,36 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						Vector2 texSize = { width, height };
 						if (asteroid->dying) {
 							BeginShaderMode(*explosionShader);
-							BeginBlendMode(BLEND_ALPHA);
 							float progress = Remap(asteroid->deathTime,0.0f,0.5f,0.0f,1.0f);		
 							SetShaderValue(*explosionShader, progressLoc, &progress, SHADER_UNIFORM_FLOAT);
 							DrawTexturePro(atlas->textureAtlas, asteroid->sprite.coords, asteroidDrawRect, 
 									(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, asteroid->rotation, WHITE);
-							EndBlendMode();
 							EndShaderMode();
 						} else {
-							if (asteroid->selected) {
+							if (0) {
 								Color outlineColor = WHITE;
 								float outlineWidth = 1.0f;
 								DrawTextureWithOutlinePro(atlas->textureAtlas,
-														  asteroid->sprite.coords,
-														  asteroidDrawRect, 
-														  (Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, 
-														  asteroid->rotation,
-														  WHITE, 
-														  outlineColor,
-														  outlineWidth, 
-														  outlineShader);
+										asteroid->sprite.coords,
+										asteroidDrawRect, 
+										(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, 
+										asteroid->rotation,
+										WHITE, 
+										outlineColor,
+										outlineWidth, 
+										outlineShader);
 							} else {
 								// SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
+								BeginShaderMode(*shader);
 								DrawTexturePro(atlas->textureAtlas, 
-										       asteroid->sprite.coords, 
-											   asteroidDrawRect, 
-										       (Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, 
-											   asteroid->rotation, 
-											   WHITE);
+										asteroid->sprite.coords, 
+										asteroidDrawRect, 
+										(Vector2){asteroid->collider.width/2.0f, asteroid->collider.height/2.0f}, 
+										asteroid->rotation, 
+										WHITE);
+								EndShaderMode();
 							}
+
 						}
 						// DrawCircleV(asteroid->position, 10.0f, RED);
 					}
@@ -1767,15 +1763,16 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						// atlas->animations[SpriteToAnimation[SPRITE_BULLET]].framesPerSecond = 14;
 						bool flipY = false;
 						if (bullet->owner != &gameState->player) flipY = true;
+						BeginShaderMode(*shader);
 						DrawSpriteAnimationPro(&atlas->textureAtlas, 
-											   &atlas->animations[SpriteToAnimation[SPRITE_BULLET]],
-											   bullet->collider, 
-											   (Vector2){0, 0}, 
-											   bullet->rotation, 
-											   WHITE, 
-											   *shader, 
-											   false, 
-											   flipY);
+								&atlas->animations[SpriteToAnimation[SPRITE_BULLET]],
+								bullet->collider, 
+								(Vector2){0, 0}, 
+								bullet->rotation, 
+								WHITE, 
+								false, 
+								flipY);
+						EndShaderMode();
 					}
 				}
 				// Draw boosts
@@ -1795,7 +1792,9 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						Vector2 pivot = { boost->collider.width / 2.0f, boost->collider.height / 2.0f };
 						// SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
 						// Rectangle destination = {texture_x, texture_y, width, height}; // origin in coordinates and scale
-						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_SCRAPMETAL]], boostDrawRect, pivot, boost->rotation, WHITE, *shader, false, false);
+						BeginShaderMode(*shader);
+						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_SCRAPMETAL]], boostDrawRect, pivot, boost->rotation, WHITE, false, false);
+						EndShaderMode();
 						// DrawRectangleLines(boostDrawRect.x, boostDrawRect.y, boostDrawRect.width, boostDrawRect.height, RED);
 						// DrawRectangleLines(boost->collider.x, boost->collider.y, boost->collider.width, boost->collider.height, GREEN);
 					}
@@ -1807,7 +1806,9 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 						Enemy* enemy = &gameState->enemies[i];
 						Vector2 texSize = { enemy->sprite.coords.width, enemy->sprite.coords.height };
 						// SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
+						BeginShaderMode(*shader);
 						DrawTexturePro(atlas->textureAtlas, enemy->sprite.coords, enemy->collider, (Vector2){0,0}, 0, WHITE);
+						EndShaderMode();
 					}
 					// char buffer[100] = {0};
 					// sprintf(buffer, "Timer: %.2f", gameState->enemySpawnTime);
@@ -1843,8 +1844,9 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 							height
 						};
 
-						Vector2 texSize = { width, height };
+						// Vector2 texSize = { width, height };
 						// SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
+						BeginShaderMode(*shader);
 						bool finished = DrawSpriteAnimationOnce(
 								atlas->textureAtlas,
 								atlas->animations[SpriteToAnimation[SPRITE_EXPLOSION]],
@@ -1852,9 +1854,9 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 								(Vector2){0, 0},
 								0.0f,
 								WHITE,
-								*shader,
 								explosion->startTime
 								);
+						EndShaderMode();
 
 						if (finished)
 							explosion->active = false;
@@ -1872,10 +1874,14 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					Vector2 texSize = { playerDestination.width, playerDestination.height };
 					// SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
 					if (gameState->player.invulTime <= 0.0f) {
-						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, *shader, 0, 0);
+						BeginShaderMode(*shader);
+						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, 0, 0);
+						EndShaderMode();
 					} else {
 						if (((int)(gameState->player.invulTime * 10)) % 2 == 0) {
-							DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, *shader, 0, 0);
+							BeginShaderMode(*shader);
+							DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_PLAYER]], playerDestination, origin, 0, WHITE, 0, 0);
+							EndShaderMode();
 						}
 					}
 					// DrawCircleV(gameState->player.position, 8.0f, GREEN);
@@ -1886,15 +1892,18 @@ void DrawScene(GameState* gameState, Options* options, TextureAtlas* atlas, Rend
 					{
 						atlas->animations[SpriteToAnimation[SPRITE_SHIELD]].framesPerSecond = 14;
 						Vector2 texSize = { getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.width / getSprite(SpriteToAnimation[SPRITE_SHIELD]).numFrames,
-											getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.height };
+							getSprite(SpriteToAnimation[SPRITE_SHIELD]).coords.height };
 						// SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
-						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_SHIELD]], playerDestination, origin, 0, WHITE, *shader, false, false);
+						BeginShaderMode(*shader);
+						DrawSpriteAnimationPro(&atlas->textureAtlas, &atlas->animations[SpriteToAnimation[SPRITE_SHIELD]], playerDestination, origin, 0, WHITE, false, false);
+						EndShaderMode();
 					}
 				}
-				EndShaderMode();
 				for (int i = 0; i < gameState->particleEmitterCount; i++)
 				{
+					BeginShaderMode(*shader);
 					DrawEmitter(atlas, &gameState->particleEmitters[i]);
+					EndShaderMode();
 				}	
 				break;
 			}
@@ -1973,7 +1982,7 @@ void DrawLightmap(GameState* gameState, Options* options, RenderTexture2D* litSc
 	EndTextureMode();
 }
 
-void DrawHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* outlineShader)
+void DrawHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader)
 {
 	// Draw player health
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
@@ -1981,21 +1990,8 @@ void DrawHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas, 
 	scale *= 1.5f;
 	float letterBoxOffsetX = (GetRenderWidth()  - viewport.width)  / 2.0f;
 	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-	
-	// For drawing outline
-	float outlineSize = 1.0f;
-	Color color = GREEN;
-	float outlineColor[4] = { 
-		color.r / 255.0f, 
-		color.g / 255.0f, 
-		color.b / 255.0f, 
-		color.a / 255.0f 
-	};
-	float textureSize[2] = {
-		atlas->textureAtlas.width,
-		atlas->textureAtlas.height 
-	};
 
+	BeginShaderMode(*shader);
 	for (int i = 1; i <= gameState->player.health; i++)
 	{
 		const int texture_x = letterBoxOffsetX + i * 16 * scale;
@@ -2004,16 +2000,17 @@ void DrawHealthBar(GameState* gameState, Options* options, TextureAtlas* atlas, 
 		const Rectangle heartRect = {
 			.x = texture_x,
 			.y = texture_y,
-		    .width = (float)getSprite(SPRITE_HEART).coords.width * scale,
-		    .height = (float)getSprite(SPRITE_HEART).coords.height * scale,
+			.width = (float)getSprite(SPRITE_HEART).coords.width * scale,
+			.height = (float)getSprite(SPRITE_HEART).coords.height * scale,
 		};
 		DrawTexturePro(atlas->textureAtlas, 
-					   getSprite(SPRITE_HEART).coords, 
-					   heartRect, 
-					   (Vector2){0,0}, 
-					   0, 
-					   WHITE);
+				getSprite(SPRITE_HEART).coords, 
+				heartRect, 
+				(Vector2){0,0}, 
+				0, 
+				WHITE);
 	}
+	EndShaderMode();
 }
 
 void DrawShieldText(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader)
@@ -2061,43 +2058,43 @@ void DrawScore(GameState* gameState, Options* options, TextureAtlas* atlas)
 	DrawRectangle(recPosX, recPosY, gameState->experience*scale / ((float)gameState->player.level*1.5f) / 5.0f, recHeight, ColorAlpha(BLUE, 0.5));
 	DrawRectangleLines(recPosX, recPosY, recWidth, recHeight, ColorAlpha(WHITE, 0.5));
 	Vector2 textSize = MeasureTextEx(options->font, T(TXT_EXPERIENCE), 
-			                         fontSize, GetDefaultSpacing(fontSize));
+			fontSize, GetDefaultSpacing(fontSize));
 
 
 
 	// Draw shadow
 	Vector2 shadowPos = (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, 
-								  recPosY + recHeight / 2.0f - textSize.y / 2.0f};
+		recPosY + recHeight / 2.0f - textSize.y / 2.0f};
 	shadowPos.x += (int)(fontSize / 10);
 	shadowPos.y += (int)(fontSize / 10);
 	DrawTextEx(options->font, T(TXT_EXPERIENCE), 
-			   shadowPos,
-			   fontSize, GetDefaultSpacing(fontSize), SHADOW_COLOR);
+			shadowPos,
+			fontSize, GetDefaultSpacing(fontSize), SHADOW_COLOR);
 	DrawTextEx(options->font, T(TXT_EXPERIENCE), 
-			   (Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, 
-			             recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 
-			   fontSize, GetDefaultSpacing(fontSize), WHITE);
+			(Vector2){recPosX + recWidth / 2.0f - textSize.x / 2.0f, 
+			recPosY + recHeight / 2.0f - textSize.y / 2.0f}, 
+			fontSize, GetDefaultSpacing(fontSize), WHITE);
 
 	// Draw Score
 	recPosX = letterBoxOffsetX + VIRTUAL_WIDTH * 0.5 * scale;
 	recPosY = letterBoxOffsetY + VIRTUAL_HEIGHT * 0.05 * scale;
 	textSize = MeasureTextEx(options->font, TF(TXT_SCORE, gameState->score), 
-							 fontSize, GetDefaultSpacing(fontSize));
+			fontSize, GetDefaultSpacing(fontSize));
 
 
 	// Draw shadow
 	shadowPos = (Vector2){recPosX - textSize.x / 2.0f,
-								  recPosY - textSize.y / 2.0f}; 
+		recPosY - textSize.y / 2.0f}; 
 
 	shadowPos.x += (int)(fontSize / 10);
 	shadowPos.y += (int)(fontSize / 10);
 	DrawTextEx(options->font, TF(TXT_SCORE, gameState->score),
-			   shadowPos,
-			   fontSize, GetDefaultSpacing(fontSize), SHADOW_COLOR);
+			shadowPos,
+			fontSize, GetDefaultSpacing(fontSize), SHADOW_COLOR);
 	DrawTextEx(options->font, TF(TXT_SCORE, gameState->score),
-			  (Vector2){recPosX - textSize.x / 2.0f,
-			            recPosY - textSize.y / 2.0f}, 
-			   fontSize, GetDefaultSpacing(fontSize), WHITE);
+			(Vector2){recPosX - textSize.x / 2.0f,
+			recPosY - textSize.y / 2.0f}, 
+			fontSize, GetDefaultSpacing(fontSize), WHITE);
 }
 
 void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, Shader* shader, Shader* outlineShader)
@@ -2175,9 +2172,9 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 		// Store rect for collision detection with mouse
 		gameState->upgradeCards[i].rect = (Rectangle){
 			.x = upgradeRect.x - pivot.x,
-			.y = upgradeRect.y - pivot.y,
-			.width = upgradeRect.width,
-			.height = upgradeRect.height,
+				.y = upgradeRect.y - pivot.y,
+				.width = upgradeRect.width,
+				.height = upgradeRect.height,
 		};
 		// Note: Debug draw
 		// DrawRectangleLines(gameState->upgradeCards[i].rect.x, gameState->upgradeCards[i].rect.y, gameState->upgradeCards[i].rect.width, gameState->upgradeCards[i].rect.height, RED);
@@ -2192,19 +2189,19 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 		{
 			Color outlineColor = (Color){ 
 				225.0f, 
-				200.0f, 
-				255.0f, 
-				255.0f 
+					200.0f, 
+					255.0f, 
+					255.0f 
 			};
 			DrawTextureWithOutlinePro(atlas->textureAtlas,
-									  getSprite(upgradeToSprite[i]).coords,
-									  upgradeRect, 
-									  pivot, 
-									  rotation, 
-									  WHITE, 
-									  outlineColor, 
-									  1.0f, 
-									  outlineShader);
+					getSprite(upgradeToSprite[i]).coords,
+					upgradeRect, 
+					pivot, 
+					rotation, 
+					WHITE, 
+					outlineColor, 
+					1.0f, 
+					outlineShader);
 
 		} 
 		else 
@@ -2216,15 +2213,15 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 		}
 		// Draw the upgrade text
 		DrawTextWrapped(options->font, T(upgradeToText[i]), 
-				        upgradeBuffer, 2048,
-						(Vector2){textPos.x - textOffset.x, textPos.y - textOffset.y},
-						32.0f*scaling*scale, 
-						fontSize, 
-						ALIGN_LEFT,
-						rotation,
-						scaling*scale,
-						(Vector2){cardCenter.x - textPos.x, cardCenter.y - textPos.y},
-						WHITE);
+				upgradeBuffer, 2048,
+				(Vector2){textPos.x - textOffset.x, textPos.y - textOffset.y},
+				32.0f*scaling*scale, 
+				fontSize, 
+				ALIGN_LEFT,
+				rotation,
+				scaling*scale,
+				(Vector2){cardCenter.x - textPos.x, cardCenter.y - textPos.y},
+				WHITE);
 
 	}
 	// EndShaderMode();
@@ -2234,175 +2231,175 @@ void DrawPauseMenu(GameState* gameState, Options* options, TextureAtlas* atlas)
 {
 	const Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
 	float scale = viewport.width / VIRTUAL_WIDTH;
-  GuiSetStyle(DEFAULT, TEXT_SIZE, 24 * scale);
-  GuiSetStyle(DEFAULT, TEXT_SPACING, GetDefaultSpacing(24 * scale));
-  float letterBoxOffsetX = (GetRenderWidth() - viewport.width) / 2.0f;
-  float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-  DrawTextWave(options->font, T(TXT_GAME_PAUSED),
-               (Vector2){letterBoxOffsetX + viewport.width / 2.0f,
-                         letterBoxOffsetY + viewport.height / 5.0f},
-               40 * scale, WHITE, false, gameState->time, 2.0f, 5.0f, 0.5f,
-               true);
-  // Draw a window box
-  const float boxWidth = 475.0f * scale;
-  const float boxHeight = 350.0f * scale;
-  const float boxPosX = letterBoxOffsetX + viewport.width / 2;
-  const float boxPosY = letterBoxOffsetY + viewport.height / 2;
-  GuiWindowBox((Rectangle){boxPosX - boxWidth / 2, boxPosY - boxHeight / 2,
-                           boxWidth, boxHeight},
-               T(TXT_SETTINGS));
-  // Language label
-  const float labelWidth = 160.0f * scale;
-  const float labelHeight = 100.0f * scale;
-  const float buttonWidth = 100 * scale;
-  const float buttonHeight = 50 * scale;
-  const float sliderWidth = 160 * scale;
-  const float sliderHeight = 20 * scale;
-  const float checkboxWidth = 20 * scale;
-  const float checkboxHeight = 20 * scale;
-  GuiLabel((Rectangle){boxPosX - labelWidth / 2 - boxWidth / 4,
-                       boxPosY - labelHeight / 2 - boxHeight / 6, labelWidth,
-                       labelHeight},
-           T(TXT_LANGUAGE));
-  GuiLabel((Rectangle){boxPosX - labelWidth / 2 - boxWidth / 4,
-                       boxPosY - labelHeight / 2 - boxHeight / 6 +
-                           1 * boxHeight / 12,
-                       labelWidth, labelHeight},
-           T(TXT_MUSICVOLUME));
-  GuiLabel((Rectangle){boxPosX - labelWidth / 2 - boxWidth / 4,
-                       boxPosY - labelHeight / 2 - boxHeight / 6 +
-                           2 * boxHeight / 12,
-                       labelWidth, labelHeight},
-           T(TXT_FXVOLUME));
-  // int GuiSliderBar(Rectangle bounds, const char *textLeft, const char
-  // *textRight, float *value, float minValue, float maxValue)
-  if (!options->languageEditMode) {
-    if (GuiSliderBar((Rectangle){boxPosX - sliderWidth / 2 + boxWidth / 6,
-                                 boxPosY - sliderHeight / 2 - boxHeight / 6 +
-                                     1 * boxHeight / 12,
-                                 sliderWidth, sliderHeight},
-                     "0%", "100%", &options->musicVolume, 0.0f, 0.5f)) {
-      options->musicVolumeChanged = true;
-    }
-    // int GuiSliderBar(Rectangle bounds, const char *textLeft, const char
-    // *textRight, float *value, float minValue, float maxValue)
-    if (GuiSliderBar((Rectangle){boxPosX - sliderWidth / 2 + boxWidth / 6,
-                                 boxPosY - sliderHeight / 2 - boxHeight / 6 +
-                                     2 * boxHeight / 12,
-                                 sliderWidth, sliderHeight},
-                     "0%", "100%", &options->fxVolume, 0.0f, 0.5f)) {
-      options->fxVolumeChanged = true;
-    }
-  }
-  GuiCheckBox((Rectangle){boxPosX - labelWidth / 2 - boxWidth / 4,
-                          boxPosY - sliderHeight / 2 - boxHeight / 6 +
-                              3 * boxHeight / 12,
-                          checkboxWidth, checkboxHeight},
-              T(TXT_SHOW_DEBUG_INFO), &options->showDebugInfo);
+	GuiSetStyle(DEFAULT, TEXT_SIZE, 24 * scale);
+	GuiSetStyle(DEFAULT, TEXT_SPACING, GetDefaultSpacing(24 * scale));
+	float letterBoxOffsetX = (GetRenderWidth() - viewport.width) / 2.0f;
+	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
+	DrawTextWave(options->font, T(TXT_GAME_PAUSED),
+			(Vector2){letterBoxOffsetX + viewport.width / 2.0f,
+			letterBoxOffsetY + viewport.height / 5.0f},
+			40 * scale, WHITE, false, gameState->time, 2.0f, 5.0f, 0.5f,
+			true);
+	// Draw a window box
+	const float boxWidth = 475.0f * scale;
+	const float boxHeight = 350.0f * scale;
+	const float boxPosX = letterBoxOffsetX + viewport.width / 2;
+	const float boxPosY = letterBoxOffsetY + viewport.height / 2;
+	GuiWindowBox((Rectangle){boxPosX - boxWidth / 2, boxPosY - boxHeight / 2,
+			boxWidth, boxHeight},
+			T(TXT_SETTINGS));
+	// Language label
+	const float labelWidth = 160.0f * scale;
+	const float labelHeight = 100.0f * scale;
+	const float buttonWidth = 100 * scale;
+	const float buttonHeight = 50 * scale;
+	const float sliderWidth = 160 * scale;
+	const float sliderHeight = 20 * scale;
+	const float checkboxWidth = 20 * scale;
+	const float checkboxHeight = 20 * scale;
+	GuiLabel((Rectangle){boxPosX - labelWidth / 2 - boxWidth / 4,
+			boxPosY - labelHeight / 2 - boxHeight / 6, labelWidth,
+			labelHeight},
+			T(TXT_LANGUAGE));
+	GuiLabel((Rectangle){boxPosX - labelWidth / 2 - boxWidth / 4,
+			boxPosY - labelHeight / 2 - boxHeight / 6 +
+			1 * boxHeight / 12,
+			labelWidth, labelHeight},
+			T(TXT_MUSICVOLUME));
+	GuiLabel((Rectangle){boxPosX - labelWidth / 2 - boxWidth / 4,
+			boxPosY - labelHeight / 2 - boxHeight / 6 +
+			2 * boxHeight / 12,
+			labelWidth, labelHeight},
+			T(TXT_FXVOLUME));
+	// int GuiSliderBar(Rectangle bounds, const char *textLeft, const char
+	// *textRight, float *value, float minValue, float maxValue)
+	if (!options->languageEditMode) {
+		if (GuiSliderBar((Rectangle){boxPosX - sliderWidth / 2 + boxWidth / 6,
+					boxPosY - sliderHeight / 2 - boxHeight / 6 +
+					1 * boxHeight / 12,
+					sliderWidth, sliderHeight},
+					"0%", "100%", &options->musicVolume, 0.0f, 0.5f)) {
+			options->musicVolumeChanged = true;
+		}
+		// int GuiSliderBar(Rectangle bounds, const char *textLeft, const char
+		// *textRight, float *value, float minValue, float maxValue)
+		if (GuiSliderBar((Rectangle){boxPosX - sliderWidth / 2 + boxWidth / 6,
+					boxPosY - sliderHeight / 2 - boxHeight / 6 +
+					2 * boxHeight / 12,
+					sliderWidth, sliderHeight},
+					"0%", "100%", &options->fxVolume, 0.0f, 0.5f)) {
+			options->fxVolumeChanged = true;
+		}
+	}
+	GuiCheckBox((Rectangle){boxPosX - labelWidth / 2 - boxWidth / 4,
+			boxPosY - sliderHeight / 2 - boxHeight / 6 +
+			3 * boxHeight / 12,
+			checkboxWidth, checkboxHeight},
+			T(TXT_SHOW_DEBUG_INFO), &options->showDebugInfo);
 
-  if (GuiButton(
-          (Rectangle){boxPosX - boxWidth / 3 - buttonWidth / 2 + checkboxWidth,
-                      boxPosY - buttonHeight / 4 + boxHeight / 6 +
-                          checkboxHeight,
-                      buttonWidth, buttonHeight},
-          T(TXT_CONTINUE))) {
-    gameState->state = gameState->lastState;
-    gameState->stateChanged = true;
-  }
-  if (GuiButton(
-          (Rectangle){boxPosX + boxWidth / 5 - buttonWidth / 2 + checkboxWidth,
-                      boxPosY - buttonHeight / 4 + boxHeight / 6 +
-                          checkboxHeight,
-                      buttonWidth, buttonHeight},
-          T(TXT_QUIT))) {
-    gameState->shouldExit = true;
-    WriteIniFile(options);
-  }
-  // Draw dropdown box
-  const float dropdownWidth = 160.0f * scale;
-  const float dropdownHeight = 20.0f * scale;
-  // Note: the label string must list all items separated by ';'
-  char langItems[256];
-  snprintf(langItems, sizeof(langItems), "%s;%s;%s", T(TXT_ENGLISH),
-           T(TXT_GERMAN), T(TXT_CHINESE));
-  if (GuiDropdownBox((Rectangle){boxPosX - dropdownWidth / 2 + boxWidth / 6,
-                                 boxPosY - dropdownHeight / 2 - boxHeight / 6,
-                                 dropdownWidth, dropdownHeight},
-                     langItems, &options->language,
-                     options->languageEditMode)) {
-    // Toggled edit mode when clicked
-    options->languageEditMode = !options->languageEditMode;
-  }
-  if (options->language != options->lastLanguage) {
-    options->languageChanged = true;
-    switch (options->language) {
-    case LANG_EN:
-      LocSetLanguage(LANG_EN);
-      break;
-    case LANG_DE:
-      LocSetLanguage(LANG_DE);
-      break;
-    case LANG_ZH:
-      LocSetLanguage(LANG_ZH);
-      break;
-    }
-    UnloadFont(options->font);
-    // options->font = LoadLanguageFont("./assets/fonts/UnifontExMono.ttf",
-    // options->maxFontSize, options->language);
-    if (options->language == LANG_EN || options->language == LANG_DE) {
-      // options->font = LoadLanguageFont("./assets/fonts/Thin Sans.ttf",
-      // options->maxFontSize, options->language);
-      options->font = LoadLanguageFont("./assets/fonts/m6x11plus.ttf",
-                                       options->maxFontSize, options->language);
-    } else if (options->language == LANG_ZH) {
-      options->font =
-          LoadLanguageFont("./assets/fonts/NotoSansSC-ExtraBold.ttf",
-                           options->maxFontSize, options->language);
-    }
-    GuiSetFont(options->font);
-    options->lastLanguage = options->language;
-  }
+	if (GuiButton(
+				(Rectangle){boxPosX - boxWidth / 3 - buttonWidth / 2 + checkboxWidth,
+				boxPosY - buttonHeight / 4 + boxHeight / 6 +
+				checkboxHeight,
+				buttonWidth, buttonHeight},
+				T(TXT_CONTINUE))) {
+		gameState->state = gameState->lastState;
+		gameState->stateChanged = true;
+	}
+	if (GuiButton(
+				(Rectangle){boxPosX + boxWidth / 5 - buttonWidth / 2 + checkboxWidth,
+				boxPosY - buttonHeight / 4 + boxHeight / 6 +
+				checkboxHeight,
+				buttonWidth, buttonHeight},
+				T(TXT_QUIT))) {
+		gameState->shouldExit = true;
+#ifndef PLATFORM_WEB
+		WriteIniFile(options);
+#endif
+	}
+	// Draw dropdown box
+	const float dropdownWidth = 160.0f * scale;
+	const float dropdownHeight = 20.0f * scale;
+	// Note: the label string must list all items separated by ';'
+	char langItems[256];
+	snprintf(langItems, sizeof(langItems), "%s;%s;%s", T(TXT_ENGLISH),
+			T(TXT_GERMAN), T(TXT_CHINESE));
+	if (GuiDropdownBox((Rectangle){boxPosX - dropdownWidth / 2 + boxWidth / 6,
+				boxPosY - dropdownHeight / 2 - boxHeight / 6,
+				dropdownWidth, dropdownHeight},
+				langItems, &options->language,
+				options->languageEditMode)) {
+		// Toggled edit mode when clicked
+		options->languageEditMode = !options->languageEditMode;
+	}
+	if (options->language != options->lastLanguage) {
+		options->languageChanged = true;
+		switch (options->language) {
+			case LANG_EN:
+				LocSetLanguage(LANG_EN);
+				break;
+			case LANG_DE:
+				LocSetLanguage(LANG_DE);
+				break;
+			case LANG_ZH:
+				LocSetLanguage(LANG_ZH);
+				break;
+		}
+		UnloadFont(options->font);
+		// options->font = LoadLanguageFont("./assets/fonts/UnifontExMono.ttf",
+		// options->maxFontSize, options->language);
+		if (options->language == LANG_EN || options->language == LANG_DE) {
+			// options->font = LoadLanguageFont("./assets/fonts/Thin Sans.ttf",
+			// options->maxFontSize, options->language);
+			options->font = LoadLanguageFont("./assets/fonts/m6x11plus.ttf",
+					options->maxFontSize, options->language);
+		} else if (options->language == LANG_ZH) {
+			options->font =
+				LoadLanguageFont("./assets/fonts/NotoSansSC-ExtraBold.ttf",
+						options->maxFontSize, options->language);
+		}
+		GuiSetFont(options->font);
+		options->lastLanguage = options->language;
+	}
 }
 
 void DrawFPSInViewport(Rectangle viewport) {
-  float offsetX = (GetRenderWidth() - viewport.width) / 2.0f;
-  float offsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-  float scale = viewport.width / VIRTUAL_WIDTH;
+	float offsetX = (GetRenderWidth() - viewport.width) / 2.0f;
+	float offsetY = (GetRenderHeight() - viewport.height) / 2.0f;
+	float scale = viewport.width / VIRTUAL_WIDTH;
 
-  DrawFPS(offsetX + 25 * scale, offsetY + 65 * scale);
+	DrawFPS(offsetX + 25 * scale, offsetY + 65 * scale);
 }
 
 void DrawEnemyHealthBar(GameState *gameState, Options *options,
-                        TextureAtlas *atlas, Shader *shader) {
-  Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
-  float scale = viewport.width / VIRTUAL_WIDTH;
-  float letterBoxOffsetX = (GetRenderWidth() - viewport.width) / 2.0f;
-  float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
-  float recHeight = 10.0f;
-  float recWidth = 50.0f;
-  for (int i = 0; i < gameState->enemyCount; i++) {
-    Enemy *enemy = &gameState->enemies[i];
-    float recPosX =
-        letterBoxOffsetX + (enemy->position.x - recWidth / 2.0f) * scale;
-    float recPosY =
-        letterBoxOffsetY +
-        (enemy->position.y + enemy->sprite.coords.height - recHeight) * scale;
-    DrawRectangle(recPosX, recPosY, recWidth / 20.0f * enemy->health * scale,
-                  recHeight * scale, RED);
-    DrawRectangleLines(recPosX, recPosY, recWidth * scale, recHeight * scale,
-                       WHITE);
-  }
+		TextureAtlas *atlas, Shader *shader) {
+	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+	float scale = viewport.width / VIRTUAL_WIDTH;
+	float letterBoxOffsetX = (GetRenderWidth() - viewport.width) / 2.0f;
+	float letterBoxOffsetY = (GetRenderHeight() - viewport.height) / 2.0f;
+	float recHeight = 10.0f;
+	float recWidth = 50.0f;
+	for (int i = 0; i < gameState->enemyCount; i++) {
+		Enemy *enemy = &gameState->enemies[i];
+		float recPosX =
+			letterBoxOffsetX + (enemy->position.x - recWidth / 2.0f) * scale;
+		float recPosY =
+			letterBoxOffsetY +
+			(enemy->position.y + enemy->sprite.coords.height - recHeight) * scale;
+		DrawRectangle(recPosX, recPosY, recWidth / 20.0f * enemy->health * scale,
+				recHeight * scale, RED);
+		DrawRectangleLines(recPosX, recPosY, recWidth * scale, recHeight * scale,
+				WHITE);
+	}
 }
 
 void DrawUI(GameState *gameState, Options *options, TextureAtlas *atlas,
-            Shader *shader, Shader *outlineShader) {
+		Shader *shader, Shader *outlineShader) {
 	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
-	// BeginShaderMode(*shader);
-	// BeginBlendMode(BLEND_ALPHA);
 	switch (gameState->state) {
 		case STATE_RUNNING: 
 			{
-				DrawHealthBar(gameState, options, atlas, outlineShader);
+				DrawHealthBar(gameState, options, atlas, shader);
 				DrawEnemyHealthBar(gameState, options, atlas, shader);
 				DrawScore(gameState, options, atlas);
 
@@ -2466,7 +2463,8 @@ void DrawUI(GameState *gameState, Options *options, TextureAtlas *atlas,
 			}
 		case STATE_UPGRADE: 
 			{
-				DrawHealthBar(gameState, options, atlas, outlineShader);
+				DrawHealthBar(gameState, options, atlas, shader);
+				DrawEnemyHealthBar(gameState, options, atlas, shader);
 				DrawScore(gameState, options, atlas);
 				DrawUpgrades(gameState, options, atlas, shader, outlineShader);
 				break;
@@ -2475,7 +2473,7 @@ void DrawUI(GameState *gameState, Options *options, TextureAtlas *atlas,
 			{
 				if (gameState->lastState == STATE_RUNNING ||
 						gameState->lastState == STATE_UPGRADE) {
-					DrawHealthBar(gameState, options, atlas, outlineShader);
+					DrawHealthBar(gameState, options, atlas, shader);
 					DrawEnemyHealthBar(gameState, options, atlas, shader);
 					DrawScore(gameState, options, atlas);
 				}
@@ -2487,82 +2485,80 @@ void DrawUI(GameState *gameState, Options *options, TextureAtlas *atlas,
 			}
 	}
 
-	// EndBlendMode();
-	// EndShaderMode();
 	if (options->showDebugInfo) {
 		DrawFPSInViewport(viewport);
 	}
 }
 
 void DrawComposite(RenderTexture2D *scene, Options *options,
-                   RenderTexture2D *litScene, GameState *gameState,
-                   Shader *lightShader) {
-  Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
-  Rectangle src = {0, 0, (float)scene->texture.width,
-                   -(float)scene->texture.height};
+		RenderTexture2D *litScene, GameState *gameState,
+		Shader *lightShader) {
+	Rectangle viewport = GetScaledViewport(GetRenderWidth(), GetRenderHeight());
+	Rectangle src = {0, 0, (float)scene->texture.width,
+		-(float)scene->texture.height};
 
-  if (!options->disableShaders)
-    BeginShaderMode(*lightShader);
-  DrawTexturePro(scene->texture, src, viewport, (Vector2){0, 0}, 0, WHITE);
-  if (!options->disableShaders)
-    EndShaderMode();
+	if (!options->disableShaders)
+		BeginShaderMode(*lightShader);
+	DrawTexturePro(scene->texture, src, viewport, (Vector2){0, 0}, 0, WHITE);
+	if (!options->disableShaders)
+		EndShaderMode();
 }
 
 void DrawCursor(GameState *gameState, Options *options, TextureAtlas *atlas,
-                Shader *shader, Shader *outlineShader) {
-  HideCursor();
-  Vector2 mousePosition = GetMousePosition();
-  Rectangle sourceRect = {
-      .x = getSprite(SPRITE_CURSOR).coords.x,
-      .y = getSprite(SPRITE_CURSOR).coords.y,
-      .width = getSprite(SPRITE_CURSOR).coords.width,
-      .height = getSprite(SPRITE_CURSOR).coords.height,
-  };
-  float cursorScale = 1.0f;
-  Rectangle destRect = {
-      .x = mousePosition.x,
-      .y = mousePosition.y,
-      .width = (float)getSprite(SPRITE_CURSOR).coords.width * cursorScale,
-      .height = (float)getSprite(SPRITE_CURSOR).coords.height * cursorScale,
-  };
-  DrawTexturePro(atlas->textureAtlas, sourceRect, destRect, (Vector2){0, 0}, 0,
-                 WHITE);
+		Shader *shader, Shader *outlineShader) {
+	HideCursor();
+	Vector2 mousePosition = GetMousePosition();
+	Rectangle sourceRect = {
+		.x = getSprite(SPRITE_CURSOR).coords.x,
+		.y = getSprite(SPRITE_CURSOR).coords.y,
+		.width = getSprite(SPRITE_CURSOR).coords.width,
+		.height = getSprite(SPRITE_CURSOR).coords.height,
+	};
+	float cursorScale = 1.0f;
+	Rectangle destRect = {
+		.x = mousePosition.x,
+		.y = mousePosition.y,
+		.width = (float)getSprite(SPRITE_CURSOR).coords.width * cursorScale,
+		.height = (float)getSprite(SPRITE_CURSOR).coords.height * cursorScale,
+	};
+	DrawTexturePro(atlas->textureAtlas, sourceRect, destRect, (Vector2){0, 0}, 0,
+			WHITE);
 }
 
 void DrawGame(GameMemory *gameMemory) {
-  GameState *gameState = gameMemory->gameState;
-  Options *options = gameMemory->options;
-  TextureAtlas *atlas = gameMemory->atlas;
-  RenderTexture2D *scene = gameMemory->scene;
-  RenderTexture2D *litScene = gameMemory->litScene;
-  Shader *shader = gameMemory->shader;
-  Shader *lightShader = gameMemory->lightShader;
-  Shader *explosionShader = gameMemory->explosionShader;
-  Shader *outlineShader = gameMemory->outlineShader;
+	GameState *gameState = gameMemory->gameState;
+	Options *options = gameMemory->options;
+	TextureAtlas *atlas = gameMemory->atlas;
+	RenderTexture2D *scene = gameMemory->scene;
+	RenderTexture2D *litScene = gameMemory->litScene;
+	Shader *shader = gameMemory->shader;
+	Shader *lightShader = gameMemory->lightShader;
+	Shader *explosionShader = gameMemory->explosionShader;
+	Shader *outlineShader = gameMemory->outlineShader;
 
-  DrawLightmap(gameState, options, litScene, lightShader);
-  DrawScene(gameState, options, atlas, scene, shader, explosionShader,
-            outlineShader);
+	DrawLightmap(gameState, options, litScene, lightShader);
+	DrawScene(gameState, options, atlas, scene, shader, explosionShader,
+			outlineShader);
 
-  BeginDrawing();
-  {
-    ClearBackground(BLACK);
-    DrawComposite(scene, options, litScene, gameState, lightShader);
-    DrawUI(gameState, options, atlas, shader, outlineShader);
-    DrawCursor(gameState, options, atlas, shader, outlineShader);
-  }
-  EndDrawing();
+	BeginDrawing();
+	{
+		ClearBackground(BLACK);
+		DrawComposite(scene, options, litScene, gameState, lightShader);
+		DrawUI(gameState, options, atlas, shader, outlineShader);
+		DrawCursor(gameState, options, atlas, shader, outlineShader);
+	}
+	EndDrawing();
 }
 
 void UpdateDrawFrame(GameMemory *gameMemory) {
-  gameMemory->gameState->dt = GetFrameTime() * gameMemory->gameState->timeScale;
-  gameMemory->gameState->time += gameMemory->gameState->dt;
-  HandleResize(gameMemory->options);
-  UpdateGame(gameMemory);
-  DrawGame(gameMemory);
+	gameMemory->gameState->dt = GetFrameTime() * gameMemory->gameState->timeScale;
+	gameMemory->gameState->time += gameMemory->gameState->dt;
+	HandleResize(gameMemory->options);
+	UpdateGame(gameMemory);
+	DrawGame(gameMemory);
 #ifndef PLATFORM_WEB
-  if (gameMemory->gameState->gifRecorder.recording) {
-    GifRecordUpdate(&gameMemory->gameState->gifRecorder);
-  }
+	if (gameMemory->gameState->gifRecorder.recording) {
+		GifRecordUpdate(&gameMemory->gameState->gifRecorder);
+	}
 #endif
 }

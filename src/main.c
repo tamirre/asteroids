@@ -62,9 +62,16 @@ int main()
 	g_game = &game;
 	g_memory = &gameMemory;
 	*g_memory->shader = LoadShader(0, TextFormat("./src/shaders/default_web.glsl", GLSL_VERSION));
-	*g_memory->lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.fs", GLSL_VERSION));
+	*g_memory->lightShader = LoadShader(0, TextFormat("./src/shaders/light_web.glsl", GLSL_VERSION));
 	*g_memory->explosionShader = LoadShader(0, TextFormat("./src/shaders/explode_web.glsl", GLSL_VERSION));
 	*g_memory->outlineShader = LoadShader(0, TextFormat("./src/shaders/outline_web.glsl", GLSL_VERSION));
+	int texSizeLoc = GetShaderLocation(*g_memory->shader, "textureSize");
+	Vector2 texSize = {(float)g_memory->atlas->textureAtlas.width, (float)g_memory->atlas->textureAtlas.height};
+	SetShaderValue(*g_memory->shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
+	texSizeLoc = GetShaderLocation(*g_memory->outlineShader, "textureSize");
+	texSize = (Vector2){(float)g_memory->atlas->textureAtlas.width, (float)g_memory->atlas->textureAtlas.height};
+	SetShaderValue(*g_memory->outlineShader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
+
 	emscripten_set_main_loop(WebWrapper, TARGET_FPS, 1);
 #else
 	GameCode game = LoadGameCode();
@@ -85,8 +92,9 @@ int main()
 			printf("Hot reloading game...\n");
 
 			shader = LoadShader(0, TextFormat("./src/shaders/default.glsl", GLSL_VERSION));
-			lightShader = LoadShader(0, TextFormat("./src/shaders/light.fs", GLSL_VERSION));
+			lightShader = LoadShader(0, TextFormat("./src/shaders/light.glsl", GLSL_VERSION));
 			outlineShader = LoadShader(0, TextFormat("./src/shaders/outline.glsl", GLSL_VERSION));
+			explosionShader = LoadShader(0, TextFormat("./src/shaders/explode.glsl", GLSL_VERSION));
 
 			// CloseAudioDevice();
 			UnloadGameCode(&game);
@@ -97,7 +105,6 @@ int main()
 			}
 			// printf("Reload done!\n");
 		}
-
 		if (game.Update) game.Update(&gameMemory);
 	}
 #endif

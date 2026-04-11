@@ -26,7 +26,6 @@ void main()
 {
     vec2 uv = aa(fragTexCoord, vec2(textureSize));
     vec4 texel = texture(texture0, uv);
-    // vec4 texel = texture(texture0, fragTexCoord);   // Get texel color
     vec2 texelScale = vec2(0.0);
     texelScale.x = outlineSize/textureSize.x;
     texelScale.y = outlineSize/textureSize.y;
