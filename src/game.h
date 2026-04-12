@@ -207,6 +207,7 @@ typedef struct Enemy {
 } Enemy;
 
 typedef struct Options {
+	Vector2 windowPosition;
 	float screenWidth;
 	float screenHeight;
 	float previousWidth;

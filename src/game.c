@@ -19,18 +19,15 @@ void LoadIniFile(Options* options)
 		// Try parsing 3 values (for things like windowPosition)
 		if (sscanf(line, "%63s %f %f", key, &v1, &v2) == 3) {
 			if (strcmp(key, "windowPosition") == 0) {
-				// options->windowX = v1;
-				// options->windowY = v2;
+				options->windowPosition = (Vector2){v1, v2};
 			}
 		}
 		// Try parsing 2 values (for single floats)
 		else if (sscanf(line, "%63s %f", key, &v1) == 2) {
 			if (strcmp(key, "musicVolume") == 0) {
 				options->musicVolume = v1;
-				// printf("DEBUG: musicVolume: %f\n", options->musicVolume);
 			} else if (strcmp(key, "fxVolume") == 0) {
 				options->fxVolume = v1;
-				// printf("DEBUG: fxVolume: %f\n", options->fxVolume);
 			}
 		}
 	}
@@ -45,7 +42,7 @@ void WriteIniFile(Options* options)
 		printf("Error: could not open config.ini file\n");
 		return;
 	}
-	// fprintf(file, "windowPosition=%d\n", options->previousWidth);
+	fprintf(file, "windowPosition %d %d\n", (int)options->windowPosition.x, (int)options->windowPosition.y);
 	fprintf(file, "musicVolume %f\n", options->musicVolume);
 	fprintf(file, "fxVolume %f\n", options->fxVolume);
 	fclose(file);
@@ -56,16 +53,16 @@ Rectangle GetScaledViewport(int winW, int winH)
 	float scale = fminf(
 			(float)winW / VIRTUAL_WIDTH,
 			(float)winH / VIRTUAL_HEIGHT
-			);
+	);
 
 	float w = VIRTUAL_WIDTH  * scale;
 	float h = VIRTUAL_HEIGHT * scale;
 
 	return (Rectangle){
 		(winW - w) / 2.0f,
-			(winH - h) / 2.0f,
-			w,
-			h
+		(winH - h) / 2.0f,
+		w,
+		h
 	};
 }
 
@@ -263,47 +260,47 @@ void InitializeGameState(GameState* gameState)
 {
 	*gameState = (GameState) {
 		.experience = 0,
-			.score = 0,
-			.state = STATE_MAIN_MENU,
-			.lastState = STATE_MAIN_MENU,
-			.timeScale = 1.0f,
-			.player = {0},
-			.enemies = {0},
-			.enemyCount = 0,
-			.enemySpawnRate = 30.0f,
-			.enemySpawnTime = 25.0f,
-			.bullets = {0},
-			.bulletCount = 0,
-			.explosions = {0},
-			.explosionCount = 0,
-			.asteroids = {0},
-			.asteroidCount = 0,
-			.spawnTime = 0.0,
-			.asteroidSpawnRate = 0.2f,
-			.boostCount = 0,
-			.boostSpawnTime = 0.0f,
-			.boostSpawnRate = 10.0f,
-			.stars = {0},
-			.starCount = 0,
-			.starTime = 0,
-			.starSpawnRate = 0.25f,
-			.initStars = 0,
-			.pickedUpgrade = UPGRADE_MULTISHOT,
-			.maxPlayerBullets = 7,
-			.dt = 0.0f,
-			.time = 0.0f,
-			.upgradeCards = {0},
-			.shouldExit = false,
-			.currentCollision = {0},
-			.stateChanged = true,
-			.particleEmitterCount = 0,
+		.score = 0,
+		.state = STATE_MAIN_MENU,
+		.lastState = STATE_MAIN_MENU,
+		.timeScale = 1.0f,
+		.player = {0},
+		.enemies = {0},
+		.enemyCount = 0,
+		.enemySpawnRate = 30.0f,
+		.enemySpawnTime = 25.0f,
+		.bullets = {0},
+		.bulletCount = 0,
+		.explosions = {0},
+		.explosionCount = 0,
+		.asteroids = {0},
+		.asteroidCount = 0,
+		.spawnTime = 0.0,
+		.asteroidSpawnRate = 0.2f,
+		.boostCount = 0,
+		.boostSpawnTime = 0.0f,
+		.boostSpawnRate = 10.0f,
+		.stars = {0},
+		.starCount = 0,
+		.starTime = 0,
+		.starSpawnRate = 0.25f,
+		.initStars = 0,
+		.pickedUpgrade = UPGRADE_MULTISHOT,
+		.maxPlayerBullets = 7,
+		.dt = 0.0f,
+		.time = 0.0f,
+		.upgradeCards = {0},
+		.shouldExit = false,
+		.currentCollision = {0},
+		.stateChanged = true,
+		.particleEmitterCount = 0,
 	};
 
 	MsfGifState gifState = { 0 };
 	gameState->gifRecorder = (GifRecorder){ 
 		.gifState = &gifState,
-			.recording = false,
-			.frameCounter = 0,
+		.recording = false,
+		.frameCounter = 0,
 	};
 
 	for (int i = 0; i < UPGRADE_COUNT; i++)
@@ -314,21 +311,21 @@ void InitializeGameState(GameState* gameState)
 
 	gameState->player = (Player) {
 		.velocity = 350,
-			.position = (Vector2){VIRTUAL_WIDTH / 2.0f, VIRTUAL_HEIGHT / 2.0f},
-			.health = 7,
-			.bulletCount = 1,
-			.sprite = getSprite(SPRITE_PLAYER),
-			.size = 2,
-			.animationFrames = 5,
-			.invulTime = 0.0f,
-			.invulDuration = 3.0f,
-			.fireRate = 1.0f,
-			.shootTime = 1.0f,
-			.damageMulti = 1.5f,
-			.shieldEnabled = false,
-			.shieldTime = 5.25f,
-			.level = 1,
-			.collider = (Rectangle){0,0,0,0},
+		.position = (Vector2){VIRTUAL_WIDTH / 2.0f, VIRTUAL_HEIGHT / 2.0f},
+		.health = 7,
+		.bulletCount = 1,
+		.sprite = getSprite(SPRITE_PLAYER),
+		.size = 2,
+		.animationFrames = 5,
+		.invulTime = 0.0f,
+		.invulDuration = 3.0f,
+		.fireRate = 1.0f,
+		.shootTime = 1.0f,
+		.damageMulti = 1.5f,
+		.shieldEnabled = false,
+		.shieldTime = 5.25f,
+		.level = 1,
+		.collider = (Rectangle){0,0,0,0},
 	};
 }
 
@@ -337,28 +334,29 @@ void InitializeOptions(Options* options)
 	const int maxFontSize = 64;
 	const int maxTitleFontSize = 100;
 	*options = (Options) {
+		.windowPosition = GetWindowPosition(),
 		.screenWidth = (float)VIRTUAL_WIDTH,
-			.screenHeight = (float)VIRTUAL_HEIGHT,
-			.previousWidth = (float)VIRTUAL_WIDTH,
-			.previousHeight = (float)VIRTUAL_HEIGHT,
-			.disableShaders = true,
-			// .font = LoadLanguageFont("./assets/fonts/UnifontExMono.ttf", maxFontSize, LANG_EN), 
-			// .font = LoadLanguageFont("./assets/fonts/Thin Sans.ttf", maxFontSize, LANG_EN), 
-			.font = LoadLanguageFont("./assets/fonts/m6x11plus.ttf", maxFontSize, LANG_EN), 
-			.titleFont = LoadLanguageFont("./assets/fonts/Ethnocentric-Regular.otf", maxTitleFontSize, LANG_EN), 
-			.fontSpacing = 1.0f,
-			.maxFontSize = maxFontSize,
-			.language = LANG_EN,
-			.lastLanguage = LANG_EN,
-			.languageEditMode = false,
-			.languageChanged = false,
-			.disableCursor = false,
-			.lastMousePos = (Vector2){0,0},
-			.musicVolume = 0.15f,
-			.fxVolume = 0.15f,
-			.musicVolumeChanged = false,
-			.fxVolumeChanged = false,
-			.showDebugInfo = false,
+		.screenHeight = (float)VIRTUAL_HEIGHT,
+		.previousWidth = (float)VIRTUAL_WIDTH,
+		.previousHeight = (float)VIRTUAL_HEIGHT,
+		.disableShaders = true,
+		// .font = LoadLanguageFont("./assets/fonts/UnifontExMono.ttf", maxFontSize, LANG_EN), 
+		// .font = LoadLanguageFont("./assets/fonts/Thin Sans.ttf", maxFontSize, LANG_EN), 
+		.font = LoadLanguageFont("./assets/fonts/m6x11plus.ttf", maxFontSize, LANG_EN), 
+		.titleFont = LoadLanguageFont("./assets/fonts/Ethnocentric-Regular.otf", maxTitleFontSize, LANG_EN), 
+		.fontSpacing = 1.0f,
+		.maxFontSize = maxFontSize,
+		.language = LANG_EN,
+		.lastLanguage = LANG_EN,
+		.languageEditMode = false,
+		.languageChanged = false,
+		.disableCursor = false,
+		.lastMousePos = (Vector2){0,0},
+		.musicVolume = 0.15f,
+		.fxVolume = 0.15f,
+		.musicVolumeChanged = false,
+		.fxVolumeChanged = false,
+		.showDebugInfo = false,
 	};
 	SetTextureFilter(options->font.texture, TEXTURE_FILTER_BILINEAR);
 	SetTextureFilter(options->titleFont.texture, TEXTURE_FILTER_BILINEAR);
@@ -385,11 +383,11 @@ void InitGame(GameMemory* gameMemory)
 	// LocSetLanguage(LANG_ZH);
 
 	ConfigFlags configFlags = FLAG_WINDOW_RESIZABLE | 
-		FLAG_VSYNC_HINT | 
-		// FLAG_WINDOW_TOPMOST | 
-		// FLAG_FULLSCREEN_MODE |
-		// FLAG_WINDOW_UNDECORATED |
-		FLAG_BORDERLESS_WINDOWED_MODE;
+							  FLAG_VSYNC_HINT | 
+							  // FLAG_WINDOW_TOPMOST | 
+							  // FLAG_FULLSCREEN_MODE |
+							  // FLAG_WINDOW_UNDECORATED |
+							  FLAG_BORDERLESS_WINDOWED_MODE;
 	SetConfigFlags(configFlags);
 
 	InitWindow(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_TITLE);
@@ -415,6 +413,7 @@ void InitGame(GameMemory* gameMemory)
 	InitializeOptions(gameMemory->options);
 #ifndef PLATFORM_WEB
 	LoadIniFile(gameMemory->options);
+	SetWindowPosition((int)gameMemory->options->windowPosition.x, (int)gameMemory->options->windowPosition.y);
 #endif
 	InitializeGameState(gameMemory->gameState);
 	InitializeAudio(gameMemory->audio, gameMemory->options);
@@ -2142,11 +2141,7 @@ void DrawUpgrades(GameState* gameState, Options* options, TextureAtlas* atlas, S
 			.y = pos_y + height / 2.0f,
 		};
 
-		// Vector2 texSize = { width, height };
-		// Vector2 texSize = {(float)atlas->textureAtlas.width, (float)atlas->textureAtlas.height};
-		// SetShaderValue(*shader, texSizeLoc, &texSize, SHADER_UNIFORM_VEC2);
 		float* anim = &gameState->upgradeCards[i].animationTime;
-
 		// Animate scaling and rotation
 		if (gameState->pickedUpgrade == i) {
 			pulseScaling = 0.10f * sinf(gameState->time * 2.2f);
