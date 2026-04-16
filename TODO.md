@@ -1,6 +1,6 @@
 # TODO list: 
 
-- [ ] add ini file for settings
+- [x] add ini file for settings
 - [ ] rework sprite system to use arbitrary animation frame position in texture atlas (non-continuous animation sprite sheets in atlas)
 - [x] add particle effects
 - [x] add outline shader
